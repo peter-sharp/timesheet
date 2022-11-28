@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timesheet</title>
+    <style></style>
+</head>
+<body>
+    <h2>Time Entries</h2>
+    <form id=timesheet>
+        <table>
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Time Start</th>
+                    <th>Time End</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody id="time_entries"> 
+                <tr data-new="task">
+                    <td><input type="text" name="task"></td>
+                    <td><input type="time" name="time_start"></td>
+                    <td><input type="time" name="time_end"></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    </form>
+
+    <template id="entry_row">
+        <tr>
+            <td><input type="text" name="task"></td>
+            <td><input type="time" name="time_start"></td>
+            <td><input type="time" name="time_end"></td>
+            <td><output name="duration"></output></td>
+        </tr>
+    </template>
+    <script>
+        timesheet(document.getElementById('time_entries'))
+
+        function timesheet(el) {
+            
+            const rowTemplate = document.getElementById('entry_row');
+            
+            const store = Store(
+                'timesheet', 
+                function hydrate(state) {
+                    state.entries = state.entries.map(
+                        ({ start, end, ...x}) => ({ 
+                            start: new Date(start),
+                            end: new Date(end),
+                            ...x
+                        })
+                    );
+                    return state;
+                },
+                {
+                    entries: []
+                }
+            );
+            const model = Model([
+                    function updateEntry(state, ev) {
+                        if('change' != ev.type) return state;
+                        const { id, ...change } = ev
+                        if(ev.id) {
+                            state.entries = state.entries.map(x => x.id == id ? { ...change, ...x } : x)
+                        } else {
+                            state.entries = [
+                                ...state.entries, 
+                                {
+                                    id: Date.now(),
+                                    ...change
+                                }
+                            ];
+                        }
+                        return state;
+                    },
+                ], 
+                store.read()
+            )
+
+
+            el.addEventListener('focusout', function (ev) {
+                if (ev.target.nodeName == 'INPUT') {
+                    const input = ev.target;
+                    const row = input.closest('tr');
+                    if(!allInputsEntered(row)) return;
+
+                    model.emit({
+                        type: 'change',
+                        id: ev.target.closest('tr').id,
+                        task: row.querySelector('[name="task"]').value,
+                        start: timeToDate(row.querySelector('[name="time_start"]').value),
+                        end: timeToDate(row.querySelector('[name="time_end"]').value),
+                    })
+                }
+            });
+
+            el.addEventListener('focusin', function autofillTime(ev) {
+                if (ev.target.nodeName == 'INPUT') {
+                    const input = ev.target;
+                    if(input.value || !['time_start', 'time_end'].includes(input.name)) {
+                        return;
+                    }
+
+                    input.value = format24hour(new Date());
+                }
+            });
+
+            model.listen(function render(state) {
+                const newTask = el.querySelector('[data-new="task"]');
+                newTask.querySelectorAll('input').forEach(x => x.value = '');
+                for (const entry of state.entries) {
+                    let row = document.getElementById(entry.id);
+                    if(!row) {
+                        row = newTimeentryRow();
+                        row.id = entry.id;
+                        if(newTask.nextElementSibling){
+                            el.insertBefore(row, newTask.nextElementSibling);
+                        } else {
+                            el.append(row);
+                        }
+                    }
+                    row.querySelector('[name="task"]').value = entry.task;
+                    row.querySelector('[name="time_start"]').value = format24hour(entry.start);
+                    row.querySelector('[name="time_end"]').value = format24hour(entry.end);
+                    row.querySelector('[name="duration"]').value = calcDuration(entry);
+                }
+            })
+
+            model.listen(store.write);
+
+            model.emit({ type: 'init'});
+
+            function newTimeentryRow() {
+                return rowTemplate.content.cloneNode(true).querySelector('tr')
+            }
+
+            
+            function formatDurationDecimal(duration) {
+                const HOUR = 60 * 60 * 1000;
+                return Math.ceil((duration / HOUR) * 10) / 10
+            }
+
+            function calcDuration({ start, end }) {
+                return start && end ? formatDurationDecimal(end.getTime() - start.getTime()) : 0
+            }
+
+            function timeToDate(val) {
+                const date = new Date();
+                console.log(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}T${val}`)
+                return new Date(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}T${val}`);
+            }
+            
+            
+
+            function format24hour(date) {
+                return padNumber(2, date.getHours()) + ':' + padNumber(2, date.getMinutes());
+            }
+
+            function padNumber(l, n) { return `${n}`.padStart(l, '0'); }
+        }
+
+        /**
+         * Creates model with given functions and state
+         * @param fns reducers to update business logic
+         * @param initialState initial state of model
+         **/
+        function Model(fns, initialState) {
+            let state = { ...initialState };
+            function emit(ev) {
+                state = fns.reduce((s, fn) => fn(s, ev), state)
+                listeners.forEach(fn => fn({ ...state }));
+            }
+            
+            const listeners = [];
+            function listen(fn) {
+                listeners.push(fn);
+            }
+            return {
+                emit,
+                listen
+            }
+        }
+
+         function Store(key, hydrateFn, initialState) {
+            function read() {
+                let data = {};
+                try {
+                    data = JSON.parse(localStorage.getItem(key)) || initialState;
+                } catch (e) {
+                    console.error(e);
+                    data.errors = [e];
+                }
+                return hydrateFn(data);
+            }
+            function write(data) {
+                localStorage.setItem(key, JSON.stringify(data));
+            }
+            return {
+                read,
+                write
+            }
+        }
+
+        function allInputsEntered(el) {
+            let entered = true;
+            for (const input of el.querySelectorAll('input')) {
+                if(!input.value) {
+                    entered = false;
+                    break;
+                }
+            }
+            return entered;
+        }
+    </script>
+</body>
+</html>
