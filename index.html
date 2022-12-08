@@ -41,7 +41,7 @@
     <script>
         timesheet(document.getElementById('time_entries'))
 
-        function timesheet(el) {
+        async function timesheet(el) {
             
             const rowTemplate = document.getElementById('entry_row');
             
@@ -80,7 +80,7 @@
                         return state;
                     },
                 ], 
-                store.read()
+                await store.read()
             )
 
 
@@ -188,7 +188,7 @@
         }
 
          function Store(key, hydrateFn, initialState) {
-            function read() {
+            async function read() {
                 let data = {};
                 try {
                     data = JSON.parse(localStorage.getItem(key)) || initialState;
@@ -198,7 +198,7 @@
                 }
                 return hydrateFn(data);
             }
-            function write(data) {
+            async function write(data) {
                 localStorage.setItem(key, JSON.stringify(data));
             }
             return {
