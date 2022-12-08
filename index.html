@@ -42,6 +42,7 @@
                     <th>Time Start</th>
                     <th>Time End</th>
                     <th>Duration</th>
+                    <th>Synced</th>
                 </tr>
             </thead>
             <tbody id="time_entries">
@@ -49,6 +50,7 @@
                     <td><input type="text" name="task"></td>
                     <td><input type="time" name="time_start"></td>
                     <td><input type="time" name="time_end"></td>
+                    <td></td>
                     <td></td>
                 </tr>
             </tbody>
@@ -75,11 +77,12 @@
             <td><input type="time" name="time_start"></td>
             <td><input type="time" name="time_end"></td>
             <td><output name="duration"></output></td>
+            <td><input type="checkbox"></td>
         </tr>
     </template>
 
     <template id="task_total">
-        <li><span data-task></span> - <output name="taskTotal"></output></li>
+        <li><span data-task></span> - <output name="taskTotal"></output> </li>
     </template>
     <script>
         const WEEK = 7 * 24 * 3600 * 1000;
