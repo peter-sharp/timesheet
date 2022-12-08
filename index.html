@@ -152,8 +152,10 @@
 
             function timeToDate(val) {
                 const date = new Date();
-                console.log(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}T${val}`)
-                return new Date(`${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}T${val}`);
+                const [hours, mins] = val.split(':')
+                date.setHours(hours);
+                date.setMinutes(mins);
+                return date;
             }
             
             
