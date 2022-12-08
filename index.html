@@ -63,10 +63,11 @@
             );
             const model = Model([
                     function updateEntry(state, ev) {
-                        if('change' != ev.type) return state;
-                        const { id, ...change } = ev
-                        if(ev.id) {
-                            state.entries = state.entries.map(x => x.id == id ? { ...change, ...x } : x)
+                    const { id, type, ...change } = ev
+                    if ('change' != type) return state;
+
+                    if (id) {
+                        state.entries = state.entries.map(x => x.id == id ? { ...x, ...change } : x)
                         } else {
                             state.entries = [
                                 ...state.entries, 
