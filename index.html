@@ -30,6 +30,7 @@
                 </tr>
             </tbody>
         </table>
+        <p>Total: <output name="durationTotal"></output></p>
 
     </form>
 
@@ -138,6 +139,7 @@
             model.listen(function render(state) {
                 const newTask = el.querySelector('[data-new="task"]');
                 newTask.querySelectorAll('input').forEach(x => x.value = '');
+                let durationTotal = 0;
                 for (const entry of state.entries) {
                     let row = document.getElementById(entry.id);
                     if (!row) {
@@ -153,8 +155,12 @@
                     row.querySelector('[name="task"]').value = entry.task;
                     row.querySelector('[name="time_start"]').value = format24hour(entry.start);
                     row.querySelector('[name="time_end"]').value = format24hour(entry.end);
-                    row.querySelector('[name="duration"]').value = calcDuration(entry);
+                    const duration = calcDuration(entry);
+                    row.querySelector('[name="duration"]').value = duration;
+                    durationTotal += duration;
                 }
+                //TODO make sure in scope of timesheet
+                document.querySelector('[name="durationTotal"]').value = round1dp(durationTotal);
             })
 
             model.listen(store.write);
@@ -169,6 +175,10 @@
             function formatDurationDecimal(duration) {
                 const HOUR = 60 * 60 * 1000;
                 return Math.ceil((duration / HOUR) * 10) / 10
+            }
+
+            function round1dp(x) {
+                return Math.round(x * 10) / 10
             }
 
             function calcDuration({ start, end }) {
