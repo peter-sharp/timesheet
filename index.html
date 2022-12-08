@@ -24,6 +24,11 @@
         th {
             text-align: left;
         }
+
+        .unstyled-list {
+            padding-left: 0;
+            list-style-type: none;
+        }
     </style>
 </head>
 
@@ -48,6 +53,8 @@
                 </tr>
             </tbody>
         </table>
+        <h3>Task totals</h3>
+        <ul data-task-totals class="unstyled-list"></ul>
         <p>Total: <output name="durationTotal"></output></p>
 
     </form>
@@ -70,6 +77,10 @@
             <td><output name="duration"></output></td>
         </tr>
     </template>
+
+    <template id="task_total">
+        <li><span data-task></span> - <output name="taskTotal"></output></li>
+    </template>
     <script>
         const WEEK = 7 * 24 * 3600 * 1000;
 
@@ -80,6 +91,7 @@
         async function timesheet(el) {
 
             const rowTemplate = document.getElementById('entry_row');
+            const taskTotalTemplate = document.getElementById('task_total');
 
             
 
@@ -158,6 +170,7 @@
                 const newTask = el.querySelector('[data-new="task"]');
                 newTask.querySelectorAll('input').forEach(x => x.value = '');
                 let durationTotal = 0;
+                const taskTotals = {};
                 for (const entry of state.entries) {
                     let row = document.getElementById(entry.id);
                     if (!row) {
@@ -176,10 +189,25 @@
                     const duration = calcDuration(entry);
                     row.querySelector('[name="duration"]').value = duration;
                     durationTotal += duration;
+                    taskTotals[entry.task] = taskTotals[entry.task] || 0;
+                    taskTotals[entry.task] += duration;
                 }
+                renderTaskTotals(taskTotals);
+
                 //TODO make sure in scope of timesheet
                 document.querySelector('[name="durationTotal"]').value = round1dp(durationTotal);
             })
+
+            function renderTaskTotals(totals) {
+                const elTotals = document.querySelector('[data-task-totals]')
+                elTotals.innerHTML = '';
+                for( let [task, total] of Object.entries(totals)) {
+                    const li = newTasktotalItem();
+                    li.querySelector('[data-task]').innerText = task;
+                    li.querySelector('[name="taskTotal"]').value = total;
+                    elTotals.append(li);
+                }
+            }
 
             model.listen(store.write);
 
@@ -187,6 +215,10 @@
 
             function newTimeentryRow() {
                 return rowTemplate.content.cloneNode(true).querySelector('tr')
+            }
+
+            function newTasktotalItem() {
+                return taskTotalTemplate.content.cloneNode(true).querySelector('li')
             }
 
 
