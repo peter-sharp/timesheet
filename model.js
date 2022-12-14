@@ -24,12 +24,12 @@ function Store(key, hydrateFn, initialState) {
     async function read() {
         let data = {};
         try {
-            data = JSON.parse(localStorage.getItem(key)) || initialState;
+            data = JSON.parse(localStorage.getItem(key)) || {};
         } catch (e) {
             console.error(e);
             data.errors = [e];
         }
-        return hydrateFn(data);
+        return hydrateFn({...initialState, ...data});
     }
     async function write(data) {
         localStorage.setItem(key, JSON.stringify(data));

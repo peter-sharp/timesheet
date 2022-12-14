@@ -1,4 +1,3 @@
-const WEEK = 7 * 24 * 3600 * 1000;
 
 timesheet(document.getElementById('time_entries'))
 
@@ -8,14 +7,13 @@ async function timesheet(el) {
 
     const rowTemplate = document.getElementById('entry_row');
     const taskTotalTemplate = document.getElementById('task_total');
-
-    
+    const entriesList = el;
+    const form = el.closest('form');
 
     const store = Store(
         'timesheet',
         function hydrate(state) {
-            state.selectedWeek = state.selectedWeek || weekOfYear(new Date)
-            state.selectedWeek = parseInt(state.selectedWeek, 10)
+         
             console.log(state)
             state.entries = state.entries.map(
                 ({ start, end, ...x }) => ({
@@ -23,13 +21,20 @@ async function timesheet(el) {
                     end: new Date(end),
                     ...x
                 })
-            ).filter(x => weekOfYear(x.start) == state.selectedWeek);
+            );
+            state.archive = state.archive.map(
+                ({ start, end, ...x }) => ({
+                    start: new Date(start),
+                    end: new Date(end),
+                    ...x
+                })
+            );
             console.log(state)
             return state;
         },
         {
-            selectedWeek: weekOfYear(new Date),
-            entries: []
+            entries: [],
+            archive: []
         }
     );
     const model = Model([
@@ -50,9 +55,19 @@ async function timesheet(el) {
             }
             return state;
         },
+        function archiveEntries(state, ev) {
+            if ('archive' != ev.type) return state;
+            state.entries = [];
+            state.archive = state.entries.map(shallowClone);
+            return state;
+        }
     ],
         await store.read()
     )
+
+    function shallowClone(x) {
+        return {...x};
+    }
 
 
     el.addEventListener('focusout', function (ev) {
@@ -63,7 +78,7 @@ async function timesheet(el) {
 
             model.emit({
                 type: 'change',
-                id: parseInt(ev.target.closest('tr').id, 10),
+                id: parseInt(ev.target.closest('tr').dataset.id, 10),
                 task: row.querySelector('[name="task"]').value,
                 start: timeToDate(row.querySelector('[name="time_start"]').value),
                 end: timeToDate(row.querySelector('[name="time_end"]').value),
@@ -82,20 +97,35 @@ async function timesheet(el) {
         }
     });
 
+    form.addEventListener('submit', function archive(ev) {
+        ev.preventDefault();
+        if(ev.submitter?.name == 'archive') {
+            model.emit({
+                type: 'archive'
+            })
+        }
+    });
+
     model.listen(function render(state) {
-        const newTask = el.querySelector('[data-new="task"]');
+        const newTask = entriesList.querySelector('[data-new="task"]');
         newTask.querySelectorAll('input').forEach(x => x.value = '');
         let durationTotal = 0;
         const taskTotals = {};
+        if(!state.entries.length) {
+            for(const x of [...entriesList.childNodes]) {
+                if(x !== newTask) x.remove();
+                console.log(x);
+            }
+        }
         for (const entry of state.entries) {
-            let row = document.getElementById(entry.id);
+            let row = entriesList.querySelector(`[data-id="${entry.id}"]`);
             if (!row) {
                 row = newTimeentryRow();
-                row.id = entry.id
+                row.dataset.id = entry.id
                 if (newTask.nextElementSibling) {
-                    el.insertBefore(row, newTask.nextElementSibling);
+                    entriesList.insertBefore(row, newTask.nextElementSibling);
                 } else {
-                    el.append(row);
+                    entriesList.append(row);
                 }
             }
 
@@ -168,14 +198,6 @@ async function timesheet(el) {
     function padNumber(l, n) { return `${n}`.padStart(l, '0'); }
 }
 
-function weekNav(el) {
-    const model = Model(
-        [],
-        {
-            currWeek: new Date(),
-        }
-    );
-}
 
 function allInputsEntered(el) {
     let entered = true;
@@ -188,16 +210,4 @@ function allInputsEntered(el) {
     return entered;
 }
 
-function dateAdd(ms, date) {
-    return new Date(date.getTime() + ms);
-}
 
-function isSameWeek(dateA, dateB) {
-    return weekOfYear(dateA) == weekOfYear(dateB)
-}
-
-function weekOfYear(date) {
-    const startOfYear = new Date(date.getFullYear(), 0, 1);
-    startOfYear.setDate(startOfYear.getDate() + (startOfYear.getDay() % 7))
-    return Math.round((date - startOfYear) / WEEK)
-}
