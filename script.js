@@ -55,7 +55,7 @@ async function timesheet(el) {
             },
             function archiveEntries(state, ev) {
                 if ('archive' != ev.type) return state;
-            state.archive = state.entries.map(shallowClone);
+                state.archive = [...state.archive, ...state.entries.map(shallowClone)];
                 state.entries = [];
                 return state;
             }
