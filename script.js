@@ -1,4 +1,3 @@
-
 timesheet(document.getElementById('time_entries'))
 
 
@@ -13,7 +12,7 @@ async function timesheet(el) {
     const store = Store(
         'timesheet',
         function hydrate(state) {
-         
+
             console.log(state)
             state.entries = state.entries.map(
                 ({ start, end, ...x }) => ({
@@ -31,46 +30,45 @@ async function timesheet(el) {
             );
             console.log(state)
             return state;
-        },
-        {
+        }, {
             entries: [],
             archive: []
         }
     );
     const model = Model([
-        function updateEntry(state, ev) {
-            const { id, type, ...change } = ev
-            if ('change' != type) return state;
+            function updateEntry(state, ev) {
+                const { id, type, ...change } = ev
+                if ('change' != type) return state;
 
-            if (id) {
-                state.entries = state.entries.map(x => x.id == id ? { ...x, ...change } : x)
-            } else {
-                state.entries = [
-                    ...state.entries,
-                    {
-                        id: Date.now(),
-                        ...change
-                    }
-                ];
-            }
-            return state;
-        },
-        function archiveEntries(state, ev) {
-            if ('archive' != ev.type) return state;
+                if (id) {
+                    state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x)
+                } else {
+                    state.entries = [
+                        ...state.entries,
+                        {
+                            id: Date.now(),
+                            ...change
+                        }
+                    ];
+                }
+                return state;
+            },
+            function archiveEntries(state, ev) {
+                if ('archive' != ev.type) return state;
             state.archive = state.entries.map(shallowClone);
-            state.entries = [];
-            return state;
-        }
-    ],
+                state.entries = [];
+                return state;
+            }
+        ],
         await store.read()
     )
 
     function shallowClone(x) {
-        return {...x};
+        return {...x };
     }
 
 
-    el.addEventListener('focusout', function (ev) {
+    el.addEventListener('focusout', function(ev) {
         if (ev.target.nodeName == 'INPUT') {
             const input = ev.target;
             const row = input.closest('tr');
@@ -99,7 +97,7 @@ async function timesheet(el) {
 
     form.addEventListener('submit', function archive(ev) {
         ev.preventDefault();
-        if(ev.submitter?.name == 'archive') {
+        if (ev.submitter ?.name == 'archive') {
             model.emit({
                 type: 'archive'
             })
@@ -111,9 +109,9 @@ async function timesheet(el) {
         newTask.querySelectorAll('input').forEach(x => x.value = '');
         let durationTotal = 0;
         const taskTotals = {};
-        if(!state.entries.length) {
-            for(const x of [...entriesList.childNodes]) {
-                if(x !== newTask) x.remove();
+        if (!state.entries.length) {
+            for (const x of [...entriesList.childNodes]) {
+                if (x !== newTask) x.remove();
                 console.log(x);
             }
         }
@@ -147,7 +145,7 @@ async function timesheet(el) {
     function renderTaskTotals(totals) {
         const elTotals = document.querySelector('[data-task-totals]')
         elTotals.innerHTML = '';
-        for( let [task, total] of Object.entries(totals)) {
+        for (let [task, total] of Object.entries(totals)) {
             const li = newTasktotalItem();
             li.querySelector('[data-task]').innerText = task;
             li.querySelector('[name="taskTotal"]').value = total;
@@ -209,5 +207,3 @@ function allInputsEntered(el) {
     }
     return entered;
 }
-
-
