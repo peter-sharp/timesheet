@@ -19,6 +19,7 @@
             <thead>
                 <tr>
                     <th>Task</th>
+                    <th>Annotation</th>
                     <th>Time Start</th>
                     <th>Time End</th>
                     <th>Duration</th>
@@ -28,6 +29,7 @@
             <tbody id="time_entries">
                 <tr data-new="task">
                     <td><input type="text" name="task"></td>
+                    <td><input type="text" name="annotation"></td>
                     <td><input type="time" name="time_start"></td>
                     <td><input type="time" name="time_end"></td>
                     <td></td>
@@ -54,6 +56,7 @@
     <template id="entry_row">
         <tr>
             <td><input type="text" name="task"></td>
+            <td><input type="text" name="annotation"></td>
             <td><input type="time" name="time_start"></td>
             <td><input type="time" name="time_end"></td>
             <td><output name="duration"></output></td>

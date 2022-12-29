@@ -78,6 +78,7 @@ async function timesheet(el) {
                 type: 'change',
                 id: parseInt(ev.target.closest('tr').dataset.id, 10),
                 task: row.querySelector('[name="task"]').value,
+                annotation: row.querySelector('[name="annotation"]').value,
                 start: timeToDate(row.querySelector('[name="time_start"]').value),
                 end: timeToDate(row.querySelector('[name="time_end"]').value),
             })
@@ -128,6 +129,7 @@ async function timesheet(el) {
             }
 
             row.querySelector('[name="task"]').value = entry.task;
+            row.querySelector('[name="annotation"]').value = entry.annotation;
             row.querySelector('[name="time_start"]').value = format24hour(entry.start);
             row.querySelector('[name="time_end"]').value = format24hour(entry.end);
             const duration = calcDuration(entry);
