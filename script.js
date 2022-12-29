@@ -81,6 +81,7 @@ async function timesheet(el) {
                 annotation: row.querySelector('[name="annotation"]').value,
                 start: timeToDate(row.querySelector('[name="time_start"]').value),
                 end: timeToDate(row.querySelector('[name="time_end"]').value),
+                synced: row.querySelector('[name="synced"]').checked,
             })
         }
     });
@@ -135,6 +136,7 @@ async function timesheet(el) {
             const duration = calcDuration(entry);
             row.querySelector('[name="duration"]').value = duration;
             durationTotal += duration;
+            row.querySelector('[name="synced"]').checked = entry.synced;
             taskTotals[entry.task] = taskTotals[entry.task] || 0;
             taskTotals[entry.task] += duration;
         }
