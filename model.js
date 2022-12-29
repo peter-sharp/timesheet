@@ -20,7 +20,7 @@ function Model(fns, initialState) {
     }
 }
 
-function Store(key, hydrateFn, initialState) {
+function Store(key, hydrateFn, dehydrateFn, initialState) {
     async function read() {
         let data = {};
         try {
@@ -32,7 +32,7 @@ function Store(key, hydrateFn, initialState) {
         return hydrateFn({...initialState, ...data});
     }
     async function write(data) {
-        localStorage.setItem(key, JSON.stringify(data));
+        localStorage.setItem(key, JSON.stringify(dehydrateFn(data)));
     }
     return {
         read,

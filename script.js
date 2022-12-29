@@ -8,12 +8,11 @@ async function timesheet(el) {
     const taskTotalTemplate = document.getElementById('task_total');
     const entriesList = el;
     const form = el.closest('form');
-
+    const prevTasks = form.querySelector(`#prevTasks`);
     const store = Store(
         'timesheet',
         function hydrate(state) {
 
-            console.log(state)
             state.entries = state.entries.map(
                 ({ start, end, ...x }) => ({
                     start: new Date(start),
@@ -28,11 +27,16 @@ async function timesheet(el) {
                     ...x
                 })
             );
-            console.log(state)
+            state.tasks = new Set(state.tasks);
+          
             return state;
+        },
+        function dehydrate(state) {
+            return {...state, tasks: Array.from(state.tasks) };
         }, {
             entries: [],
-            archive: []
+            archive: [],
+            tasks: new Set()
         }
     );
     const model = Model([
@@ -51,6 +55,9 @@ async function timesheet(el) {
                         }
                     ];
                 }
+
+                state.tasks = new Set([...Array.from(state.tasks), change.task])
+
                 return state;
             },
             function archiveEntries(state, ev) {
@@ -141,7 +148,7 @@ async function timesheet(el) {
             taskTotals[entry.task] += duration;
         }
         renderTaskTotals(taskTotals);
-
+        renderTaskdatalist(state.tasks)
         //TODO make sure in scope of timesheet
         document.querySelector('[name="durationTotal"]').value = round1dp(durationTotal);
     })
@@ -154,6 +161,16 @@ async function timesheet(el) {
             li.querySelector('[data-task]').innerText = task;
             li.querySelector('[name="taskTotal"]').value = total;
             elTotals.append(li);
+        }
+    }
+
+    function renderTaskdatalist(tasks) {
+        prevTasks.innerHTML = ''
+        for(const task of Array.from(tasks)) {
+            const opt = document.createElement('OPTION');
+            opt.value = task;
+            opt.innerText = task;
+            prevTasks.append(opt)
         }
     }
 

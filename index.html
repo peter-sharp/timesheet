@@ -28,7 +28,7 @@
             </thead>
             <tbody id="time_entries">
                 <tr data-new="task">
-                    <td><input type="text" name="task"></td>
+                    <td><input type="text" name="task" list="prevTasks"></td>
                     <td><input type="text" name="annotation"></td>
                     <td><input type="time" name="time_start"></td>
                     <td><input type="time" name="time_end"></td>
@@ -37,6 +37,7 @@
                 </tr>
             </tbody>
         </table>
+        <datalist id="prevTasks"></datalist>
         <h2>Task totals</h2>
         <ul data-task-totals class="unstyled-list"></ul>
         <p>Total: <output name="durationTotal"></output></p>
@@ -55,7 +56,7 @@
 
     <template id="entry_row">
         <tr>
-            <td><input type="text" name="task"></td>
+            <td><input type="text" name="task" list="prevTasks"></td>
             <td><input type="text" name="annotation"></td>
             <td><input type="time" name="time_start"></td>
             <td><input type="time" name="time_end"></td>
