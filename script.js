@@ -88,7 +88,7 @@ async function timesheet(el) {
                 annotation: row.querySelector('[name="annotation"]').value,
                 start: timeToDate(row.querySelector('[name="time_start"]').value),
                 end: timeToDate(row.querySelector('[name="time_end"]').value),
-                synced: row.querySelector('[name="synced"]').checked,
+                synced: row.querySelector('[name="synced"]')?.checked,
             })
         }
     });
