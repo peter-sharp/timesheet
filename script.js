@@ -1,14 +1,5 @@
-timesheet(document.getElementById('time_entries'))
+(async () => {
 
-
-
-async function timesheet(el) {
-
-    const rowTemplate = document.getElementById('entry_row');
-    const taskTotalTemplate = document.getElementById('task_total');
-    const entriesList = el;
-    const form = el.closest('form');
-    const prevTasks = form.querySelector(`#prevTasks`);
     const store = Store(
         'timesheet',
         function hydrate(state) {
@@ -28,7 +19,7 @@ async function timesheet(el) {
                 })
             );
             state.tasks = new Set(state.tasks);
-          
+            
             return state;
         },
         function dehydrate(state) {
@@ -70,9 +61,25 @@ async function timesheet(el) {
         await store.read()
     )
 
-    function shallowClone(x) {
-        return {...x };
-    }
+
+
+    timesheet(document.getElementById('timesheet'), model);
+    archive(document.getElementById('archive'), model);
+    
+
+    model.listen(store.write);
+
+    model.emit({ type: 'init' });
+})();
+
+function timesheet(el, model) {
+
+    const rowTemplate = document.getElementById('entry_row');
+    const taskTotalTemplate = document.getElementById('task_total');
+    const entriesList = el.querySelector('#time_entries');
+    const form = el;
+    const prevTasks = form.querySelector(`#prevTasks`);
+    
 
 
     el.addEventListener('focusout', function(ev) {
@@ -174,9 +181,6 @@ async function timesheet(el) {
         }
     }
 
-    model.listen(store.write);
-
-    model.emit({ type: 'init' });
 
     function newTimeentryRow() {
         return rowTemplate.content.cloneNode(true).querySelector('tr')
@@ -218,6 +222,18 @@ async function timesheet(el) {
 }
 
 
+function archive(el, model) {
+    el.addEventListener('submit', function archive(ev) {
+        ev.preventDefault();
+        if (ev.submitter ?.name == 'archive') {
+            model.emit({
+                type: 'archive'
+            })
+        }
+    });
+}
+
+
 function allInputsEntered(el) {
     let entered = true;
     for (const input of el.querySelectorAll('input')) {
@@ -227,4 +243,8 @@ function allInputsEntered(el) {
         }
     }
     return entered;
+}
+
+function shallowClone(x) {
+    return {...x };
 }
