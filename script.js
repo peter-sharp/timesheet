@@ -56,6 +56,36 @@
                 state.archive = [...state.archive, ...state.entries.map(shallowClone)];
                 state.entries = [];
                 return state;
+            },
+            function settings(state, ev) {
+                switch (ev.type) {
+                    case 'import':
+                        const data = JSON.parse(ev.data);
+                        const imported = data.map(x => {
+
+                            let start = new Date(x.start); 
+                            let end = new Date(x.end); 
+                            if(isNaN(start)) {
+                                start = importTimewtime(x.start)
+                            }
+                            if(isNaN(end)) {
+                                end = importTimewtime(x.end)
+                            }
+                            return {
+                                ...x,
+                                id: x.id.toString() + Date.now().toString(),
+                                task: x.task || x.tags.join('_'),
+                                annotation: x.annotation || x.tags ? x.tags.join(' ') : 'Imported '+ new Date(),
+                                start,
+                                end
+                            }
+                        });
+                        state.entries = [...state.entries, ...imported]
+                        break;
+                    default:
+                        break;
+                }
+                return state;
             }
         ],
         await store.read()
@@ -65,7 +95,7 @@
 
     timesheet(document.getElementById('timesheet'), model);
     archive(document.getElementById('archive'), model);
-    
+    settings(document.getElementById('settings'), model);
 
     model.listen(store.write);
 
@@ -233,6 +263,25 @@ function archive(el, model) {
     });
 }
 
+
+function settings(el, model) {
+    const importEl = el.querySelector('#import');
+    importEl.addEventListener('submit', function importData(ev) {
+        ev.preventDefault();
+        if (ev.submitter?.name == 'import') {
+            model.emit({
+                type: 'import',
+                data: importEl.elements.data.value
+            })
+        }
+    });
+}
+
+
+function importTimewtime(x) {
+    const [_, y,m,d,h,mm,s] = x.match(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/)
+    return new Date(y, m - 1, d, h, mm, s);
+}
 
 function allInputsEntered(el) {
     let entered = true;

@@ -13,6 +13,10 @@
             padding: 0.2em;
         }
 
+        input, textarea {
+            display: block;
+        }
+
         [name="task"] {
             max-width: 5em;
         }
