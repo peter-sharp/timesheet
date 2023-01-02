@@ -40,3 +40,7 @@
             margin-right: auto;
             max-width: 50rem;
         }
+
+        .stack > :where( * + *) {
+            margin-top: 1rem;
+        }
