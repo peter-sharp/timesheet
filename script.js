@@ -79,17 +79,27 @@ async function timesheet(el) {
         if (ev.target.nodeName == 'INPUT') {
             const input = ev.target;
             const row = input.closest('tr');
-            if (!allInputsEntered(row)) return;
-
-            model.emit({
-                type: 'change',
-                id: parseInt(ev.target.closest('tr').dataset.id, 10),
-                task: row.querySelector('[name="task"]').value,
-                annotation: row.querySelector('[name="annotation"]').value,
-                start: timeToDate(row.querySelector('[name="time_start"]').value),
-                end: timeToDate(row.querySelector('[name="time_end"]').value),
-                synced: row.querySelector('[name="synced"]')?.checked,
-            })
+            if (allInputsEntered(row)) {
+                 model.emit({
+                    type: 'change',
+                    id: parseInt(ev.target.closest('tr').dataset.id, 10),
+                    task: row.querySelector('[name="task"]').value,
+                    annotation: row.querySelector('[name="annotation"]').value,
+                    start: timeToDate(row.querySelector('[name="time_start"]').value),
+                    end: timeToDate(row.querySelector('[name="time_end"]').value),
+                    synced: row.querySelector('[name="synced"]')?.checked,
+                })
+            } else if(row.dataset.new) {
+                //  model.emit({
+                //     type: 'new',
+                //     id: parseInt(ev.target.closest('tr').dataset.id, 10),
+                //     task: row.querySelector('[name="task"]').value,
+                //     annotation: row.querySelector('[name="annotation"]').value,
+                //     start: timeToDate(row.querySelector('[name="time_start"]').value),
+                //     end: timeToDate(row.querySelector('[name="time_end"]').value),
+                // })
+            }
+           
         }
     });
 
