@@ -1,14 +1,5 @@
-timesheet(document.getElementById('time_entries'))
+(async () => {
 
-
-
-async function timesheet(el) {
-
-    const rowTemplate = document.getElementById('entry_row');
-    const taskTotalTemplate = document.getElementById('task_total');
-    const entriesList = el;
-    const form = el.closest('form');
-    const prevTasks = form.querySelector(`#prevTasks`);
     const store = Store(
         'timesheet',
         function hydrate(state) {
@@ -28,7 +19,7 @@ async function timesheet(el) {
                 })
             );
             state.tasks = new Set(state.tasks);
-          
+            
             return state;
         },
         function dehydrate(state) {
@@ -65,14 +56,60 @@ async function timesheet(el) {
                 state.archive = [...state.archive, ...state.entries.map(shallowClone)];
                 state.entries = [];
                 return state;
+            },
+            function settings(state, ev) {
+                switch (ev.type) {
+                    case 'import':
+                        const data = JSON.parse(ev.data);
+                        const imported = data.map(x => {
+
+                            let start = new Date(x.start); 
+                            let end = new Date(x.end); 
+                            if(isNaN(start)) {
+                                start = importTimewtime(x.start)
+                            }
+                            if(isNaN(end)) {
+                                end = importTimewtime(x.end)
+                            }
+                            return {
+                                ...x,
+                                id: x.id.toString() + Date.now().toString(),
+                                task: x.task || x.tags.join('_'),
+                                annotation: x.annotation || x.tags ? x.tags.join(' ') : 'Imported '+ new Date(),
+                                start,
+                                end
+                            }
+                        });
+                        state.entries = [...state.entries, ...imported]
+                        break;
+                    default:
+                        break;
+                }
+                return state;
             }
         ],
         await store.read()
     )
 
-    function shallowClone(x) {
-        return {...x };
-    }
+
+
+    timesheet(document.getElementById('timesheet'), model);
+    archive(document.getElementById('archive'), model);
+    settings(document.getElementById('settings'), model);
+
+    model.listen(store.write);
+
+    model.emit({ type: 'init' });
+})();
+
+function timesheet(el, model) {
+
+    const rowTemplate = document.getElementById('entry_row');
+    const taskTotalTemplate = document.getElementById('task_total');
+    const entriesList = el.querySelector('#time_entries');
+    const form = el;
+    const prevTasks = form.querySelector(`#prevTasks`);
+    
 
 
     el.addEventListener('focusout', function(ev) {
@@ -184,9 +221,6 @@ async function timesheet(el) {
         }
     }
 
-    model.listen(store.write);
-
-    model.emit({ type: 'init' });
 
     function newTimeentryRow() {
         return rowTemplate.content.cloneNode(true).querySelector('tr')
@@ -228,6 +262,37 @@ async function timesheet(el) {
 }
 
 
+function archive(el, model) {
+    el.addEventListener('submit', function archive(ev) {
+        ev.preventDefault();
+        if (ev.submitter ?.name == 'archive') {
+            model.emit({
+                type: 'archive'
+            })
+        }
+    });
+}
+
+
+function settings(el, model) {
+    const importEl = el.querySelector('#import');
+    importEl.addEventListener('submit', function importData(ev) {
+        ev.preventDefault();
+        if (ev.submitter?.name == 'import') {
+            model.emit({
+                type: 'import',
+                data: importEl.elements.data.value
+            })
+        }
+    });
+}
+
+
+function importTimewtime(x) {
+    const [_, y,m,d,h,mm,s] = x.match(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/)
+    return new Date(y, m - 1, d, h, mm, s);
+}
+
 function allInputsEntered(el) {
     let entered = true;
     for (const input of el.querySelectorAll('input')) {
@@ -237,4 +302,8 @@ function allInputsEntered(el) {
         }
     }
     return entered;
+}
+
+function shallowClone(x) {
+    return {...x };
 }

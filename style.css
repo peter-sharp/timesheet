@@ -13,6 +13,10 @@
             padding: 0.2em;
         }
 
+        input, textarea {
+            display: block;
+        }
+
         [name="task"] {
             max-width: 5em;
         }
@@ -39,4 +43,8 @@
             margin-left: auto;
             margin-right: auto;
             max-width: 50rem;
+        }
+
+        .stack > :where( * + *) {
+            margin-top: 1rem;
         }

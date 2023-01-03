@@ -11,7 +11,7 @@
  href="./favicon.ico" />
 </head>
 
-<body class="wrapper">
+<body class="wrapper stack">
     <h1 class="wrapper__inner">Timesheet</h1>
     <h2 class="wrapper__inner">Time Entries</h2>
     <form class="wrapper__inner" id=timesheet>
@@ -41,8 +41,25 @@
         <h2>Task totals</h2>
         <ul data-task-totals class="unstyled-list"></ul>
         <p>Total: <output name="durationTotal"></output></p>
-        <button name="archive">Archive</button>
+        <!-- TODO add hidden button to save data -->
+        
     </form>
+    <form class="wrapper__inner" id="archive">
+        <details class="stack">
+            <summary>Archive</summary>
+            <button name="archive">Archive</button>
+        </details>
+    </form>
+
+    <details class="wrapper__inner stack" id="settings">
+        <summary>Settings</summary>
+        <form class="stack" id="import">
+            <textarea name="data"></textarea>
+            <button name="import">Import</button>
+        </form>
+    
+    </details>
+    
 
     <template id="week_nav">
         <nav data-week-nav>
