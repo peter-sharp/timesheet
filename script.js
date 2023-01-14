@@ -3,7 +3,11 @@
     const store = Store(
         'timesheet',
         function hydrate(state) {
-
+            state.newEntry = {
+                ...state.newEntry,
+                start: state.newEntry.start ? new Date(state.newEntry.start) : null,
+                end: state.newEntry.end ? new Date(state.newEntry.end) : null
+            };
             state.entries = state.entries.map(
                 ({ start, end, ...x }) => ({
                     start: new Date(start),
@@ -18,6 +22,8 @@
                     ...x
                 })
             );
+
+
             state.tasks = new Set(state.tasks);
             
             return state;
@@ -25,19 +31,30 @@
         function dehydrate(state) {
             return {...state, tasks: Array.from(state.tasks) };
         }, {
+            newEntry: {},
             entries: [],
             archive: [],
             tasks: new Set()
         }
     );
     const model = Model([
+            function newEntry(state, ev) {
+                const { type, ...data } = ev
+                if ('new' != type) return state;
+              
+                state.newEntry = {...data};
+                
+                return state;
+            },
             function updateEntry(state, ev) {
                 const { id, type, ...change } = ev
                 if ('change' != type) return state;
 
                 if (id) {
+                    // updating existing entry
                     state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x)
                 } else {
+                    // adding new entry
                     state.entries = [
                         ...state.entries,
                         {
@@ -45,6 +62,7 @@
                             ...change
                         }
                     ];
+                    state.newEntry = {};
                 }
 
                 state.tasks = new Set([...Array.from(state.tasks), change.task])
@@ -127,14 +145,18 @@ function timesheet(el, model) {
                     synced: row.querySelector('[name="synced"]')?.checked,
                 })
             } else if(row.dataset.new) {
-                //  model.emit({
-                //     type: 'new',
-                //     id: parseInt(ev.target.closest('tr').dataset.id, 10),
-                //     task: row.querySelector('[name="task"]').value,
-                //     annotation: row.querySelector('[name="annotation"]').value,
-                //     start: timeToDate(row.querySelector('[name="time_start"]').value),
-                //     end: timeToDate(row.querySelector('[name="time_end"]').value),
-                // })
+                const task = row.querySelector('[name="task"]').value;
+                const annotation = row.querySelector('[name="annotation"]').value;
+                const start = row.querySelector('[name="time_start"]').value;
+                const end = row.querySelector('[name="time_end"]').value;
+                model.emit({
+                    type: 'new',
+                    id: parseInt(ev.target.closest('tr').dataset.id, 10),
+                    task,
+                    annotation,
+                    start: start ? timeToDate(start) : null,
+                    end: end ? timeToDate(end) : null,
+                })
             }
            
         }
@@ -162,7 +184,7 @@ function timesheet(el, model) {
 
     model.listen(function render(state) {
         const newTask = entriesList.querySelector('[data-new="task"]');
-        newTask.querySelectorAll('input').forEach(x => x.value = '');
+        renderEntry(newTask, state.newEntry);
         let durationTotal = 0;
         const taskTotals = {};
         if (!state.entries.length) {
@@ -183,10 +205,7 @@ function timesheet(el, model) {
                 }
             }
 
-            row.querySelector('[name="task"]').value = entry.task;
-            row.querySelector('[name="annotation"]').value = entry.annotation;
-            row.querySelector('[name="time_start"]').value = format24hour(entry.start);
-            row.querySelector('[name="time_end"]').value = format24hour(entry.end);
+            renderEntry(row, entry);
             const duration = calcDuration(entry);
             row.querySelector('[name="duration"]').value = duration;
             durationTotal += duration;
@@ -199,6 +218,13 @@ function timesheet(el, model) {
         //TODO make sure in scope of timesheet
         document.querySelector('[name="durationTotal"]').value = round1dp(durationTotal);
     })
+
+    function renderEntry(row, entry) {
+        row.querySelector('[name="task"]').value = entry.task || '';
+        row.querySelector('[name="annotation"]').value = entry.annotation || '';
+        row.querySelector('[name="time_start"]').value = entry.start ? format24hour(entry.start) : '';
+        row.querySelector('[name="time_end"]').value = entry.end ? format24hour(entry.end) : '';
+    }
 
     function renderTaskTotals(totals) {
         const elTotals = document.querySelector('[data-task-totals]')
