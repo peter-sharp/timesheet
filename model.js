@@ -15,6 +15,9 @@ function Model(fns, initialState) {
         listeners.push(fn);
     }
     return {
+        get state() {
+            return {...state}
+        },
         emit,
         listen
     }

@@ -114,6 +114,9 @@
     timesheet(document.getElementById('timesheet'), model);
     archive(document.getElementById('archive'), model);
     settings(document.getElementById('settings'), model);
+    timeLoop(1000, () => {
+        renderTabTitle(model.state);
+    })
 
     model.listen(store.write);
 
@@ -237,6 +240,7 @@ function timesheet(el, model) {
         }
     }
 
+
     function renderTaskdatalist(tasks) {
         prevTasks.innerHTML = ''
         for(const task of Array.from(tasks)) {
@@ -246,6 +250,8 @@ function timesheet(el, model) {
             prevTasks.append(opt)
         }
     }
+
+   
 
 
     function newTimeentryRow() {
@@ -257,34 +263,18 @@ function timesheet(el, model) {
     }
 
 
-    function formatDurationDecimal(duration) {
-        const HOUR = 60 * 60 * 1000;
-        return Math.ceil((duration / HOUR) * 10) / 10
-    }
-
-    function round1dp(x) {
-        return Math.round(x * 10) / 10
-    }
-
-    function calcDuration({ start, end }) {
-        return start && end ? formatDurationDecimal(end.getTime() - start.getTime()) : 0
-    }
-
-    function timeToDate(val) {
-        const date = new Date();
-        const [hours, mins] = val.split(':')
-        date.setHours(hours);
-        date.setMinutes(mins);
-        return date;
-    }
+}
 
 
+function renderTabTitle({ newEntry }) {
+    const title = "Timesheet";
+    let info = []
 
-    function format24hour(date) {
-        return padNumber(2, date.getHours()) + ':' + padNumber(2, date.getMinutes());
-    }
+    if(newEntry.task) info.push(newEntry.task);
 
-    function padNumber(l, n) { return `${n}`.padStart(l, '0'); }
+    if(newEntry.start) info.push(calcDuration({ start: newEntry.start, end: new Date() }));
+
+    document.title = info.length ? `${info.join(' ')} | ${title}` : title;
 }
 
 
@@ -332,4 +322,40 @@ function allInputsEntered(el) {
 
 function shallowClone(x) {
     return {...x };
+}
+
+
+function formatDurationDecimal(duration) {
+    const HOUR = 60 * 60 * 1000;
+    return Math.ceil((duration / HOUR) * 10) / 10
+}
+
+function round1dp(x) {
+    return Math.round(x * 10) / 10
+}
+
+function calcDuration({ start, end }) {
+    return start && end ? formatDurationDecimal(end.getTime() - start.getTime()) : 0
+}
+
+function timeToDate(val) {
+    const date = new Date();
+    const [hours, mins] = val.split(':')
+    date.setHours(hours);
+    date.setMinutes(mins);
+    return date;
+}
+
+
+function format24hour(date) {
+    return padNumber(2, date.getHours()) + ':' + padNumber(2, date.getMinutes());
+}
+
+function padNumber(l, n) { return `${n}`.padStart(l, '0'); }
+
+function timeLoop(ms, fn) {
+    fn();
+    let that = this === window ? {} : this
+    that.timeout = setTimeout(timeLoop.bind(that, ms, fn), ms);
+    return that
 }
