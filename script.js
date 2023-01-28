@@ -131,6 +131,9 @@ function timesheet(el, model) {
     const form = el;
     const prevTasks = form.querySelector(`#prevTasks`);
     
+    timeLoop(1000, () => {
+        renderNewEntryDuration(model.state);
+    })
 
 
     el.addEventListener('focusout', function(ev) {
@@ -188,6 +191,7 @@ function timesheet(el, model) {
     model.listen(function render(state) {
         const newTask = entriesList.querySelector('[data-new="task"]');
         renderEntry(newTask, state.newEntry);
+        
         let durationTotal = 0;
         const taskTotals = {};
         if (!state.entries.length) {
@@ -251,7 +255,14 @@ function timesheet(el, model) {
         }
     }
 
-   
+    function renderNewEntryDuration({ newEntry }) {
+        const newTask = entriesList.querySelector('[data-new="task"]');
+        const {start} = newEntry
+        const duration = calcDuration({ start, end: new Date() });
+        const elDuration = newTask.querySelector('[name="duration"]'); 
+        elDuration.value = duration;
+        elDuration.dataset.state = duration > 0 ? "started" : "stopped";
+    }
 
 
     function newTimeentryRow() {

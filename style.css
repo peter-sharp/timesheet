@@ -58,3 +58,24 @@
             border-top: solid 0.05em;
             padding-top: 0.4em;
         }
+
+        .pulseOpacity {
+            opacity: 0.6;
+            
+        }
+
+        .pulseOpacity[data-state="started"] {
+            animation: pulseOpacity 500ms ease-in-out infinite;
+        }
+
+        @keyframes pulseOpacity {
+            0% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 0.9;
+            }
+            100% {
+                opacity: 0.6;
+            }
+        }
