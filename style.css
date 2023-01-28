@@ -54,6 +54,10 @@
             padding-bottom: 0.4em;
         }
 
+        summary > :where(h1, h2, h3, h4) {
+            display: inline-block;
+        }
+
         .unstyled-list {
             padding-left: 0;
             list-style-type: none;
