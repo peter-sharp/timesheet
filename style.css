@@ -5,6 +5,24 @@
             font-family: Arial, Helvetica, sans-serif;
         }
 
+        dl {
+            padding-left: 0;
+        }
+
+        dd {
+            margin-left: 0;
+        }
+
+        dl > :where(div + div) {
+            margin-top: 1em;
+        }
+
+        dl > div {
+            display: flex;
+            flex-direction: row;
+            gap: 1em;
+        }
+
         table {
             border-collapse: collapse;
         }

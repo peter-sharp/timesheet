@@ -73,6 +73,20 @@
                 if ('archive' != ev.type) return state;
                 state.archive = [...state.archive, ...state.entries.map(shallowClone)];
                 state.entries = [];
+                const now = new Date()
+                function isSameMonth(x) {
+                    return x.start.getMonth() == now.getMonth()
+                }
+
+                
+
+                const totalDurationMonth = reduce(reduceDuraction, 0, filter(isSameMonth, state.archive))
+
+                state.stats = {
+                    ...state.stats,
+                    totalDurationMonth
+                }
+
                 return state;
             },
             function settings(state, ev) {
@@ -179,24 +193,17 @@ function timesheet(el, model) {
         }
     });
 
-    form.addEventListener('submit', function archive(ev) {
-        ev.preventDefault();
-        if (ev.submitter ?.name == 'archive') {
-            model.emit({
-                type: 'archive'
-            })
-        }
-    });
 
     model.listen(function render(state) {
         const newTask = entriesList.querySelector('[data-new="task"]');
         renderEntry(newTask, state.newEntry);
         
+        const footer = entriesList.querySelector('.table-footer')
         let durationTotal = 0;
         const taskTotals = {};
         if (!state.entries.length) {
             for (const x of [...entriesList.childNodes]) {
-                if (x !== newTask) x.remove();
+                if (![newTask,footer].includes(x)) x.remove();
                 console.log(x);
             }
         }
@@ -223,7 +230,8 @@ function timesheet(el, model) {
         renderTaskTotals(taskTotals);
         renderTaskdatalist(state.tasks)
         //TODO make sure in scope of timesheet
-        document.querySelector('[name="durationTotal"]').value = round1dp(durationTotal);
+        const elDurationTotal = el.querySelector('[name="durationTotal"]')
+        elDurationTotal.value = round1dp(durationTotal);
     })
 
     function renderEntry(row, entry) {
@@ -298,6 +306,11 @@ function archive(el, model) {
             })
         }
     });
+
+    model.listen(function renderStats({ stats = {} }) {
+        const { totalDurationMonth } = stats;
+        el.querySelector('[name="totalDurationMonth"]').value = round1dp(totalDurationMonth);
+    })
 }
 
 
@@ -345,6 +358,10 @@ function round1dp(x) {
     return Math.round(x * 10) / 10
 }
 
+function reduceDuraction(acc, x) {
+    return acc + calcDuration(x);
+}
+
 function calcDuration({ start, end }) {
     return start && end ? formatDurationDecimal(end.getTime() - start.getTime()) : 0
 }
@@ -369,4 +386,17 @@ function timeLoop(ms, fn) {
     let that = this === window ? {} : this
     that.timeout = setTimeout(timeLoop.bind(that, ms, fn), ms);
     return that
+}
+
+function *filter(fn, xs) {
+    for(let x of xs) {
+        if(fn(x)) yield x;
+    }
+}
+
+function reduce(fn, acc, xs) {
+    for(let x of xs) {
+        acc = fn(acc, x)
+    }
+    return acc;
 }
