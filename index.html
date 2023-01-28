@@ -35,15 +35,29 @@
                     <td></td>
                     <td></td>
                 </tr>
+                <tr class="table-footer">
+                    <td colspan="4"></td>
+                    <td><output name="durationTotal"></output></td>
+                    <td></td>
+                </tr>
             </tbody>
         </table>
         <datalist id="prevTasks"></datalist>
-        <h2>Task totals</h2>
-        <ul data-task-totals class="unstyled-list"></ul>
-        <p>Total: <output name="durationTotal"></output></p>
         <!-- TODO add hidden button to save data -->
         
     </form>
+    <details class="wrapper__inner">
+        <summary>Tasks</summary>
+        <table>
+            <thead>
+                <tr>
+                    <th>task</th>
+                    <th>duration</th>
+                </tr>
+            </thead>
+            <tbody data-task-totals></tbody>
+        </table>
+    </details>
     <form class="wrapper__inner" id="archive">
         <details class="stack">
             <summary>Archive</summary>
@@ -83,7 +97,10 @@
     </template>
 
     <template id="task_total">
-        <li><span data-task></span> - <output name="taskTotal"></output> </li>
+        <tr>
+            <td data-task></td>
+            <td><output name="taskTotal"></output></td>
+        </tr>
     </template>
     <script src="./model.js"></script>
     <script src="./script.js"></script>

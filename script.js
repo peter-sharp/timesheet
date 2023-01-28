@@ -233,10 +233,10 @@ function timesheet(el, model) {
         const elTotals = document.querySelector('[data-task-totals]')
         elTotals.innerHTML = '';
         for (let [task, total] of Object.entries(totals)) {
-            const li = newTasktotalItem();
-            li.querySelector('[data-task]').innerText = task;
-            li.querySelector('[name="taskTotal"]').value = total;
-            elTotals.append(li);
+            const item = newTasktotalItem();
+            item.querySelector('[data-task]').innerText = task;
+            item.querySelector('[name="taskTotal"]').value = total;
+            elTotals.append(item);
         }
     }
 
@@ -259,7 +259,7 @@ function timesheet(el, model) {
     }
 
     function newTasktotalItem() {
-        return taskTotalTemplate.content.cloneNode(true).querySelector('li')
+        return taskTotalTemplate.content.cloneNode(true).querySelector('tr')
     }
 
 
