@@ -68,6 +68,7 @@
                 <div>
                     <dt>Month</dt>
                     <dd><output name="totalDurationMonth"></output></dd>
+                    <dd><output name="totalNetIncomeMonth"></output></dd>
                 </div>
             </dl>
         </details>
@@ -78,6 +79,17 @@
         <form class="stack" id="import">
             <textarea name="data"></textarea>
             <button name="import">Import</button>
+        </form>
+        <form class="stack" id="settings">
+            <p>
+                <label for="settings_rate">Rate</label>
+                <input id="settings_rate" type="number" name="rate" step="0.01"/>
+            </p>
+            <p>
+                <label for="settings_tax">Tax %</label>
+                <input id="settings_tax" type="number" name="tax" step="0.01"/>
+            </p>
+            <button name="save">Save</button>
         </form>
     
     </details>

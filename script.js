@@ -34,7 +34,8 @@
             newEntry: {},
             entries: [],
             archive: [],
-            tasks: new Set()
+            tasks: new Set(),
+            settings: {}
         }
     );
     const model = Model([
@@ -81,10 +82,11 @@
                 
 
                 const totalDurationMonth = reduce(reduceDuraction, 0, filter(isSameMonth, state.archive))
-
+                const totalNetIncomeMonth = totalDurationMonth * state.settings.rate - percentOf(state.settings.tax, state.settings.rate)
                 state.stats = {
                     ...state.stats,
-                    totalDurationMonth
+                    totalDurationMonth,
+                    totalNetIncomeMonth
                 }
 
                 return state;
@@ -114,11 +116,14 @@
                         });
                         state.entries = [...state.entries, ...imported]
                         break;
+                    case "updateSettings":
+                        state.settings = {...state.settings, ...ev.data}
+                        break;
                     default:
                         break;
                 }
                 return state;
-            }
+            },
         ],
         await store.read()
     )
@@ -281,7 +286,7 @@ function timesheet(el, model) {
         return taskTotalTemplate.content.cloneNode(true).querySelector('tr')
     }
 
-
+    
 }
 
 
@@ -296,8 +301,12 @@ function renderTabTitle({ newEntry }) {
     document.title = info.length ? `${info.join(' ')} | ${title}` : title;
 }
 
-
+function percentOf(percent, number) {
+    return percent/100 * number
+}
+const formatPrice = Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' })
 function archive(el, model) {
+    
     el.addEventListener('submit', function archive(ev) {
         ev.preventDefault();
         if (ev.submitter ?.name == 'archive') {
@@ -308,25 +317,55 @@ function archive(el, model) {
     });
 
     model.listen(function renderStats({ stats = {} }) {
-        const { totalDurationMonth } = stats;
+        const { totalDurationMonth, totalNetIncomeMonth } = stats;
         el.querySelector('[name="totalDurationMonth"]').value = round1dp(totalDurationMonth);
+        el.querySelector('[name="totalNetIncomeMonth"]').value = formatPrice.format(totalNetIncomeMonth);
     })
 }
 
 
 function settings(el, model) {
-    const importEl = el.querySelector('#import');
-    importEl.addEventListener('submit', function importData(ev) {
+    const elImport = el.querySelector('#import');
+    elImport.addEventListener('submit', function importData(ev) {
         ev.preventDefault();
-        if (ev.submitter?.name == 'import') {
-            model.emit({
-                type: 'import',
-                data: importEl.elements.data.value
-            })
-        }
+        model.emit({
+            type: 'import',
+            data: elImport.elements.data.value
+        })
     });
+
+    const elSettings = el.querySelector('#settings');
+    elSettings.addEventListener('submit', function importData(ev) {
+        ev.preventDefault();
+        
+        model.emit({
+            type: 'updateSettings',
+            data: getFormData(elSettings)
+        })
+    });
+
+    model.listen(function render({ settings }) {
+        setFormData(elSettings, settings);
+    })
 }
 
+function getFormData(form) {
+    let data = {}
+    for(let element of form.elements) {
+        if(!(element instanceof HTMLButtonElement)) {
+            data[element.name] = element.value;
+        }
+    }
+    return data;
+}
+
+function setFormData(form, data) {
+    for(let element of form.elements) {
+        if(!(element instanceof HTMLButtonElement)) {
+            element.value = data[element.name];
+        }
+    }
+}
 
 function importTimewtime(x) {
     const [_, y,m,d,h,mm,s] = x.match(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/)
