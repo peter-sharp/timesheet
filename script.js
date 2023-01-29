@@ -237,6 +237,7 @@ function timesheet(el, model) {
         //TODO make sure in scope of timesheet
         const elDurationTotal = el.querySelector('[name="durationTotal"]')
         elDurationTotal.value = round1dp(durationTotal);
+        el.querySelector('[name="durationNetIncome"]').value = formatPrice.format(getNetIncome(durationTotal, state.settings.rate, state.settings.tax))
     })
 
     function renderEntry(row, entry) {
@@ -301,9 +302,16 @@ function renderTabTitle({ newEntry }) {
     document.title = info.length ? `${info.join(' ')} | ${title}` : title;
 }
 
+function getNetIncome(duration, rate, tax) {
+    return duration * rate - percentOf(tax, rate)
+}
+
 function percentOf(percent, number) {
     return percent/100 * number
 }
+
+
+
 const formatPrice = Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' })
 function archive(el, model) {
     
