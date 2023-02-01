@@ -1,4 +1,4 @@
 # timesheet
 A simple time tracking app
 
-[Demo](peter-sharp.github.io)
+[Demo](https://peter-sharp.github.io/timesheet)
