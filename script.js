@@ -114,7 +114,10 @@
                                 end
                             }
                         });
-                        state.entries = [...state.entries, ...imported]
+                        state.archive = [...state.archive, ...imported]
+                        break;
+                    case "export":
+                        state.export = JSON.stringify([...state.archive, ...state.entries])
                         break;
                     case "updateSettings":
                         state.settings = {...state.settings, ...ev.data}
@@ -342,6 +345,14 @@ function settings(el, model) {
         })
     });
 
+    const elExport = el.querySelector('#export');
+    elExport.addEventListener('submit', function importData(ev) {
+        ev.preventDefault();
+        model.emit({
+            type: 'export'
+        })
+    });
+
     const elSettings = el.querySelector('#settings');
     elSettings.addEventListener('submit', function importData(ev) {
         ev.preventDefault();
@@ -352,8 +363,9 @@ function settings(el, model) {
         })
     });
 
-    model.listen(function render({ settings }) {
-        setFormData(elSettings, settings);
+    model.listen(function render(state) {
+        setFormData(elSettings, state.settings);
+        if(state.export) setFormData(elExport, { data: state.export })
     })
 }
 
