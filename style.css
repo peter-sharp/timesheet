@@ -27,6 +27,10 @@ table {
   border-collapse: collapse;
 }
 
+thead th {
+    padding-bottom: 1em;
+}
+
 input {
   background-color: rgba(0, 0, 0, 0.3);
   border: none;
@@ -45,19 +49,20 @@ textarea {
 
 th + th,
 td + td {
-  padding-left: 0.4em;
+  padding-left: 0.6em;
 }
 
 td,
 th {
   text-align: left;
-  padding-bottom: 0.4em;
+  padding-bottom: 0.6em;
 }
 
 summary > :where(h1, h2, h3, h4) {
   display: inline-block;
 }
 
+.pagination ol,
 .unstyled-list {
   padding-left: 0;
   list-style-type: none;
@@ -81,6 +86,29 @@ summary > :where(h1, h2, h3, h4) {
   padding-top: 0.4em;
 }
 
+button[data-style="subtle"] {
+    box-sizing: content-box;
+    color: #fff;
+    border: none;
+    background-color: rgba(255,255,255, 0.1);
+    border: 0.1em solid rgba(255,255,255, 0.1);
+    transition: background-color 100ms;
+}
+button[data-style="subtle"]:focus,
+button[data-style="subtle"]:hover {
+    background-color: rgba(255,255,255, 0.5);
+    color: rgba(0,0,0, 0.5)
+}
+.pagination ol {
+    display: flex;
+    flex-direction: row;
+    gap: 0.3em;
+}
+
+.pagination [aria-selected="true"] button {
+    border-color: rgba(255,255,255, 0.5);
+}
+
 .pulseOpacity {
   opacity: 0.6;
 }
@@ -88,6 +116,18 @@ summary > :where(h1, h2, h3, h4) {
 .pulseOpacity[data-state="started"] {
   animation: pulseOpacity 500ms ease-in-out infinite;
 }
+
+.sr-only:not(:focus):not(:active) {
+    clip: rect(0 0 0 0); 
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap; 
+    width: 1px;
+}
+
+
 
 @keyframes pulseOpacity {
   0% {

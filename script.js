@@ -71,24 +71,47 @@
                 return state;
             },
             function archiveEntries(state, ev) {
-                if ('archive' != ev.type) return state;
-                state.archive = [...state.archive, ...state.entries.map(shallowClone)];
-                state.entries = [];
+                switch (ev.type) {
+                    case 'archive':
+                        state.archive = [...state.archive, ...state.entries.map(shallowClone)];
+                        state.entries = [];
+                        
+
+                        break;
+                
+                    case 'archiveState':
+                        state.archiveOpen = ev.state;
+                        break;
+                    case 'updateArchivePage':
+                        state.archiveBrowserPage = ev.page
+                        break;
+                    case 'deleteArchiveEntry':
+                        const archive = [];
+                        state.deleted = [];
+                        for (const x of state.archive) {
+                            if(x.id == ev.id) state.deleted.push(x)
+                            else archive.push(x)
+                        }
+                        state.archive = archive
+                        break;
+                }
+                
+                return state;
+            },
+            function archiveTotals(state, ev) {
+                if(!ev.type.includes('archive')) return state;
                 const now = new Date()
                 function isSameMonth(x) {
                     return x.start.getMonth() == now.getMonth()
                 }
 
-                
-
-                const totalDurationMonth = reduce(reduceDuraction, 0, filter(isSameMonth, state.archive))
+                const totalDurationMonth = reduce(reduceDuration, 0, filter(isSameMonth, state.archive))
                 const totalNetIncomeMonth = totalDurationMonth * state.settings.rate - percentOf(state.settings.tax, state.settings.rate)
                 state.stats = {
                     ...state.stats,
                     totalDurationMonth,
                     totalNetIncomeMonth
-                }
-
+                };
                 return state;
             },
             function settings(state, ev) {
@@ -317,8 +340,12 @@ function percentOf(percent, number) {
 
 const formatPrice = Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' })
 function archive(el, model) {
-    
-    el.addEventListener('submit', function archive(ev) {
+    const archiveEntryRow = document.getElementById('archive_entry_row');
+    const archiveEntriesPageNavItem = document.getElementById('archive_entries_page_nav_item');
+    const elDetails = el
+    const elArchiveForm = el.querySelector('form[name="archive"]')
+
+    elArchiveForm.addEventListener('submit', function archive(ev) {
         ev.preventDefault();
         if (ev.submitter ?.name == 'archive') {
             model.emit({
@@ -327,11 +354,81 @@ function archive(el, model) {
         }
     });
 
+    elDetails.addEventListener('toggle', function updateArchiveActiveState(){
+        model.emit({
+            type: 'archiveState',
+            state: elDetails.open
+        })
+    })
+
     model.listen(function renderStats({ stats = {} }) {
         const { totalDurationMonth, totalNetIncomeMonth } = stats;
         el.querySelector('[name="totalDurationMonth"]').value = round1dp(totalDurationMonth);
         el.querySelector('[name="totalNetIncomeMonth"]').value = formatPrice.format(totalNetIncomeMonth);
     })
+
+    const elArchiveEntries = el.querySelector("#archive_entries")
+    const elArchiveEntriesNav = el.querySelector("#archive_entries_page_nav")
+    
+    elArchiveEntries.addEventListener("click", function handleArchiveAction(ev) {
+        if(ev.target.nodeName = "button") {
+            model.emit({
+                type: ev.target.name + "ArchiveEntry",
+                id: parseInt(ev.target.closest('[data-id]').dataset.id, 10)
+            })
+        }
+    });
+
+    elArchiveEntriesNav.addEventListener("click", function updatePage(ev) {
+        if(ev.target.nodeName = "button") {
+            model.emit({
+                type: "updateArchivePage",
+                page: parseInt(ev.target.innerText, 10)
+            })
+        }
+    });
+
+    model.listen(function renderArchiveBrowser({ archiveOpen, archive, archiveBrowserPage = 0, archiveBrowserPageSize = 20 }) {
+        if(!archiveOpen) return;
+        
+        const rows = document.createDocumentFragment();
+        const lastIndex = Math.min(archiveBrowserPage + archiveBrowserPageSize, archive.length);
+        for (let i = archiveBrowserPage; i < lastIndex; i += 1) {
+            rows.append(renderEntry(archive[i]))
+        } 
+
+        elArchiveEntries.innerHTML = "";
+        elArchiveEntries.append(rows);
+
+        const pageCount = Math.ceil(archive.length / archiveBrowserPageSize);
+        const pages = document.createDocumentFragment();
+        for (let i = 0; i < pageCount; i += 1) {
+            pages.append(renderPageNavItem({ pageNo: i, selectedPage: archiveBrowserPage }))
+        } 
+
+        elArchiveEntriesNav.innerHTML = ""
+        elArchiveEntriesNav.append(pages)
+    })
+
+    function renderEntry( entry) {
+        const row = newtemplateItem(archiveEntryRow)
+        row.dataset.id = entry.id
+        row.querySelector('[data-field="task"]').innerText = entry.task || '';
+        row.querySelector('[data-field="annotation"]').innerText = entry.annotation || '';
+        row.querySelector('[data-field="time_start"]').innerText = entry.start ? format24hour(entry.start) : '';
+        row.querySelector('[data-field="time_end"]').innerText = entry.end ? format24hour(entry.end) : '';
+        const duration = calcDuration(entry);
+        row.querySelector('[data-field="duration"]').innerText = duration;
+        row.querySelector('[data-field="synced"]').innerText = entry.synced ? "yes" : "no";
+        return row
+    }
+
+    function renderPageNavItem({ pageNo, selectedPage }) {
+        const item = newtemplateItem(archiveEntriesPageNavItem)
+        item.setAttribute('aria-selected', pageNo == selectedPage )
+        item.querySelector("button").innerText = pageNo
+        return item
+    }
 }
 
 
@@ -407,6 +504,9 @@ function shallowClone(x) {
     return {...x };
 }
 
+function newtemplateItem(template) {
+    return template.content.cloneNode(true).firstElementChild
+}
 
 function formatDurationDecimal(duration) {
     const HOUR = 60 * 60 * 1000;
@@ -417,7 +517,7 @@ function round1dp(x) {
     return Math.round(x * 10) / 10
 }
 
-function reduceDuraction(acc, x) {
+function reduceDuration(acc, x) {
     return acc + calcDuration(x);
 }
 
@@ -446,6 +546,7 @@ function timeLoop(ms, fn) {
     that.timeout = setTimeout(timeLoop.bind(that, ms, fn), ms);
     return that
 }
+
 
 function *filter(fn, xs) {
     for(let x of xs) {

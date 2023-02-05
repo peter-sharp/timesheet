@@ -58,21 +58,44 @@
             <tbody data-task-totals></tbody>
         </table>
     </details>
-    <form class="wrapper__inner" id="archive">
-        <details class="stack">
+    
+        <details class="stack wrapper__inner" id="archive">
             <summary><h2>Archive</h2></summary>
-            <button name="archive">Archive</button>
-
-            <h3>Totals</h3>
-            <dl>
-                <div>
-                    <dt>Month</dt>
-                    <dd><output name="totalDurationMonth"></output></dd>
-                    <dd><output name="totalNetIncomeMonth"></output></dd>
-                </div>
-            </dl>
+            <form name="archive">
+                <button name="archive">Archive</button>
+            </form>
+            <div>
+                <h3>Totals</h3>
+                <dl>
+                    <div>
+                        <dt>Month</dt>
+                        <dd><output name="totalDurationMonth"></output></dd>
+                        <dd><output name="totalNetIncomeMonth"></output></dd>
+                    </div>
+                </dl>
+            </div>
+            <div>
+                <h3>Entries</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Annotation</th>
+                            <th>Time Start</th>
+                            <th>Time End</th>
+                            <th>Duration</th>
+                            <th>Synced</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="archive_entries">
+                    </tbody>
+                </table>
+                <nav class="pagination">
+                    <ol  id="archive_entries_page_nav"></ol>
+                </nav>
+            </div>
         </details>
-    </form>
 
     <details class="wrapper__inner stack" id="settings">
         <summary><h2>Settings</h2></summary>
@@ -125,6 +148,21 @@
             <td data-task></td>
             <td><output name="taskTotal"></output></td>
         </tr>
+    </template>
+
+    <template id="archive_entry_row">
+        <tr data-id="">
+            <td data-field="task"></td>
+            <td data-field="annotation"></td>
+            <td data-field="time_start"></td>
+            <td data-field="time_end"></td>
+            <td data-field="duration"></td>
+            <td><span class="cb-state" data-field="synced"></span></td>
+            <td><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button></td>
+        </tr>
+    </template>
+    <template id="archive_entries_page_nav_item">
+        <li aria-selected="true"><button type="button" data-style="subtle"></button></li>
     </template>
     <script src="./model.js"></script>
     <script src="./script.js"></script>
