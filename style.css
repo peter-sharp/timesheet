@@ -1,107 +1,106 @@
-  body {
-            background-color: #123;
-            color: #eee;
-            font-size: 100%;
-            font-family: Arial, Helvetica, sans-serif;
-        }
+body {
+  background-color: #123;
+  color: #eee;
+  font-size: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+}
 
-        dl {
-            padding-left: 0;
-        }
+dl {
+  padding-left: 0;
+}
 
-        dd {
-            margin-left: 0;
-        }
+dd {
+  margin-left: 0;
+}
 
-        dl > :where(div + div) {
-            margin-top: 1em;
-        }
+dl > :where(div + div) {
+  margin-top: 1em;
+}
 
-        dl > div {
-            display: flex;
-            flex-direction: row;
-            gap: 1em;
-        }
+dl > div {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+}
 
-        table {
-            border-collapse: collapse;
-        }
+table {
+  border-collapse: collapse;
+}
 
-        input {
-            background-color: rgba(0,0,0, 0.3);
-            border: none;
-            color: #fff;
-            padding: 0.2em;
-        }
+input {
+  background-color: rgba(0, 0, 0, 0.3);
+  border: none;
+  color: #fff;
+  padding: 0.2em;
+}
 
-        input, textarea {
-            display: block;
-        }
+input,
+textarea {
+  display: block;
+}
 
-        [name="task"] {
-            max-width: 5em;
-        }
+[name="task"] {
+  max-width: 5em;
+}
 
-        th + th,
-        td + td {
-            padding-left: 0.4em;
-        }
+th + th,
+td + td {
+  padding-left: 0.4em;
+}
 
+td,
+th {
+  text-align: left;
+  padding-bottom: 0.4em;
+}
 
-        td,
-        th {
-            text-align: left;
-            padding-bottom: 0.4em;
-        }
+summary > :where(h1, h2, h3, h4) {
+  display: inline-block;
+}
 
-        summary > :where(h1, h2, h3, h4) {
-            display: inline-block;
-        }
+.unstyled-list {
+  padding-left: 0;
+  list-style-type: none;
+}
 
-        .unstyled-list {
-            padding-left: 0;
-            list-style-type: none;
-        }
+.wrapper {
+  padding: 1em;
+}
+.wrapper__inner {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 50rem;
+}
 
-        .wrapper {
-            padding: 1em;
-        }
-        .wrapper__inner {
-            margin-left: auto;
-            margin-right: auto;
-            max-width: 50rem;
-        }
+.stack > :where(* + *) {
+  margin-top: 1rem;
+}
 
-        .stack > :where( * + *) {
-            margin-top: 1rem;
-        }
+.table-footer td {
+  border-top: solid 0.05em;
+  padding-top: 0.4em;
+}
 
-        .table-footer td {
-            border-top: solid 0.05em;
-            padding-top: 0.4em;
-        }
+.pulseOpacity {
+  opacity: 0.6;
+}
 
-        .pulseOpacity {
-            opacity: 0.6;
-            
-        }
+.pulseOpacity[data-state="started"] {
+  animation: pulseOpacity 500ms ease-in-out infinite;
+}
 
-        .pulseOpacity[data-state="started"] {
-            animation: pulseOpacity 500ms ease-in-out infinite;
-        }
+@keyframes pulseOpacity {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
 
-        @keyframes pulseOpacity {
-            0% {
-                opacity: 0.6;
-            }
-            50% {
-                opacity: 0.9;
-            }
-            100% {
-                opacity: 0.6;
-            }
-        }
-
-        .opacity50 {
-            opacity: 0.5;
-        }
+.opacity50 {
+  opacity: 0.5;
+}
