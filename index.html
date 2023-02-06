@@ -46,13 +46,14 @@
         <!-- TODO add hidden button to save data -->
         
     </form>
-    <details class="wrapper__inner">
+    <details class="wrapper__inner" id="tasks">
         <summary><h2>Tasks</h2></summary>
         <table>
             <thead>
                 <tr>
                     <th>task</th>
                     <th>duration</th>
+                    <th>Synced</th>
                 </tr>
             </thead>
             <tbody data-task-totals></tbody>
@@ -147,6 +148,7 @@
         <tr>
             <td data-task></td>
             <td><output name="taskTotal"></output></td>
+            <td><input type="checkbox" name="synced"></td>
         </tr>
     </template>
 

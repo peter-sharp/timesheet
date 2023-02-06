@@ -41,7 +41,7 @@
     const model = Model([
             function newEntry(state, ev) {
                 const { type, ...data } = ev
-                if ('new' != type) return state;
+                if ('newEntry' != type) return state;
               
                 state.newEntry = {...data};
                 
@@ -49,26 +49,50 @@
             },
             function updateEntry(state, ev) {
                 const { id, type, ...change } = ev
-                if ('change' != type) return state;
-
-                if (id) {
-                    // updating existing entry
-                    state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x)
-                } else {
-                    // adding new entry
-                    state.entries = [
-                        ...state.entries,
-                        {
-                            id: Date.now(),
-                            ...change
+                switch (type) {
+                    case "changedEntry":
+                        if (id) {
+                            // updating existing entry
+                            state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x)
+                        } else {
+                            // adding new entry
+                            state.entries = [
+                                ...state.entries,
+                                {
+                                    id: Date.now(),
+                                    ...change
+                                }
+                            ];
+                            state.newEntry = {};
                         }
-                    ];
-                    state.newEntry = {};
+                        state.tasks = new Set([...Array.from(state.tasks), change.task]);
+        
+                        state.durationTotal = reduce(reduceDuration, 0, state.entries);
+                        break;
                 }
 
-                state.tasks = new Set([...Array.from(state.tasks), change.task])
+               
 
                 return state;
+            },
+            function tasks(state, ev) {
+                if("taskSyncChanged" == ev.type) {
+                    state.entries = state.entries.map(x => x.task == ev.task ? {...x, synced: ev.synced} : x);
+                }
+                if(["taskSyncChanged", "changedEntry"].includes(ev.type)) {
+                    
+                    state.taskTotals = {};
+                    for (const entry of state.entries) {
+                       
+                        
+    
+                        state.taskTotals[entry.task] = state.taskTotals[entry.task] || { task: entry.task, total: 0, synced: true };
+                        state.taskTotals[entry.task].total += calcDuration(entry);
+                        if(!entry.synced) state.taskTotals[entry.task].synced = false;
+                    }
+                }
+              
+                return state
             },
             function archiveEntries(state, ev) {
                 switch (ev.type) {
@@ -99,7 +123,7 @@
                 return state;
             },
             function archiveTotals(state, ev) {
-                if(!ev.type.includes('archive')) return state;
+                if(!ev.type.toLowerCase().includes('archive')) return state;
                 const now = new Date()
                 function isSameMonth(x) {
                     return x.start.getMonth() == now.getMonth()
@@ -157,6 +181,7 @@
 
 
     timesheet(document.getElementById('timesheet'), model);
+    tasks(document.getElementById('tasks'), model);
     archive(document.getElementById('archive'), model);
     settings(document.getElementById('settings'), model);
     timeLoop(1000, () => {
@@ -171,7 +196,7 @@
 function timesheet(el, model) {
 
     const rowTemplate = document.getElementById('entry_row');
-    const taskTotalTemplate = document.getElementById('task_total');
+    
     const entriesList = el.querySelector('#time_entries');
     const form = el;
     const prevTasks = form.querySelector(`#prevTasks`);
@@ -180,14 +205,24 @@ function timesheet(el, model) {
         renderNewEntryDuration(model.state);
     })
 
-
+    el.addEventListener("change", function updateSynced(ev) {
+        if(ev.target.name == "synced") {
+            const input = ev.target
+            const row = input.closest('tr');
+            model.emit({
+                type: 'changedEntry',
+                id: parseInt(row.dataset.id, 10),
+                synced: row.querySelector('[name="synced"]')?.checked,
+            })
+        }
+    });
     el.addEventListener('focusout', function(ev) {
         if (ev.target.nodeName == 'INPUT') {
             const input = ev.target;
             const row = input.closest('tr');
             if (allInputsEntered(row)) {
                  model.emit({
-                    type: 'change',
+                    type: 'changedEntry',
                     id: parseInt(ev.target.closest('tr').dataset.id, 10),
                     task: row.querySelector('[name="task"]').value,
                     annotation: row.querySelector('[name="annotation"]').value,
@@ -201,7 +236,7 @@ function timesheet(el, model) {
                 const start = row.querySelector('[name="time_start"]').value;
                 const end = row.querySelector('[name="time_end"]').value;
                 model.emit({
-                    type: 'new',
+                    type: 'newEntry',
                     id: parseInt(ev.target.closest('tr').dataset.id, 10),
                     task,
                     annotation,
@@ -231,13 +266,12 @@ function timesheet(el, model) {
         
         const footer = entriesList.querySelector('.table-footer')
         let durationTotal = 0;
-        const taskTotals = {};
         if (!state.entries.length) {
             for (const x of [...entriesList.childNodes]) {
                 if (![newTask,footer].includes(x)) x.remove();
-                console.log(x);
             }
         }
+        
         for (const entry of state.entries) {
             let row = entriesList.querySelector(`[data-id="${entry.id}"]`);
             if (!row) {
@@ -249,20 +283,18 @@ function timesheet(el, model) {
                     entriesList.append(row);
                 }
             }
-
             renderEntry(row, entry);
             const duration = calcDuration(entry);
             row.querySelector('[name="duration"]').value = duration;
-            durationTotal += duration;
             row.querySelector('[name="synced"]').checked = entry.synced;
-            taskTotals[entry.task] = taskTotals[entry.task] || 0;
-            taskTotals[entry.task] += duration;
+
+          
         }
-        renderTaskTotals(taskTotals);
+        
         renderTaskdatalist(state.tasks)
         //TODO make sure in scope of timesheet
         const elDurationTotal = el.querySelector('[name="durationTotal"]')
-        elDurationTotal.value = round1dp(durationTotal);
+        elDurationTotal.value = round1dp(state.durationTotal);
         el.querySelector('[name="durationNetIncome"]').value = formatPrice.format(getNetIncome(durationTotal, state.settings.rate, state.settings.tax))
     })
 
@@ -272,17 +304,8 @@ function timesheet(el, model) {
         row.querySelector('[name="time_start"]').value = entry.start ? format24hour(entry.start) : '';
         row.querySelector('[name="time_end"]').value = entry.end ? format24hour(entry.end) : '';
     }
-
-    function renderTaskTotals(totals) {
-        const elTotals = document.querySelector('[data-task-totals]')
-        elTotals.innerHTML = '';
-        for (let [task, total] of Object.entries(totals)) {
-            const item = newTasktotalItem();
-            item.querySelector('[data-task]').innerText = task;
-            item.querySelector('[name="taskTotal"]').value = total;
-            elTotals.append(item);
-        }
-    }
+    
+    
 
 
     function renderTaskdatalist(tasks) {
@@ -309,11 +332,36 @@ function timesheet(el, model) {
         return rowTemplate.content.cloneNode(true).querySelector('tr')
     }
 
-    function newTasktotalItem() {
-        return taskTotalTemplate.content.cloneNode(true).querySelector('tr')
-    }
+   
 
     
+}
+
+function tasks(el, model) {
+    const taskTotalTemplate = document.getElementById('task_total');
+    const elTotals = el.querySelector('[data-task-totals]');
+    model.listen(function renderTaskTotals({ taskTotals = {} }) {
+        
+        elTotals.innerHTML = '';
+        for (let [task, {total = 0, synced = false}] of Object.entries(taskTotals)) {
+            const item = newtemplateItem(taskTotalTemplate)
+            item.querySelector('[data-task]').innerText = task;
+            item.querySelector('[name="taskTotal"]').value = total;
+            item.querySelector('[name="synced"]').checked = synced
+            elTotals.append(item);
+        }
+    })
+
+    el.addEventListener("change", function toggleTaskSynced(ev) {
+        if(ev.target.name == "synced") {
+            model.emit({
+                type: "taskSyncChanged",
+                task: ev.target.closest('tr').querySelector('[data-task]').innerText,
+                synced: ev.target.checked
+            })
+        }
+    })
+   
 }
 
 
