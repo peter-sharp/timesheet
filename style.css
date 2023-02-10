@@ -99,7 +99,7 @@ td {
 }
 
 tr:hover  td {
-  background-color: rgba(255, 127, 80, 0.233);
+  background-color: rgba(255, 125, 30, 0.2);
 }
 
 tr:focus-within  td {
