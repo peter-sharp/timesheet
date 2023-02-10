@@ -295,7 +295,7 @@ function timesheet(el, model) {
         //TODO make sure in scope of timesheet
         const elDurationTotal = el.querySelector('[name="durationTotal"]')
         elDurationTotal.value = round1dp(state.durationTotal);
-        el.querySelector('[name="durationNetIncome"]').value = formatPrice.format(getNetIncome(durationTotal, state.settings.rate, state.settings.tax))
+        el.querySelector('[name="durationNetIncome"]').value = formatPrice.format(getNetIncome(state.durationTotal, state.settings.rate, state.settings.tax))
     })
 
     function renderEntry(row, entry) {
