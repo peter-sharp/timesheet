@@ -140,9 +140,8 @@ summary > :where(h1, h2, h3, h4) {
 button[data-style="subtle"] {
     box-sizing: content-box;
     color: #fff;
-    border: none;
     background-color: rgba(255,255,255, 0.1);
-    border: 0.1em solid rgba(255,255,255, 0.1);
+    border: 0.1em solid transparent;
     transition: background-color 100ms;
 }
 button[data-style="subtle"]:focus,
