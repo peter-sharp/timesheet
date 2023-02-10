@@ -440,8 +440,9 @@ function archive(el, model) {
         if(!archiveOpen) return;
         
         const rows = document.createDocumentFragment();
-        const lastIndex = Math.min(archiveBrowserPage + archiveBrowserPageSize, archive.length);
-        for (let i = archiveBrowserPage; i < lastIndex; i += 1) {
+        const offset = archiveBrowserPage * archiveBrowserPageSize;
+        const lastIndex = Math.min(offset + archiveBrowserPageSize, archive.length);
+        for (let i = offset; i < lastIndex; i += 1) {
             rows.append(renderEntry(archive[i]))
         } 
 
