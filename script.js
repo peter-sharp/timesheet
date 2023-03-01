@@ -319,7 +319,7 @@ function timesheet(el, model) {
         //TODO make sure in scope of timesheet
         const elDurationTotal = el.querySelector('[name="durationTotal"]')
         elDurationTotal.value = round1dp(state.durationTotal);
-        el.querySelector('[name="durationNetIncome"]').value = formatPrice.format(getNetIncome(state.durationTotal, state.settings.rate, state.settings.tax))
+        el.querySelector('[name="durationNetIncome"]').value = formatPrice(getNetIncome(state.durationTotal || 0, state.settings.rate || 0, state.settings.tax || 0))
     })
 
     function renderEntry(row, entry) {
@@ -408,7 +408,8 @@ function percentOf(percent, number) {
 
 
 
-const formatPrice = Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' })
+let formatPrice = Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' })
+formatPrice = formatPrice.format.bind(formatPrice);
 
 let formatDate = new Intl.DateTimeFormat('en-US');
 formatDate = formatDate.format.bind(formatDate);
@@ -442,9 +443,9 @@ function archive(el, model) {
             totalNetIncomeMonth = 0
         } = stats;
         el.querySelector('[name="totalDurationWeek"]').value = round1dp(totalDurationWeek);
-        el.querySelector('[name="totalNetIncomeWeek"]').value = formatPrice.format(totalNetIncomeWeek);
+        el.querySelector('[name="totalNetIncomeWeek"]').value = formatPrice(totalNetIncomeWeek);
         el.querySelector('[name="totalDurationMonth"]').value = round1dp(totalDurationMonth);
-        el.querySelector('[name="totalNetIncomeMonth"]').value = formatPrice.format(totalNetIncomeMonth);
+        el.querySelector('[name="totalNetIncomeMonth"]').value = formatPrice(totalNetIncomeMonth);
     })
 
     const elArchiveEntries = el.querySelector("#archive_entries")
