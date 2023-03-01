@@ -47,53 +47,7 @@
                 
                 return state;
             },
-            function updateEntry(state, ev) {
-                const { id, type, ...change } = ev
-                switch (type) {
-                    case "changedEntry":
-                        if (id) {
-                            // updating existing entry
-                            state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x)
-                        } else {
-                            // adding new entry
-                            state.entries = [
-                                ...state.entries,
-                                {
-                                    id: Date.now(),
-                                    ...change
-                                }
-                            ];
-                            state.newEntry = {};
-                        }
-                        state.tasks = new Set([...Array.from(state.tasks), change.task]);
-        
-                        state.durationTotal = reduce(reduceDuration, 0, state.entries);
-                        break;
-                }
-
-               
-
-                return state;
-            },
-            function tasks(state, ev) {
-                if("taskSyncChanged" == ev.type) {
-                    state.entries = state.entries.map(x => x.task == ev.task ? {...x, synced: ev.synced} : x);
-                }
-                if(["taskSyncChanged", "changedEntry"].includes(ev.type)) {
-                    
-                    state.taskTotals = {};
-                    for (const entry of state.entries) {
-                       
-                        
-    
-                        state.taskTotals[entry.task] = state.taskTotals[entry.task] || { task: entry.task, total: 0, synced: true };
-                        state.taskTotals[entry.task].total += calcDuration(entry);
-                        if(!entry.synced) state.taskTotals[entry.task].synced = false;
-                    }
-                }
-              
-                return state
-            },
+            
             function archiveEntries(state, ev) {
                 switch (ev.type) {
                     case 'archive':
@@ -137,6 +91,57 @@
                     totalNetIncomeMonth
                 };
                 return state;
+            },
+            function updateEntry(state, ev) {
+                const { id, type, ...change } = ev
+                switch (type) {
+                    case "changedEntry":
+                        if (id) {
+                            // updating existing entry
+                            state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x)
+                        } else {
+                            // adding new entry
+                            state.entries = [
+                                ...state.entries,
+                                {
+                                    id: Date.now(),
+                                    ...change
+                                }
+                            ];
+                            state.newEntry = {};
+                        }
+                        state.tasks = new Set([...Array.from(state.tasks), change.task]);
+        
+                        
+                        break;
+                }
+
+                
+
+                return state;
+            },
+            function calcStateDurationTotal(state, ev) {
+                state.durationTotal = reduce(reduceDuration, 0, state.entries);
+                return state;
+            },
+            function tasks(state, ev) {
+                if("taskSyncChanged" == ev.type) {
+                    state.entries = state.entries.map(x => x.task == ev.task ? {...x, synced: ev.synced} : x);
+                }
+                if(["taskSyncChanged", "changedEntry", "archive"].includes(ev.type)) {
+                    
+                    state.taskTotals = {};
+                    for (const entry of state.entries) {
+                       
+                        
+    
+                        state.taskTotals[entry.task] = state.taskTotals[entry.task] || { task: entry.task, total: 0, synced: true };
+                        state.taskTotals[entry.task].total += calcDuration(entry);
+                        if(!entry.synced) state.taskTotals[entry.task].synced = false;
+                    }
+                }
+              
+                return state
             },
             function settings(state, ev) {
                 switch (ev.type) {
