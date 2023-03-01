@@ -53,7 +53,12 @@
             function archiveEntries(state, ev) {
                 switch (ev.type) {
                     case 'archive':
-                        state.archive = [...state.archive, ...state.entries.map(shallowClone)];
+                        state.archive = [...state.entries.map(shallowClone), ...state.archive];
+                        state.archive.sort(function byStartTimeDesc(a,b){
+                            if(a.start > b.start) return -1;
+                            if(a.start < b.start) return 1;
+                            return 0;
+                        });
                         state.entries = [];
                         break;
                 
