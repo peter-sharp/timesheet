@@ -88,25 +88,29 @@
             function archiveTotals(state, ev) {
                 if(!ev.type.toLowerCase().includes('archive')) return state;
                 const now = new Date()
-
-                function isSameWeek(x) {
-                    return weekOfYear(x.start) === weekOfYear(now);
+                const lastMonth = subMonth(now, 1)
+                function isSameWeek(date, x) {
+                    return weekOfYear(x.start) === weekOfYear(date);
                 }
 
-                function isSameMonth(x) {
-                    return x.start.getMonth() == now.getMonth()
+                function isSameMonth(date, x) {
+                    return x.start.getMonth() == date.getMonth()
                 }
 
-                const totalDurationWeek = reduce(reduceDuration, 0, filter(isSameWeek, state.archive))
+                const totalDurationWeek = reduce(reduceDuration, 0, filter(apply(isSameWeek, now), state.archive))
                 const totalNetIncomeWeek = totalDurationWeek * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
-                const totalDurationMonth = reduce(reduceDuration, 0, filter(isSameMonth, state.archive))
+                const totalDurationMonth = reduce(reduceDuration, 0, filter(apply(isSameMonth, now), state.archive))
                 const totalNetIncomeMonth = totalDurationMonth * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
+                const totalDurationLastMonth = reduce(reduceDuration, 0, filter(apply(isSameMonth, lastMonth), state.archive))
+                const totalNetIncomeLastMonth = totalDurationLastMonth * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
                 state.stats = {
                     ...state.stats,
                     totalDurationWeek,
                     totalNetIncomeWeek,
                     totalDurationMonth,
-                    totalNetIncomeMonth
+                    totalNetIncomeMonth,
+                    totalDurationLastMonth,
+                    totalNetIncomeLastMonth
                 };
                 return state;
             },
@@ -461,12 +465,16 @@ function archive(el, model) {
             totalDurationWeek = 0, 
             totalNetIncomeWeek = 0,
             totalDurationMonth = 0, 
-            totalNetIncomeMonth = 0
+            totalNetIncomeMonth = 0,
+            totalDurationLastMonth = 0, 
+            totalNetIncomeLastMonth = 0
         } = stats;
         el.querySelector('[name="totalDurationWeek"]').value = round1dp(totalDurationWeek);
         el.querySelector('[name="totalNetIncomeWeek"]').value = formatPrice(totalNetIncomeWeek);
         el.querySelector('[name="totalDurationMonth"]').value = round1dp(totalDurationMonth);
         el.querySelector('[name="totalNetIncomeMonth"]').value = formatPrice(totalNetIncomeMonth);
+        el.querySelector('[name="totalDurationLastMonth"]').value = round1dp(totalDurationLastMonth);
+        el.querySelector('[name="totalNetIncomeLastMonth"]').value = formatPrice(totalNetIncomeLastMonth);
     })
 
     const elArchiveEntries = el.querySelector("#archive_entries")
@@ -692,4 +700,14 @@ function weekOfYear (date) {
     const startOfYear = new Date(date.getFullYear(), 0, 1);
     startOfYear.setDate(startOfYear.getDate() + (startOfYear.getDay() % 7));
     return Math.round((date - startOfYear) / (7 * 24 * 3600 * 1000));
+}
+
+function subMonth(date, months) {
+    const newDate = new Date(date)
+     newDate.setMonth( date.getMonth() - months);
+     return newDate
+ }
+
+function apply(fn, ...args) {
+    return fn.bind(null, ...args)
 }
