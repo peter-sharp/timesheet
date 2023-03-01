@@ -409,6 +409,9 @@ function percentOf(percent, number) {
 
 
 const formatPrice = Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' })
+
+let formatDate = new Intl.DateTimeFormat('en-US');
+formatDate = formatDate.format.bind(formatDate);
 function archive(el, model) {
     const archiveEntryRow = document.getElementById('archive_entry_row');
     const archiveEntriesPageNavItem = document.getElementById('archive_entries_page_nav_item');
@@ -493,6 +496,7 @@ function archive(el, model) {
         row.dataset.id = entry.id
         row.querySelector('[data-field="task"]').innerText = entry.task || '';
         row.querySelector('[data-field="annotation"]').innerText = entry.annotation || '';
+        row.querySelector('[data-field="date_start"]').innerText = entry.start ? formatDate(entry.start) : '';
         row.querySelector('[data-field="time_start"]').innerText = entry.start ? format24hour(entry.start) : '';
         row.querySelector('[data-field="time_end"]').innerText = entry.end ? format24hour(entry.end) : '';
         const duration = calcDuration(entry);
