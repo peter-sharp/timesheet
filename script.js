@@ -43,10 +43,14 @@
     const model = Model([
             function newEntry(state, ev) {
                 const { type, ...data } = ev
-                if ('newEntry' != type) return state;
-              
-                state.newEntry = {...data};
-                
+                switch (type) {
+                    case 'newEntry':
+                        state.newEntry = {...data};
+                        break;
+                    case 'clearNewEntry':
+                        state.newEntry = {};
+                        break;
+                }
                 return state;
             },
             
@@ -112,7 +116,10 @@
                     case "changedEntry":
                         if (id) {
                             // updating existing entry
-                            state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x)
+                            state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x);
+                            if(state.entries[0] && !state.entries[0].end && !Object.keys(state.newEntry).length) {
+                                state.newEntry = state.entries.shift();
+                            }
                         } else {
                             // adding new entry
                             state.entries = [
@@ -247,12 +254,26 @@ function timesheet(el, model) {
             if (allInputsEntered(row)) {
                  model.emit({
                     type: 'changedEntry',
-                    id: parseInt(ev.target.closest('tr').dataset.id, 10),
+                    id: parseInt(row.dataset.id, 10),
                     task: row.querySelector('[name="task"]').value,
                     annotation: row.querySelector('[name="annotation"]').value,
                     start: timeToDate(row.querySelector('[name="time_start"]').value),
                     end: timeToDate(row.querySelector('[name="time_end"]').value),
                     synced: row.querySelector('[name="synced"]')?.checked,
+                })
+            } else if (allInputsEnteredExcept(['time_end'], row) && row.rowIndex === 2) {
+                 model.emit({
+                    type: 'changedEntry',
+                    id: parseInt(row.dataset.id, 10),
+                    task: row.querySelector('[name="task"]').value,
+                    annotation: row.querySelector('[name="annotation"]').value,
+                    start: timeToDate(row.querySelector('[name="time_start"]').value),
+                    end: null,
+                    synced: row.querySelector('[name="synced"]')?.checked,
+                })
+            } else if(row.dataset.new && noInputsEntered(row)) {
+                model.emit({
+                    type: 'clearNewEntry'
                 })
             } else if(row.dataset.new) {
                 const task = row.querySelector('[name="task"]').value;
@@ -261,13 +282,13 @@ function timesheet(el, model) {
                 const end = row.querySelector('[name="time_end"]').value;
                 model.emit({
                     type: 'newEntry',
-                    id: parseInt(ev.target.closest('tr').dataset.id, 10),
+                    id: parseInt(row.dataset.id, 10),
                     task,
                     annotation,
                     start: start ? timeToDate(start) : null,
                     end: end ? timeToDate(end) : null,
                 })
-            }
+            } 
            
         }
     });
@@ -576,6 +597,28 @@ function allInputsEntered(el) {
     let entered = true;
     for (const input of el.querySelectorAll('input')) {
         if (!input.value) {
+            entered = false;
+            break;
+        }
+    }
+    return entered;
+}
+
+function noInputsEntered(el) {
+    let none = true;
+    for (const input of el.querySelectorAll('input')) {
+        if (input.value) {
+            none = false;
+            break;
+        }
+    }
+    return none;
+}
+
+function allInputsEnteredExcept(except, el) {
+    let entered = true;
+    for (const input of el.querySelectorAll('input')) {
+        if (!except.includes(input.name) && !input.value) {
             entered = false;
             break;
         }
