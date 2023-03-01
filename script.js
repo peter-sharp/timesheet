@@ -25,6 +25,7 @@
 
 
             state.tasks = new Set(state.tasks);
+            state.taskTotals = Array.isArray(state.taskTotals) ? state.taskTotals : [];
             
             return state;
         },
@@ -138,15 +139,20 @@
                 }
                 if(["taskSyncChanged", "changedEntry", "archive"].includes(ev.type)) {
                     
-                    state.taskTotals = {};
+                    const taskTotals = {};
                     for (const entry of state.entries) {
-                       
-                        
     
-                        state.taskTotals[entry.task] = state.taskTotals[entry.task] || { task: entry.task, total: 0, synced: true };
-                        state.taskTotals[entry.task].total += calcDuration(entry);
-                        if(!entry.synced) state.taskTotals[entry.task].synced = false;
+                        taskTotals[entry.task] = taskTotals[entry.task] || { task: entry.task, total: 0, mostRecentEntry: new Date(0,0,0), synced: true };
+                        taskTotals[entry.task].total += calcDuration(entry);
+                        if(!entry.synced) taskTotals[entry.task].synced = false;
+                        if(entry.start > taskTotals[entry.task].mostRecentEntry) taskTotals[entry.task].mostRecentEntry = entry.start;
                     }
+                    state.taskTotals = Object.entries(taskTotals).map(([task, stats]) => ({task, ...stats}));
+                    state.taskTotals.sort(function sortByMostRecentEntry(a,b) {
+                        if(a.mostRecentEntry > b.mostRecentEntry) return -1;
+                        if(a.mostRecentEntry < b.mostRecentEntry) return 1;
+                        return 0;
+                    });
                 }
               
                 return state
@@ -317,8 +323,6 @@ function timesheet(el, model) {
         row.querySelector('[name="time_start"]').value = entry.start ? format24hour(entry.start) : '';
         row.querySelector('[name="time_end"]').value = entry.end ? format24hour(entry.end) : '';
     }
-    
-    
 
 
     function renderTaskdatalist(tasks) {
@@ -353,10 +357,10 @@ function timesheet(el, model) {
 function tasks(el, model) {
     const taskTotalTemplate = document.getElementById('task_total');
     const elTotals = el.querySelector('[data-task-totals]');
-    model.listen(function renderTaskTotals({ taskTotals = {} }) {
+    model.listen(function renderTaskTotals({ taskTotals = [] }) {
         
         elTotals.innerHTML = '';
-        for (let [task, {total = 0, synced = false}] of Object.entries(taskTotals)) {
+        for (let {task, total = 0, synced = false} of taskTotals) {
             const item = newtemplateItem(taskTotalTemplate)
             item.querySelector('[data-task]').innerText = task;
             item.querySelector('[name="taskTotal"]').value = total;
