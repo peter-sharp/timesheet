@@ -89,7 +89,9 @@
                 if(!ev.type.toLowerCase().includes('archive')) return state;
                 const now = new Date()
                 const lastMonth = subMonth(now, 1)
+                const lastWeek = subWeek(now, 1)
                 const isCurrentWeek = (x) => isSameWeek(now, x.start)
+                const isLastWeek = (x) => isSameWeek(lastWeek, x.start)
 
                 function isSameMonth(date, x) {
                     return x.start.getMonth() == date.getMonth()
@@ -97,6 +99,8 @@
 
                 const totalDurationWeek = reduce(reduceDuration, 0, filter(apply(isCurrentWeek, now), state.archive))
                 const totalNetIncomeWeek = totalDurationWeek * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
+                const totalDurationLastWeek = reduce(reduceDuration, 0, filter(apply(isLastWeek, now), state.archive))
+                const totalNetIncomeLastWeek = totalDurationLastWeek * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
                 const totalDurationMonth = reduce(reduceDuration, 0, filter(apply(isSameMonth, now), state.archive))
                 const totalNetIncomeMonth = totalDurationMonth * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
                 const totalDurationLastMonth = reduce(reduceDuration, 0, filter(apply(isSameMonth, lastMonth), state.archive))
@@ -105,6 +109,8 @@
                     ...state.stats,
                     totalDurationWeek,
                     totalNetIncomeWeek,
+                    totalDurationLastWeek,
+                    totalNetIncomeLastWeek,
                     totalDurationMonth,
                     totalNetIncomeMonth,
                     totalDurationLastMonth,
@@ -462,6 +468,8 @@ function archive(el, model) {
         const { 
             totalDurationWeek = 0, 
             totalNetIncomeWeek = 0,
+            totalDurationLastWeek = 0,
+            totalNetIncomeLastWeek = 0,
             totalDurationMonth = 0, 
             totalNetIncomeMonth = 0,
             totalDurationLastMonth = 0, 
@@ -469,6 +477,8 @@ function archive(el, model) {
         } = stats;
         el.querySelector('[name="totalDurationWeek"]').value = round1dp(totalDurationWeek);
         el.querySelector('[name="totalNetIncomeWeek"]').value = formatPrice(totalNetIncomeWeek);
+        el.querySelector('[name="totalDurationLastWeek"]').value = round1dp(totalDurationLastWeek);
+        el.querySelector('[name="totalNetIncomeLastWeek"]').value = formatPrice(totalNetIncomeLastWeek);
         el.querySelector('[name="totalDurationMonth"]').value = round1dp(totalDurationMonth);
         el.querySelector('[name="totalNetIncomeMonth"]').value = formatPrice(totalNetIncomeMonth);
         el.querySelector('[name="totalDurationLastMonth"]').value = round1dp(totalDurationLastMonth);
@@ -694,8 +704,9 @@ function reduce(fn, acc, xs) {
     return acc;
 }
 
+const oneDay = 24 * 60 * 60 * 1000; // one day in milliseconds
+
 function isSameWeek(date1, date2) {
-    const oneDay = 24 * 60 * 60 * 1000; // one day in milliseconds
     const dayOfWeek = date1.getDay(); // get the day of the week of the first date
     const firstDayOfWeek = new Date(date1.getTime() - dayOfWeek * oneDay); // get the first day of the week
     const lastDayOfWeek = new Date(firstDayOfWeek.getTime() + 6 * oneDay); // get the last day of the week
@@ -707,6 +718,12 @@ function isSameWeek(date1, date2) {
 function subMonth(date, months) {
     const newDate = new Date(date)
      newDate.setMonth( date.getMonth() - months);
+     return newDate
+ }
+
+ function subWeek(date, weeks) {
+    const oneWeek = oneDay * 7;
+    const newDate = new Date(date.getTime() - oneWeek * weeks);
      return newDate
  }
 
