@@ -89,15 +89,13 @@
                 if(!ev.type.toLowerCase().includes('archive')) return state;
                 const now = new Date()
                 const lastMonth = subMonth(now, 1)
-                function isSameWeek(date, x) {
-                    return weekOfYear(x.start) === weekOfYear(date);
-                }
+                const isCurrentWeek = (x) => isSameWeek(now, x.start)
 
                 function isSameMonth(date, x) {
                     return x.start.getMonth() == date.getMonth()
                 }
 
-                const totalDurationWeek = reduce(reduceDuration, 0, filter(apply(isSameWeek, now), state.archive))
+                const totalDurationWeek = reduce(reduceDuration, 0, filter(apply(isCurrentWeek, now), state.archive))
                 const totalNetIncomeWeek = totalDurationWeek * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
                 const totalDurationMonth = reduce(reduceDuration, 0, filter(apply(isSameMonth, now), state.archive))
                 const totalNetIncomeMonth = totalDurationMonth * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
@@ -696,10 +694,14 @@ function reduce(fn, acc, xs) {
     return acc;
 }
 
-function weekOfYear (date) {
-    const startOfYear = new Date(date.getFullYear(), 0, 1);
-    startOfYear.setDate(startOfYear.getDate() + (startOfYear.getDay() % 7));
-    return Math.round((date - startOfYear) / (7 * 24 * 3600 * 1000));
+function isSameWeek(date1, date2) {
+    const oneDay = 24 * 60 * 60 * 1000; // one day in milliseconds
+    const dayOfWeek = date1.getDay(); // get the day of the week of the first date
+    const firstDayOfWeek = new Date(date1.getTime() - dayOfWeek * oneDay); // get the first day of the week
+    const lastDayOfWeek = new Date(firstDayOfWeek.getTime() + 6 * oneDay); // get the last day of the week
+
+    // check if the second date is between the first and last day of the week
+    return date2 >= firstDayOfWeek && date2 <= lastDayOfWeek;
 }
 
 function subMonth(date, months) {
