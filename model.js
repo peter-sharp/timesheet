@@ -3,7 +3,7 @@
  * @param fns reducers to update business logic
  * @param initialState initial state of model
  **/
-function Model(fns, initialState) {
+export function Model(fns, initialState) {
     let state = { ...initialState };
     function emit(ev) {
         state = fns.reduce((s, fn) => fn(s, ev), state)
@@ -23,7 +23,7 @@ function Model(fns, initialState) {
     }
 }
 
-function Store(key, hydrateFn, dehydrateFn, initialState) {
+export function Store(key, hydrateFn, dehydrateFn, initialState) {
     async function read() {
         let data = {};
         try {
