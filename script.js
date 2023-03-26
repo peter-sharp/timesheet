@@ -134,13 +134,12 @@ import format24hour from "./utils/format24Hour.js";
             function updateEntry(state, ev) {
                 const { id, type, ...change } = ev
                 switch (type) {
+
                     case "changedEntry":
                         if (id) {
                             // updating existing entry
                             state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x);
-                            if(state.entries[0] && !state.entries[0].end && !Object.keys(state.newEntry).length) {
-                                state.newEntry = state.entries.shift();
-                            }
+                           
                         } else {
                             // adding new entry
                             state.entries = [
@@ -156,9 +155,21 @@ import format24hour from "./utils/format24Hour.js";
         
                         
                         break;
+                    case 'revertToNewEntry':
+                        
+                        if(state.entries.length && 
+                            !change.end && 
+                            Object.values(state.newEntry).every(x => !x) &&
+                            state.entries[state.entries.length - 1].id == id) {
+                            const [newEntry, ...entries] = state.entries;
+                            state.newEntry = {...newEntry, ...change};
+                            state.entries = entries;
+                            
+                        }
+                        break;
                 }
 
-                
+                console.log(state.entries);
 
                 return state;
             },

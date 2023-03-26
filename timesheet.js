@@ -34,6 +34,8 @@ export default function timesheet(el, model) {
         if (ev.target.nodeName == 'INPUT') {
             const input = ev.target;
             const row = input.closest('tr');
+
+            console.log({ allInputsEnteredExcept: allInputsEnteredExcept(['time_end'], row), index: row.rowIndex})
             if (allInputsEntered(row)) {
                  model.emit({
                     type: 'changedEntry',
@@ -46,7 +48,7 @@ export default function timesheet(el, model) {
                 })
             } else if (allInputsEnteredExcept(['time_end'], row) && row.rowIndex === 2) {
                  model.emit({
-                    type: 'changedEntry',
+                    type: 'revertToNewEntry',
                     id: parseInt(row.dataset.id, 10),
                     task: row.querySelector('[name="task"]').value,
                     annotation: row.querySelector('[name="annotation"]').value,
@@ -94,7 +96,7 @@ export default function timesheet(el, model) {
         
         const footer = entriesList.querySelector('.table-footer')
         let durationTotal = 0;
-        if (!state.entries.length) {
+        if (!state.entries.length || entriesList.childNodes.length - 2 > state.entries.length) {
             for (const x of [...entriesList.childNodes]) {
                 if (![newTask,footer].includes(x)) x.remove();
             }
