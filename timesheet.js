@@ -5,6 +5,8 @@ import timeLoop from "./utils/timeLoop.js";
 import calcDuration from "./utils/calcDuration.js";
 import round1dp from "./utils/round1dp.js";
 import formatPrice from "./utils/formatPrice.js";
+import format24hour from "./utils/format24Hour.js";
+
 export default function timesheet(el, model) {
 
     const rowTemplate = document.getElementById('entry_row');

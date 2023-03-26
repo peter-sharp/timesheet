@@ -5,6 +5,8 @@ import calcDuration from "./utils/calcDuration.js";
 import round1dp from "./utils/round1dp.js";
 import formatPrice from "./utils/formatPrice.js";
 import percentOf from "./utils/percentOf.js";
+import format24hour from "./utils/format24Hour.js";
+
 (async () => {
 
     const store = Store(
@@ -465,16 +467,6 @@ function newtemplateItem(template) {
 function reduceDuration(acc, x) {
     return acc + calcDuration(x);
 }
-
-
-
-function format24hour(date) {
-    return padNumber(2, date.getHours()) + ':' + padNumber(2, date.getMinutes());
-}
-
-function padNumber(l, n) { return `${n}`.padStart(l, '0'); }
-
-
 
 
 function *filter(fn, xs) {
