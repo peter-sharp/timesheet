@@ -332,7 +332,7 @@ function archive(el, model) {
     const elArchiveEntriesNav = el.querySelector("#archive_entries_page_nav")
     
     elArchiveEntries.addEventListener("click", function handleArchiveAction(ev) {
-        if(ev.target.nodeName = "button") {
+        if(ev.target.nodeName.toLowerCase() == "button") {
             model.emit({
                 type: ev.target.name + "ArchiveEntry",
                 id: parseInt(ev.target.closest('[data-id]').dataset.id, 10)
@@ -341,7 +341,7 @@ function archive(el, model) {
     });
 
     elArchiveEntriesNav.addEventListener("click", function updatePage(ev) {
-        if(ev.target.nodeName = "button") {
+        if(ev.target.nodeName.toLowerCase() == "button") {
             model.emit({
                 type: "updateArchivePage",
                 page: parseInt(ev.target.innerText, 10)
