@@ -155,18 +155,7 @@ import format24hour from "./utils/format24Hour.js";
         
                         
                         break;
-                    case 'revertToNewEntry':
-                        
-                        if(state.entries.length && 
-                            !change.end && 
-                            Object.values(state.newEntry).every(x => !x) &&
-                            state.entries[state.entries.length - 1].id == id) {
-                            const [newEntry, ...entries] = state.entries;
-                            state.newEntry = {...newEntry, ...change};
-                            state.entries = entries;
-                            
-                        }
-                        break;
+                   
                 }
 
                 console.log(state.entries);

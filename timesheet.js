@@ -46,17 +46,7 @@ export default function timesheet(el, model) {
                     end: timeToDate(row.querySelector('[name="time_end"]').value),
                     synced: row.querySelector('[name="synced"]')?.checked,
                 })
-            } else if (allInputsEnteredExcept(['time_end'], row) && row.rowIndex === 2) {
-                 model.emit({
-                    type: 'revertToNewEntry',
-                    id: parseInt(row.dataset.id, 10),
-                    task: row.querySelector('[name="task"]').value,
-                    annotation: row.querySelector('[name="annotation"]').value,
-                    start: timeToDate(row.querySelector('[name="time_start"]').value),
-                    end: null,
-                    synced: row.querySelector('[name="synced"]')?.checked,
-                })
-            } else if(row.dataset.new && noInputsEntered(row)) {
+            }  else if(row.dataset.new && noInputsEntered(row)) {
                 model.emit({
                     type: 'clearNewEntry'
                 })
