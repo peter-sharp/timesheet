@@ -1,11 +1,13 @@
 import { Store, Model } from "./model.js";
 import timesheet from "./timesheet.js";
+import  "./tasks.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration from "./utils/calcDuration.js";
 import round1dp from "./utils/round1dp.js";
 import formatPrice from "./utils/formatPrice.js";
 import percentOf from "./utils/percentOf.js";
 import format24hour from "./utils/format24Hour.js";
+import newtemplateItem from "./utils/newTemplateItem.js";
 
 (async () => {
 
@@ -233,44 +235,26 @@ import format24hour from "./utils/format24Hour.js";
 
 
     timesheet(document.getElementById('timesheet'), model);
-    tasks(document.getElementById('tasks'), model);
+
+    const tasksList = document.querySelector('task-list');
+    model.listen(tasksList.update.bind(tasksList));
+
+
     archive(document.getElementById('archive'), model);
     settings(document.getElementById('settings'), model);
     timeLoop(1000, () => {
         renderTabTitle(model.state);
     })
-
+    
+    document.body.addEventListener("updateState", function updateState(ev) {
+        model.emit(ev.detail);
+    });
     model.listen(store.write);
 
     model.emit({ type: 'init' });
 })();
 
-function tasks(el, model) {
-    const taskTotalTemplate = document.getElementById('task_total');
-    const elTotals = el.querySelector('[data-task-totals]');
-    model.listen(function renderTaskTotals({ taskTotals = [] }) {
-        
-        elTotals.innerHTML = '';
-        for (let {task, total = 0, synced = false} of taskTotals) {
-            const item = newtemplateItem(taskTotalTemplate)
-            item.querySelector('[data-task]').innerText = task;
-            item.querySelector('[name="taskTotal"]').value = total;
-            item.querySelector('[name="synced"]').checked = synced
-            elTotals.append(item);
-        }
-    })
 
-    el.addEventListener("change", function toggleTaskSynced(ev) {
-        if(ev.target.name == "synced") {
-            model.emit({
-                type: "taskSyncChanged",
-                task: ev.target.closest('tr').querySelector('[data-task]').innerText,
-                synced: ev.target.checked
-            })
-        }
-    })
-   
-}
 
 
 function renderTabTitle({ newEntry }) {
@@ -460,9 +444,7 @@ function shallowClone(x) {
     return {...x };
 }
 
-function newtemplateItem(template) {
-    return template.content.cloneNode(true).firstElementChild
-}
+
 
 function reduceDuration(acc, x) {
     return acc + calcDuration(x);
