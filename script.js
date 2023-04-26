@@ -1,5 +1,5 @@
 import { Store, Model } from "./model.js";
-import timesheet from "./timesheet.js";
+import  "./timesheet.js";
 import  "./tasks.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration from "./utils/calcDuration.js";
@@ -157,6 +157,15 @@ import newtemplateItem from "./utils/newTemplateItem.js";
         
                         
                         break;
+                    case 'deleteEntry':
+                        const entries = [];
+                        state.deleted = [];
+                        for (const x of state.entries) {
+                            if(x.id == ev.id) state.deleted.push(x)
+                            else entries.push(x)
+                        }
+                        state.entries = entries
+                        break;
                    
                 }
 
@@ -233,8 +242,8 @@ import newtemplateItem from "./utils/newTemplateItem.js";
     )
 
 
-
-    timesheet(document.getElementById('timesheet'), model);
+    const timeSheet = document.querySelector('time-sheet');
+    model.listen(timeSheet.update.bind(timeSheet));
 
     const tasksList = document.querySelector('task-list');
     model.listen(tasksList.update.bind(tasksList));
@@ -245,7 +254,7 @@ import newtemplateItem from "./utils/newTemplateItem.js";
     timeLoop(1000, () => {
         renderTabTitle(model.state);
     })
-    
+
     document.body.addEventListener("updateState", function updateState(ev) {
         model.emit(ev.detail);
     });
