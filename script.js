@@ -41,13 +41,16 @@ import newtemplateItem from "./utils/newTemplateItem.js";
             return state;
         },
         function dehydrate(state) {
+            if(!state.settings.color) state.settings.color = "#112233";
             return {...state, tasks: Array.from(state.tasks) };
         }, {
             newEntry: {},
             entries: [],
             archive: [],
             tasks: new Set(),
-            settings: {},
+            settings: {
+                color: "#112233"
+            },
             stats: {},
         }
     );
@@ -259,6 +262,11 @@ import newtemplateItem from "./utils/newTemplateItem.js";
         model.emit(ev.detail);
     });
     model.listen(store.write);
+    model.listen(function renderTheme({ settings }) {
+        if(settings.color){
+            document.body.style.setProperty("--theme-color", settings.color);
+        }
+    })
 
     model.emit({ type: 'init' });
 })();
