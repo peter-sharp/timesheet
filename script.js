@@ -8,6 +8,8 @@ import formatPrice from "./utils/formatPrice.js";
 import percentOf from "./utils/percentOf.js";
 import format24hour from "./utils/format24Hour.js";
 import newtemplateItem from "./utils/newTemplateItem.js";
+import first from "./utils/first.js";
+import last from "./utils/last.js";
 
 (async () => {
 
@@ -176,8 +178,12 @@ import newtemplateItem from "./utils/newTemplateItem.js";
 
                 return state;
             },
-            function calcStateDurationTotal(state, ev) {
+            function calcEntriesStats(state, ev) {
                 state.durationTotal = reduce(reduceDuration, 0, state.entries);
+                const { start } = first(state.entries) || {};
+                const { end } = last(state.entries) || {};
+                const durationTotalNoGaps = calcDuration({ start, end });
+                state.durationTotalGaps = durationTotalNoGaps - state.durationTotal;
                 return state;
             },
             function tasks(state, ev) {

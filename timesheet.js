@@ -125,9 +125,11 @@ class Timesheet extends HTMLElement {
         }
         this.renderTaskdatalist(state.tasks)
         //TODO make sure in scope of timesheet
-        const elDurationTotal = el.querySelector('[name="durationTotal"]')
+        const elDurationTotal = el.querySelector('[name="durationTotal"]');
         elDurationTotal.value = round1dp(state.durationTotal);
         el.querySelector('[name="durationNetIncome"]').value = formatPrice(getNetIncome(state.durationTotal || 0, state.settings.rate || 0, state.settings.tax || 0))
+        const elDurationTotalGaps = el.querySelector('[name="durationTotalGaps"]');
+        elDurationTotalGaps.value = round1dp(state.durationTotalGaps);
     }
 
     renderEntry(row, entry) {
