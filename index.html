@@ -14,43 +14,7 @@
 <body class="wrapper stack">
     <h1 class="wrapper__inner">Timesheet</h1>
     <h2 class="wrapper__inner h4">Time Entries</h2>
-    <time-sheet>
-    <form class="wrapper__inner" id=timesheet>
-        <table>
-            <thead>
-                <tr>
-                    <th>Task</th>
-                    <th>Annotation</th>
-                    <th>Time Start</th>
-                    <th>Time End</th>
-                    <th>Duration</th>
-                    <th>Synced</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="time_entries">
-                <tr data-new="task">
-                    <td><input type="text" name="task" list="prevTasks"></td>
-                    <td><input type="text" name="annotation"></td>
-                    <td><input type="time" name="time_start"></td>
-                    <td><input type="time" name="time_end"></td>
-                    <td><output class="pulseOpacity" name="duration"></output></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr class="table-footer">
-                    <td colspan="4"><abbr title="Gaps between entries">Gaps</abbr> <output name="durationTotalGaps"></output></td>
-                    <td><output name="durationTotal"></output> <output class="opacity50" name="durationNetIncome"></output></td>
-                    <td></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <datalist id="prevTasks"></datalist>
-        <!-- TODO add hidden button to save data -->
-        
-    </form>
-    </time-sheet>
+    <time-sheet></time-sheet>
     <details class="wrapper__inner" id="tasks" open>
         <summary><h2 class="h4">Tasks</h2></summary>
         <task-list></task-list>

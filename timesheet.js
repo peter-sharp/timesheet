@@ -9,11 +9,48 @@ import format24hour from "./utils/format24Hour.js";
 import emitEvent from "./utils/emitEvent.js";
 
 
+const template = document.createElement('template');
+template.innerHTML = /*html*/`<form class="wrapper__inner" id=timesheet>
+<table>
+    <thead>
+        <tr>
+            <th>Task</th>
+            <th>Annotation</th>
+            <th>Time Start</th>
+            <th>Time End</th>
+            <th>Duration</th>
+            <th>Synced</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="time_entries">
+        <tr data-new="task">
+            <td><input type="text" name="task" list="prevTasks"></td>
+            <td><input type="text" name="annotation"></td>
+            <td><input type="time" name="time_start"></td>
+            <td><input type="time" name="time_end"></td>
+            <td><output class="pulseOpacity" name="duration"></output></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr class="table-footer">
+            <td colspan="4"><abbr title="Gaps between entries">Gaps</abbr> <output name="durationTotalGaps"></output></td>
+            <td><output name="durationTotal"></output> <output class="opacity50" name="durationNetIncome"></output></td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+
+<datalist id="prevTasks"></datalist>
+<!-- TODO add hidden button to save data -->
+
+</form>`
+
 class Timesheet extends HTMLElement {
     constructor() {
         super();
         //implementation
-        
+        this.append(template.content.cloneNode(true));
         this.rowTemplate = document.getElementById('entry_row');
         const el = this;
         this.entriesList = el.querySelector('#time_entries');
