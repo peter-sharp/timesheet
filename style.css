@@ -71,6 +71,7 @@ input {
   border: none;
   color: #fff;
   padding: 0.2em;
+  max-width: 100%;
 }
 
 input,
@@ -80,6 +81,10 @@ textarea {
 
 [name="task"] {
   max-width: 5em;
+}
+
+[name="taskRaw"] {
+  width: 16em;
 }
 
 th + th,
@@ -157,6 +162,14 @@ button[data-style="subtle"]:hover {
 
 .pagination [aria-selected="true"] button {
     border-color: rgba(255,255,255, 0.5);
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  align-items: end;
+
 }
 
 .pulseOpacity {

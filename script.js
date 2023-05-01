@@ -37,14 +37,14 @@ import last from "./utils/last.js";
             );
 
 
-            state.tasks = new Set(state.tasks);
+            state.tasks = Array.isArray(state.tasks) ? state.tasks : [];
             state.taskTotals = Array.isArray(state.taskTotals) ? state.taskTotals : [];
             
             return state;
         },
         function dehydrate(state) {
             if(!state.settings.color) state.settings.color = "#112233";
-            return {...state, tasks: Array.from(state.tasks) };
+            return {...state, tasks: state.tasks };
         }, {
             newEntry: {},
             entries: [],
@@ -158,7 +158,7 @@ import last from "./utils/last.js";
                             ];
                             state.newEntry = {};
                         }
-                        state.tasks = new Set([...Array.from(state.tasks), change.task]);
+                        state.tasks = [...Array.from(state.tasks), { exid: change.task }];
         
                         
                         break;
@@ -187,27 +187,54 @@ import last from "./utils/last.js";
                 return state;
             },
             function tasks(state, ev) {
-                if("taskSyncChanged" == ev.type) {
-                    state.entries = state.entries.map(x => x.task == ev.task ? {...x, synced: ev.synced} : x);
+                switch (ev.type) {
+                    case "addTask":
+                        const [exid, client, description] = extract([/#(\w+)/, /client:(\w+)/], ev.raw);
+                        state.tasks = [...state.tasks, { exid, client, description, id: Date.now() }]
+                        break;
+                    case "taskSyncChanged":
+                        state.entries = state.entries.map(x => x.task == ev.exid ? {...x, synced: ev.synced} : x);
+                        break;
+                    case "taskComplete":
+                        state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, complete: ev.complete} : x);
+                        break;
                 }
-                if(["taskSyncChanged", "changedEntry", "archive"].includes(ev.type)) {
-                    
-                    const taskTotals = {};
-                    for (const entry of state.entries) {
-    
-                        taskTotals[entry.task] = taskTotals[entry.task] || { task: entry.task, total: 0, mostRecentEntry: new Date(0,0,0), synced: true };
-                        taskTotals[entry.task].total += calcDuration(entry);
-                        if(!entry.synced) taskTotals[entry.task].synced = false;
-                        if(entry.start > taskTotals[entry.task].mostRecentEntry) taskTotals[entry.task].mostRecentEntry = entry.start;
-                    }
-                    state.taskTotals = Object.entries(taskTotals).map(([task, stats]) => ({task, ...stats}));
-                    state.taskTotals.sort(function sortByMostRecentEntry(a,b) {
-                        if(a.mostRecentEntry > b.mostRecentEntry) return -1;
-                        if(a.mostRecentEntry < b.mostRecentEntry) return 1;
-                        return 0;
-                    });
+                switch(ev.type){
+                    case "addTask":
+                    case "taskSyncChanged":
+                    case "changedEntry":
+                    case "archive":
+                        const taskTotals = {};
+                        for (const entry of state.entries) {
+        
+                            taskTotals[entry.task] = taskTotals[entry.task] || { task: entry.task, total: 0, mostRecentEntry: new Date(0,0,0), synced: true };
+                            taskTotals[entry.task].total += calcDuration(entry);
+                            if(!entry.synced) taskTotals[entry.task].synced = false;
+                            if(entry.start > taskTotals[entry.task].mostRecentEntry) taskTotals[entry.task].mostRecentEntry = entry.start;
+                        }
+                        // state.taskTotals = Object.entries(taskTotals).map(([task, stats]) => ({task, ...stats}));
+                        const tasks = [];
+                        const oldTasks = state.tasks.map(x => x.exid ? x : { exid: x })
+                        if(oldTasks.length >= Object.keys(taskTotals).length) {
+                            for (const task of oldTasks) {
+                                tasks.push({...task, ...(taskTotals[task.exid] || {})});
+                            }
+                        } else {
+                            const tasksByExid = oldTasks.reduce((xs, x) => ({...xs, [x.exid]: x}), {})
+                            for (const [exid, stats] of Object.entries(taskTotals)) {
+                                tasks.push({...(tasksByExid[exid] || {}), ...stats, exid});
+                            }
+                        }
+
+                        tasks.sort(function sortByMostRecentEntry(a,b) {
+                            if(a.mostRecentEntry > b.mostRecentEntry) return -1;
+                            if(a.mostRecentEntry < b.mostRecentEntry) return 1;
+                            return 0;
+                        });
+                        console.log(tasks);
+                        state.tasks = tasks;
+                        break;
                 }
-              
                 return state
             },
             function settings(state, ev) {
@@ -277,7 +304,17 @@ import last from "./utils/last.js";
     model.emit({ type: 'init' });
 })();
 
-
+function extract(regs, x) {
+    let res = []
+    let str = x
+    for (const reg of regs) {
+        let [rawItem, item] = str.match(reg) || [];
+        str = str.replace(rawItem, '');
+        res.push(item);
+    }
+    res.push(str);
+    return res
+}
 
 
 function renderTabTitle({ newEntry }) {

@@ -181,8 +181,8 @@ class Timesheet extends HTMLElement {
         this.prevTasks.innerHTML = ''
         for(const task of Array.from(tasks)) {
             const opt = document.createElement('OPTION');
-            opt.value = task;
-            opt.innerText = task;
+            opt.value = task.exid;
+            opt.innerText = `${task.client ? task.client + ' ' : ''}${task.description || task.exid} `;
             this.prevTasks.append(opt)
         }
     }
