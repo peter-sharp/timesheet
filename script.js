@@ -79,6 +79,8 @@ import last from "./utils/last.js";
                             if(a.start < b.start) return 1;
                             return 0;
                         });
+                        state.archivedTasks = [...state.tasks.map(shallowClone), ...(state.archivedTasks || [])];
+                        state.tasks = [];
                         state.entries = [];
                         break;
                 
