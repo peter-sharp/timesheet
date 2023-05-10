@@ -39,7 +39,10 @@ h1 {
 
 small, .text_small {font-size: 0.8rem;}
 
-
+th,
+td {
+  vertical-align: top;
+}
 dl {
   padding-left: 0;
 }
