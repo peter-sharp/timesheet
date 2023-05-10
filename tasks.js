@@ -21,6 +21,7 @@ template.innerHTML = /*html*/`
             <th>description</th>
             <th>duration</th>
             <th>Synced</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody data-task-totals></tbody>
@@ -29,13 +30,14 @@ template.innerHTML = /*html*/`
 
 const taskRow = document.createElement('template');
 taskRow.innerHTML = /*html*/`
-<tr>
+<tr data-exid="">
     <td><input type="checkbox" name="complete"></td>
     <td data-task></td>
     <td><output name="client"></output></td>
     <td><output name="description"></output></td>
     <td><output name="taskTotal"></output></td>
     <td><input type="checkbox" name="synced"></td>
+    <td><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button></td>
 </tr>`
 
 class TaskList extends HTMLElement {
@@ -74,6 +76,14 @@ class TaskList extends HTMLElement {
             }
         });
 
+        this.addEventListener("click", function handleArchiveAction(ev) {
+            if(ev.target.nodeName.toLowerCase() == "button") {
+                emitEvent(that, ev.target.name + "Task", {
+                    exid: ev.target.closest('[data-exid]').dataset.exid
+                })
+            }
+        });
+
         
     }
 
@@ -89,6 +99,7 @@ class TaskList extends HTMLElement {
         const toRender = tasks.filter(x => x.exid);
         for (let {exid, client= "", description="", total = 0, synced = false, complete = false} of toRender) {
             const item = newtemplateItem(taskRow);
+            item.dataset.exid = exid
             item.querySelector('[name="complete"]').checked = complete
             item.querySelector('[data-task]').innerText = exid;
             item.querySelector('[name="client"]').value = client;

@@ -201,8 +201,19 @@ import last from "./utils/last.js";
                     case "taskComplete":
                         state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, complete: ev.complete} : x);
                         break;
+                    case 'deleteTask':
+                        const tasks = [];
+                        state.deletedTasks = [];
+                        for (const x of state.tasks) {
+                            if(x.exid == ev.exid) state.deletedTasks.push(x)
+                            else tasks.push(x)
+                        }
+                        console.log(ev)
+                        state.tasks = tasks
+                        break;
                 }
                 switch(ev.type){
+                    case 'deleteTask':
                     case "addTask":
                     case "taskSyncChanged":
                     case "changedEntry":
