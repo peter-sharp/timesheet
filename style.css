@@ -221,7 +221,10 @@ button[data-style="subtle"]:hover {
     width: 1px;
 }
 
-
+.overflow-x-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
 
 
 @keyframes pulseOpacity {
