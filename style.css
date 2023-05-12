@@ -7,6 +7,12 @@ body {
 }
 
 
+span,
+input,
+output {
+  line-height: inherit;
+}
+
 body {
   font-weight: 400;
   line-height: 1.75;
@@ -69,6 +75,7 @@ thead th {
     padding-bottom: 1em;
 }
 
+
 input {
   background-color: rgba(0, 0, 0, 0.3);
   border: none;
@@ -80,6 +87,11 @@ input {
 input,
 textarea {
   display: block;
+}
+
+
+label > input {
+  display: inline-block;
 }
 
 [name="task"] {
@@ -137,7 +149,7 @@ summary > :where(h1, h2, h3, h4) {
 }
 
 .stack > :where(* + *) {
-  margin-top: 1rem;
+  margin-top: var(--gap, 1rem);
 }
 
 .table-footer td {
@@ -171,8 +183,24 @@ button[data-style="subtle"]:hover {
   display: flex;
   flex-direction: row;
   gap: 1em;
-  align-items: end;
+  align-items: var(--align, end);
+}
 
+.task-item {
+  width: 20em;
+  max-width: 100%;
+}
+.task-item__details {
+  padding-left: 2rem;
+}
+
+.task-item__actions {
+  flex-grow: 2;
+  justify-content: flex-end;
+}
+.task-item__details,
+.task-item__synced-label {
+  font-size: 0.6em;
 }
 
 .pulseOpacity {
@@ -192,6 +220,7 @@ button[data-style="subtle"]:hover {
     white-space: nowrap; 
     width: 1px;
 }
+
 
 
 

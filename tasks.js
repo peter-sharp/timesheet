@@ -12,8 +12,8 @@ template.innerHTML = /*html*/`
         <button type="submit">Add</button>
     </div>
 </form>
-<table>
-    <thead>
+<div>
+    <!-- <thead>
         <tr>
             <th>complete</th>
             <th>task</th>
@@ -23,22 +23,28 @@ template.innerHTML = /*html*/`
             <th>Synced</th>
             <th>Actions</th>
         </tr>
-    </thead>
-    <tbody data-task-totals></tbody>
-</table>`
+    </thead> -->
+    <ul data-task-totals class="unstyled-list stack" style="--gap: 1.6em"></ul>
+</div>`
 
 
 const taskRow = document.createElement('template');
 taskRow.innerHTML = /*html*/`
-<tr data-exid="">
-    <td><input type="checkbox" name="complete"></td>
-    <td data-task></td>
-    <td><output name="client"></output></td>
-    <td><output name="description"></output></td>
-    <td><output name="taskTotal"></output></td>
-    <td><input type="checkbox" name="synced"></td>
-    <td><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button></td>
-</tr>`
+<li data-exid="" class="task-item" >
+    <div class="task-item__details row">
+            <span data-task></span>
+            <output name="client"></output>
+            <output name="taskTotal"></output>
+    </div>
+    <div class="row" style="--align: center">
+        <input type="checkbox" name="complete">
+        <div class="task-item__description"><output name="description"></output></div>
+        <span class="task-item__actions row">
+            <label class="task-item__synced-label">Synced <input type="checkbox" name="synced"></label>
+            <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button>
+        </span>
+    </div>
+</li>`
 
 class TaskList extends HTMLElement {
     constructor() {
