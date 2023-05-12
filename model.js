@@ -37,9 +37,9 @@ export function Store(key, hydrateFn, dehydrateFn, storageTypeSortFn, initialSta
         return hydrateFn({...initialState, ...data});
     }
     async function write(data) {
-        const {session, local} = storageTypeSortFn(data);
-        localStorage.setItem(key, JSON.stringify(dehydrateFn(local)));
-        sessionStorage.setItem(key, JSON.stringify(dehydrateFn(session)));
+        const {session, local} = storageTypeSortFn(dehydrateFn(data));
+        localStorage.setItem(key, JSON.stringify(local));
+        sessionStorage.setItem(key, JSON.stringify(session));
     }
     return {
         read,
