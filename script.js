@@ -43,9 +43,16 @@ import last from "./utils/last.js";
             return state;
         },
         function dehydrate(state) {
-            if(!state.settings.color) state.settings.color = "#112233";
-            return {...state, tasks: state.tasks };
-        }, {
+            if(state.settings && !state.settings.color) state.settings.color = "#112233";
+            return {...state };
+        },
+        function storageTypeSort({deleted, deletedTasks, ...local}) {
+            return {
+                session: { deleted, deletedTasks},
+                local
+            }
+        }, 
+        {
             newEntry: {},
             entries: [],
             archive: [],
@@ -92,7 +99,7 @@ import last from "./utils/last.js";
                         break;
                     case 'deleteArchiveEntry':
                         const archive = [];
-                        state.deleted = [];
+                        state.deleted = state.deleted || [];
                         for (const x of state.archive) {
                             if(x.id == ev.id) state.deleted.push(x)
                             else archive.push(x)
@@ -166,7 +173,7 @@ import last from "./utils/last.js";
                         break;
                     case 'deleteEntry':
                         const entries = [];
-                        state.deleted = [];
+                        state.deleted = state.deleted || [];
                         for (const x of state.entries) {
                             if(x.id == ev.id) state.deleted.push(x)
                             else entries.push(x)
@@ -203,7 +210,7 @@ import last from "./utils/last.js";
                         break;
                     case 'deleteTask':
                         const tasks = [];
-                        state.deletedTasks = [];
+                        state.deletedTasks = state.deletedTasks || [];
                         for (const x of state.tasks) {
                             if(x.exid == ev.exid) state.deletedTasks.push(x)
                             else tasks.push(x)

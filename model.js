@@ -23,11 +23,13 @@ export function Model(fns, initialState) {
     }
 }
 
-export function Store(key, hydrateFn, dehydrateFn, initialState) {
+export function Store(key, hydrateFn, dehydrateFn, storageTypeSortFn, initialState) {
     async function read() {
         let data = {};
         try {
-            data = JSON.parse(localStorage.getItem(key)) || {};
+            const local = JSON.parse(localStorage.getItem(key)) || {};
+            const session = JSON.parse(sessionStorage.getItem(key)) || {};
+            data = {...local, ...session}
         } catch (e) {
             console.error(e);
             data.errors = [e];
@@ -35,7 +37,9 @@ export function Store(key, hydrateFn, dehydrateFn, initialState) {
         return hydrateFn({...initialState, ...data});
     }
     async function write(data) {
-        localStorage.setItem(key, JSON.stringify(dehydrateFn(data)));
+        const {session, local} = storageTypeSortFn(data);
+        localStorage.setItem(key, JSON.stringify(dehydrateFn(local)));
+        sessionStorage.setItem(key, JSON.stringify(dehydrateFn(session)));
     }
     return {
         read,
