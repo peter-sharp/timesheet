@@ -157,6 +157,63 @@ summary > :where(h1, h2, h3, h4) {
   padding-top: 0.4em;
 }
 
+.fixed-nav {
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  width: 100vw;
+  min-height: 3em;
+}
+
+.app-menu {
+  background-color: rgba(0,0,0, 0.8);
+}
+.app-menu a:link {
+  color: #fff;
+  text-decoration: none;
+}
+.app-menu a:link.active {
+  text-decoration: underline;
+}
+
+.app-menu a:visited {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.popup-menu {
+  position: relative;
+}
+.popup-menu[open] > summary {
+  font-weight: bold;
+}
+
+.popup-menu > summary {
+  list-style-type: none;
+}
+
+.popup-menu__body {
+  bottom: 100%;
+  background-color: #fff;
+  border-radius: 1em;
+  color: #123;
+  left: -1em;
+  padding: 0.6em;
+  position: absolute;
+  min-width: 100%;
+  z-index: 999;
+}
+
+.popup-menu__body:after {
+  
+}
+
+.popup-menu__body a:link {
+  color: #123;
+}
+
+.popup-menu__body a:visited {
+  color: rgba(0, 10, 20, 0.7);
+}
 button[data-style="subtle"] {
     box-sizing: content-box;
     color: #fff;

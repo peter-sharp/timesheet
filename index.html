@@ -13,17 +13,18 @@
 
 <body class="wrapper stack">
     <h1 class="wrapper__inner">Timesheet</h1>
-    <details class="wrapper__inner" id="tasks" open>
-        <summary><h2 class="h4">Tasks</h2></summary>
-        <task-list></task-list>
-    </details>
-    <section class="wrapper__inner">
-        <h2 class=" h4">Time Entries</h2>
-        <time-sheet></time-sheet>
-    </section>
-    
-        <details class="stack wrapper__inner" id="archive">
-            <summary><h2 class="h4">Archive</h2></summary>
+
+    <hash-router default="tasks">
+        <section class="wrapper__inner" id="tasks">
+            <summary><h2 class="h4">Tasks</h2></summary>
+            <task-list></task-list>
+        </section>
+        <section class="wrapper__inner" id="time-entries">
+            <h2 class=" h4">Time Entries</h2>
+            <time-sheet></time-sheet>
+        </section>
+        <section class="stack wrapper__inner" id="archive">
+            <h2 class="h4">Archive</h2>
             <form name="archive">
                 <button name="archive">Archive</button>
             </form>
@@ -74,36 +75,52 @@
                     <ol  id="archive_entries_page_nav"></ol>
                 </nav>
             </div>
+        </section>
+        <details class="wrapper__inner stack" id="settings">
+            <summary><h2 class="h4">Settings</h2></summary>
+            <form class="stack" id="settings">
+                <p>
+                    <label for="settings_rate">Color</label>
+                    <input id="settings_rate" type="color" name="color" />
+                </p>
+                <p>
+                    <label for="settings_rate">Rate</label>
+                    <input id="settings_rate" type="number" name="rate" step="0.01"/>
+                </p>
+                <p>
+                    <label for="settings_tax">Tax %</label>
+                    <input id="settings_tax" type="number" name="tax" step="0.01"/>
+                </p>
+                <button name="save">Save</button>
+            </form>
+            <form class="stack" id="import">
+                <textarea name="data"></textarea>
+                <button name="import">Import</button>
+            </form>
+            <form class="stack" id="export">
+                <textarea name="data"></textarea>
+                <button name="export">Export</button>
+            </form>
+           
+        
         </details>
+    </hash-router>
+    <nav class="fixed-nav app-menu">
+        <ul class="wrapper__inner unstyled-list row">
+            <a href="#tasks">Tasks</a>
+            <a href="#time-entries">Time entries</a>
+            <details class="popup-menu">
+                <summary>...</summary>
+                <ul class="unstyled-list stack popup-menu__body">
+                    <a href="#archive">Archive</a>
+                    <a href="#settings">Settings</a>
+                </ul>
+            </details>
+        </ul>
+    </nav>
+        
 
-    <details class="wrapper__inner stack" id="settings">
-        <summary><h2 class="h4">Settings</h2></summary>
-        <form class="stack" id="settings">
-            <p>
-                <label for="settings_rate">Color</label>
-                <input id="settings_rate" type="color" name="color" />
-            </p>
-            <p>
-                <label for="settings_rate">Rate</label>
-                <input id="settings_rate" type="number" name="rate" step="0.01"/>
-            </p>
-            <p>
-                <label for="settings_tax">Tax %</label>
-                <input id="settings_tax" type="number" name="tax" step="0.01"/>
-            </p>
-            <button name="save">Save</button>
-        </form>
-        <form class="stack" id="import">
-            <textarea name="data"></textarea>
-            <button name="import">Import</button>
-        </form>
-        <form class="stack" id="export">
-            <textarea name="data"></textarea>
-            <button name="export">Export</button>
-        </form>
-       
     
-    </details>
     
 
     <template id="week_nav">

@@ -1,6 +1,7 @@
 import { Store, Model } from "./model.js";
 import  "./timesheet.js";
 import  "./tasks.js";
+import  "./hash-router.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration from "./utils/calcDuration.js";
 import round1dp from "./utils/round1dp.js";
