@@ -7,12 +7,13 @@ class HashRouter extends HTMLElement {
 
     connectedCallback() {
         setTimeout(() => {
-            this.showPage(this.querySelector(`#${this.getAttribute('default')}`))
+            const initial = window.location.hash.replace('#', '') || this.getAttribute('default');
+            this.showPage(this.querySelector(`#${initial}`));
         }, 0);
     }
 
     showPage(page) {
-        for( let child of this.children){
+        for(let child of this.children){
             child.hidden = true;
         }
         page.hidden = false;
