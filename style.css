@@ -162,11 +162,16 @@ summary > :where(h1, h2, h3, h4) {
   left: 0;
   position: fixed;
   width: 100vw;
-  min-height: 3em;
+  height: 3em;
+}
+
+.fixed-nav + .fixed-nav-placeholder {
+  height: 4em;
 }
 
 .app-menu {
   background-color: rgba(0,0,0, 0.8);
+
 }
 .app-menu a:link {
   color: #fff;
