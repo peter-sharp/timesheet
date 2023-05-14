@@ -1,7 +1,6 @@
 class HashRouter extends HTMLElement {
     constructor() {
         super();
-        //implementation
         window.addEventListener("hashchange", () => this.showPage(this.querySelector(":target")))
     }
 
