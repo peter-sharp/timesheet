@@ -106,17 +106,21 @@
         </section>
     </hash-router>
     <nav class="fixed-nav app-menu">
-        <ul class="wrapper__inner unstyled-list row">
-            <a href="#tasks">Tasks</a>
-            <a href="#time-entries">Time entries</a>
-            <details class="popup-menu">
-                <summary>...</summary>
-                <ul class="unstyled-list stack popup-menu__body">
-                    <a href="#archive">Archive</a>
-                    <a href="#settings">Settings</a>
-                </ul>
-            </details>
-        </ul>
+        <hash-nav>
+            <ul class="wrapper__inner unstyled-list row">
+                <li><a href="#tasks">Tasks</a></li>
+                <li><a href="#time-entries">Time entries</a></li>
+                <li>
+                    <details class="popup-menu">
+                        <summary>...</summary>
+                        <ul class="unstyled-list stack popup-menu__body" style="--gap: 0.2em">
+                            <li><a href="#archive">Archive</a></li>
+                            <li><a href="#settings">Settings</a></li>
+                        </ul>
+                    </details>
+                </li>
+            </ul>
+        </hash-nav>
     </nav>
     <div class="fixed-nav-placeholder"></div>
 
