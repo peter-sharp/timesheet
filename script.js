@@ -3,6 +3,7 @@ import  "./timesheet.js";
 import  "./tasks.js";
 import  "./hash-router.js";
 import  "./hash-nav.js";
+import  "./sync-status.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration from "./utils/calcDuration.js";
 import round1dp from "./utils/round1dp.js";
@@ -304,12 +305,15 @@ import last from "./utils/last.js";
         await store.read()
     )
 
-
+    
     const timeSheet = document.querySelector('time-sheet');
     model.listen(timeSheet.update.bind(timeSheet));
 
     const tasksList = document.querySelector('task-list');
     model.listen(tasksList.update.bind(tasksList));
+
+    const syncStatus = document.querySelector('sync-status');
+    model.listen(syncStatus.update.bind(syncStatus));
 
 
     archive(document.getElementById('archive'), model);

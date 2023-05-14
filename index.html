@@ -101,8 +101,10 @@
                 <textarea name="data"></textarea>
                 <button name="export">Export</button>
             </form>
-           
-        
+        </section>
+        <section class="wrapper__inner stack" id="sync">
+            <h2 class="h4">Sync</h2>
+            <sync-status></sync-status>
         </section>
     </hash-router>
     <nav class="fixed-nav app-menu">
@@ -116,6 +118,7 @@
                         <ul class="unstyled-list stack popup-menu__body" style="--gap: 0.2em">
                             <li><a href="#archive">Archive</a></li>
                             <li><a href="#settings">Settings</a></li>
+                            <li><a href="#sync">Sync</a></li>
                         </ul>
                     </details>
                 </li>
@@ -137,17 +140,6 @@
         </nav>
     </template>
 
-    <template id="entry_row">
-        <tr>
-            <td><input type="text" name="task" list="prevTasks"></td>
-            <td><input type="text" name="annotation"></td>
-            <td><input type="time" name="time_start"></td>
-            <td><input type="time" name="time_end"></td>
-            <td><output name="duration"></output></td>
-            <td><input type="checkbox" name="synced"></td>
-            <td><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button></td>
-        </tr>
-    </template>
 
     <template id="archive_entry_row">
         <tr data-id="">

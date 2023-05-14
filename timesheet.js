@@ -19,7 +19,6 @@ template.innerHTML = /*html*/`<form class="wrapper__inner" id=timesheet>
             <th>Time Start</th>
             <th>Time End</th>
             <th>Duration</th>
-            <th>Synced</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -30,7 +29,6 @@ template.innerHTML = /*html*/`<form class="wrapper__inner" id=timesheet>
             <td><input type="time" name="time_start"></td>
             <td><input type="time" name="time_end"></td>
             <td><output class="pulseOpacity" name="duration"></output></td>
-            <td></td>
             <td></td>
         </tr>
         <tr class="table-footer">
@@ -46,12 +44,22 @@ template.innerHTML = /*html*/`<form class="wrapper__inner" id=timesheet>
 
 </form>`
 
+const entryRow = document.createElement('template');
+entryRow.innerHTML = /*html*/`
+<tr>
+    <td><input type="text" name="task" list="prevTasks"></td>
+    <td><input type="text" name="annotation"></td>
+    <td><input type="time" name="time_start"></td>
+    <td><input type="time" name="time_end"></td>
+    <td><output name="duration"></output></td>
+    <td><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button></td>
+</tr>`
+
 class Timesheet extends HTMLElement {
     constructor() {
         super();
         //implementation
         this.append(template.content.cloneNode(true));
-        this.rowTemplate = document.getElementById('entry_row');
         const el = this;
         this.entriesList = el.querySelector('#time_entries');
         const form = el;
@@ -60,16 +68,7 @@ class Timesheet extends HTMLElement {
         timeLoop(1000, () => {
             this.renderNewEntryDuration(this.state);
         })
-        el.addEventListener("change", function updateSynced(ev) {
-            if(ev.target.name == "synced") {
-                const input = ev.target
-                const row = input.closest('tr');
-                emitEvent(el, 'changedEntry', {
-                    id: parseInt(row.dataset.id, 10),
-                    synced: row.querySelector('[name="synced"]')?.checked,
-                })
-            }
-        });
+       
         el.addEventListener('focusout', function(ev) {
             if (ev.target.nodeName == 'INPUT') {
                 const input = ev.target;
@@ -82,8 +81,7 @@ class Timesheet extends HTMLElement {
                         task: row.querySelector('[name="task"]').value,
                         annotation: row.querySelector('[name="annotation"]').value,
                         start: timeToDate(row.querySelector('[name="time_start"]').value),
-                        end: timeToDate(row.querySelector('[name="time_end"]').value),
-                        synced: row.querySelector('[name="synced"]')?.checked,
+                        end: timeToDate(row.querySelector('[name="time_end"]').value)
                     })
                 }  else if(row.dataset.new && noInputsEntered(row)) {
                     emitEvent(el, 'clearNewEntry');
@@ -156,7 +154,6 @@ class Timesheet extends HTMLElement {
             this.renderEntry(row, entry);
             const duration = calcDuration(entry);
             row.querySelector('[name="duration"]').value = duration;
-            row.querySelector('[name="synced"]').checked = entry.synced;
 
           
         }
@@ -199,7 +196,7 @@ class Timesheet extends HTMLElement {
 
 
     newTimeentryRow() {
-        return this.rowTemplate.content.cloneNode(true).querySelector('tr')
+        return entryRow.content.cloneNode(true).querySelector('tr')
     }
 
 }
