@@ -155,6 +155,7 @@ import last from "./utils/last.js";
                 switch (type) {
 
                     case "changedEntry":
+                        console.log({id, type, change})
                         if (id) {
                             // updating existing entry
                             state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x);
@@ -206,6 +207,7 @@ import last from "./utils/last.js";
                         state.tasks = [...state.tasks, { exid, client, description, id: Date.now(), mostRecentEntry: new Date()}]
                         break;
                     case "taskSyncChanged":
+                        state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, synced: ev.synced} : x);
                         state.entries = state.entries.map(x => x.task == ev.exid ? {...x, synced: ev.synced} : x);
                         break;
                     case "taskComplete":
@@ -255,11 +257,11 @@ import last from "./utils/last.js";
                             if(a.mostRecentEntry < b.mostRecentEntry) return 1;
                             return 0;
                         });
-                        tasks.reverse()
+                        
                         // merging values
                         const tasksByExid = tasks.reduce((xs, x) => ({...xs, [x.exid]: {...(xs[x.exid] || []), ...x}}), {});
                         tasks = Object.values(tasksByExid)
-                        console.log(tasks);
+                       
                         state.tasks = tasks;
                         break;
                 }

@@ -69,13 +69,13 @@ class TaskList extends HTMLElement {
             switch (ev.target.name) {
                 case 'synced':
                     emitEvent(that, "taskSyncChanged", {
-                        exid: ev.target.closest('tr').querySelector('[data-task]').innerText,
+                        exid: ev.target.closest('li').querySelector('[data-task]').innerText,
                         synced: ev.target.checked
                     })
                     break;
                 case 'complete':
                     emitEvent(that, "taskComplete", {
-                        exid: ev.target.closest('tr').querySelector('[data-task]').innerText,
+                        exid: ev.target.closest('li').querySelector('[data-task]').innerText,
                         complete: ev.target.checked
                     })
                     break;
@@ -104,6 +104,13 @@ class TaskList extends HTMLElement {
         elTotals.innerHTML = '';
         const toRender = tasks.filter(x => x.exid);
         for (let {exid, client= "", description="", total = 0, synced = false, complete = false} of toRender) {
+            console.log({exid,
+                complete,
+                exid,
+                client,
+                description,
+                total,
+                synced})
             const item = newtemplateItem(taskRow);
             item.dataset.exid = exid
             item.querySelector('[name="complete"]').checked = complete

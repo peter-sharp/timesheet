@@ -72,7 +72,7 @@ class SyncStatus extends HTMLElement {
         const el = this;
         const footer = this.entriesList.querySelector('.table-footer')
         
-        if (!state.entries.length || this.entriesList.childNodes.length - 2 > state.entries.length) {
+        if (!state.entries.length || this.entriesList.childNodes.length - 1 > state.entries.length) {
             for (const x of [...this.entriesList.childNodes]) {
                 if (![footer].includes(x)) x.remove();
             }
@@ -83,15 +83,10 @@ class SyncStatus extends HTMLElement {
             if (!row) {
                 row = this.newTimeentryRow();
                 row.dataset.id = entry.id
-                if (newTask.nextElementSibling) {
-                    this.entriesList.insertBefore(row, newTask.nextElementSibling);
-                } else {
-                    this.entriesList.append(row);
-                }
+                this.entriesList.insertBefore(row, footer)
             }
             this.renderEntry(row, entry);
-            const duration = calcDuration(entry);
-            row.querySelector('[name="duration"]').value = duration;
+          
 
           
         }
@@ -104,24 +99,20 @@ class SyncStatus extends HTMLElement {
     }
 
     renderEntry(row, entry) {
+
         row.querySelector('[name="task"]').value = entry.task || '';
         row.querySelector('[name="annotation"]').value = entry.annotation || '';
         row.querySelector('[name="time_start"]').value = entry.start ? format24hour(entry.start) : '';
         row.querySelector('[name="time_end"]').value = entry.end ? format24hour(entry.end) : '';
-        row.querySelector('[name="synced"]').checked = entry.checked;
+        row.querySelector('[name="synced"]').checked = entry.synced;
+        const duration = calcDuration(entry);
+        row.querySelector('[name="duration"]').value = duration;
+        console.log({ row, entry})
     }
 
 
 
-    renderNewEntryDuration({ newEntry }) {
-        if(!newEntry) return;
-        const newTask = this.entriesList.querySelector('[data-new="task"]');
-        const {start} = newEntry
-        const duration = calcDuration({ start, end: new Date() });
-        const elDuration = newTask.querySelector('[name="duration"]'); 
-        elDuration.value = duration;
-        elDuration.dataset.state = duration > 0 ? "started" : "stopped";
-    }
+   
 
 
     newTimeentryRow() {
