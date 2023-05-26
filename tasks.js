@@ -42,6 +42,8 @@ taskRow.innerHTML = /*html*/`
         <span class="task-item__actions row">
             <label class="task-item__synced-label">Synced <input type="checkbox" name="synced"></label>
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button>
+            <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><span data-icon>&RightTriangle;</span></button>
+            <button name="stop" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><span data-icon>&square;</span></button>
         </span>
     </div>
 </li>`
@@ -83,10 +85,12 @@ class TaskList extends HTMLElement {
         });
 
         this.addEventListener("click", function handleArchiveAction(ev) {
-            if(ev.target.nodeName.toLowerCase() == "button") {
-                emitEvent(that, ev.target.name + "Task", {
-                    exid: ev.target.closest('[data-exid]').dataset.exid
-                })
+            if(ev.target.closest("button")) {
+                const btn = ev.target.closest("button")
+                emitEvent(that, btn.name + "Task", {
+                    exid: btn.closest('[data-exid]').dataset.exid
+                });
+                return false;
             }
         });
 
@@ -96,14 +100,14 @@ class TaskList extends HTMLElement {
   
 
     update(state) {
-        this.renderTaskTotals(state);
+        this.renderTasks(state);
     }
 
-    renderTaskTotals({ tasks = [] }) {
+    renderTasks({ tasks = [] }) {
         const elTotals = this.elTotals;
         elTotals.innerHTML = '';
         const toRender = tasks.filter(x => x.exid);
-        for (let {exid, client= "", description="", total = 0, synced = false, complete = false} of toRender) {
+        for (let {exid, client= "", timingState="stop", description="", total = 0, synced = false, complete = false} of toRender) {
             console.log({exid,
                 complete,
                 exid,
@@ -119,6 +123,10 @@ class TaskList extends HTMLElement {
             item.querySelector('[name="description"]').value = description;
             item.querySelector('[name="taskTotal"]').value = total;
             item.querySelector('[name="synced"]').checked = synced
+
+            item.querySelector('[name="start"]').hidden = "start" == timingState
+            item.querySelector('[name="stop"]').hidden =  "stop" == timingState
+
             elTotals.append(item);
         }
     }

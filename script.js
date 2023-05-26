@@ -201,6 +201,42 @@ import last from "./utils/last.js";
             },
             function tasks(state, ev) {
                 switch (ev.type) {
+                    case "startTask":
+                        console.log(ev)
+                        if(state.newEntry.start) {
+                            state.entries = [
+                                ...state.entries,
+                                {
+                                    ...state.newEntry,
+                                    id: Date.now(),
+                                    end: new Date()
+                                }
+                            ];
+                            state.newEntry = {};
+                        }
+                        state.newEntry = {
+                                task: ev.exid,
+                                annotation: "Working...",
+                                start: new Date(),
+                                end:  null,
+                            }
+                            state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, timingState: "start"} : x);
+                            break;
+                    case "stopTask":
+                        console.log(ev)
+                        if(state.newEntry.start) {
+                            state.entries = [
+                                ...state.entries,
+                                {
+                                    ...state.newEntry,
+                                    id: Date.now(),
+                                    end: new Date()
+                                }
+                            ];
+                            state.newEntry = {};
+                        }
+                        state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, timingState: "stop"} : x);
+                        break;
                     case "addTask":
                         const [exid, client, description] = extract([/#(\w+)/, /client:(\w+)/], ev.raw);
                         // mostRecentEntry to ensure new tasks are at the top
@@ -227,6 +263,8 @@ import last from "./utils/last.js";
                 switch(ev.type){
                     case 'deleteTask':
                     case "addTask":
+                    case "startTask":
+                    case "stopTask":
                     case "taskSyncChanged":
                     case "changedEntry":
                     case "archive":
