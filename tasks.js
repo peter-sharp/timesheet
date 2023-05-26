@@ -43,7 +43,7 @@ taskRow.innerHTML = /*html*/`
             <label class="task-item__synced-label">Synced <input type="checkbox" name="synced"></label>
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button>
             <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><span data-icon>&RightTriangle;</span></button>
-            <button name="stop" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><span data-icon>&square;</span></button>
+            <button name="stop" class="pulseOpacity" data-state="started" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><span data-icon>&square;</span></button>
         </span>
     </div>
 </li>`
