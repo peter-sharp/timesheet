@@ -17,7 +17,7 @@ class HashNav extends HTMLElement {
             child.classList.remove('active');
         }
         const pageLink = this.querySelector(`a[href="${page}"]`)
-        pageLink.classList.add('active');
+        pageLink?.classList.add('active');
     }
 
 }
