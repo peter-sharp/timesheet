@@ -68,8 +68,9 @@ class Timesheet extends HTMLElement {
         timeLoop(1000, () => {
             this.renderNewEntryDuration(this.state);
         })
-       
-        el.addEventListener('focusout', function(ev) {
+        this.task = null;
+        const that = this;
+        el.addEventListener('focusout', function handleNewTimeEntry(ev) {
             if (ev.target.nodeName == 'INPUT') {
                 const input = ev.target;
                 const row = input.closest('tr');
@@ -84,15 +85,15 @@ class Timesheet extends HTMLElement {
                         end: timeToDate(row.querySelector('[name="time_end"]').value)
                     })
                 }  else if(row.dataset.new && noInputsEntered(row)) {
-                    emitEvent(el, 'clearNewEntry');
+                    emitEvent(el, 'clearNewEntry', {task: that.task});
                 } else if(row.dataset.new) {
-                    const task = row.querySelector('[name="task"]').value;
+                    that.task = row.querySelector('[name="task"]').value;
                     const annotation = row.querySelector('[name="annotation"]').value;
                     const start = row.querySelector('[name="time_start"]').value;
                     const end = row.querySelector('[name="time_end"]').value;
                     emitEvent(el, 'newEntry', {
                         id: parseInt(row.dataset.id, 10),
-                        task,
+                        task: that.task,
                         annotation,
                         start: start ? timeToDate(start) : null,
                         end: end ? timeToDate(end) : null,

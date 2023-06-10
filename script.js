@@ -72,9 +72,14 @@ import last from "./utils/last.js";
                 switch (type) {
                     case 'newEntry':
                         state.newEntry = {...data};
+                        if(!state.tasks.find(x => x.exid == ev.task)) {
+                            state.tasks = [...state.tasks, { exid: ev.task, id: Date.now(), mostRecentEntry: new Date()}]
+                        }
+                        state.tasks = state.tasks.map(x =>  ({...x, timingState: x.exid == ev.task ? "start" : "stop" }) );
                         break;
                     case 'clearNewEntry':
                         state.newEntry = {};
+                       
                         break;
                 }
                 return state;
@@ -170,6 +175,7 @@ import last from "./utils/last.js";
                                 }
                             ];
                             state.newEntry = {};
+                            state.tasks = state.tasks.map(x => x.exid == ev.task ? {...x, timingState: "stop"} : x);
                         }
                         state.tasks = [...Array.from(state.tasks), { exid: change.task }];
         
