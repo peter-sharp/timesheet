@@ -256,20 +256,47 @@ button[data-style="subtle"]:hover {
   align-items: var(--align, end);
 }
 
-.task-item {
-  width: 20em;
+.tasks {
   max-width: 100%;
-}
-.task-item__details {
-  padding-left: 2rem;
+  width: max-content;
 }
 
+.task-item {
+  display: grid;
+  grid-template-areas:
+  ".        content        ." 
+  "complete content actions";
+  grid-template-columns: 2rem 1fr min-content;
+  grid-template-rows: 1fr 1fr;
+  gap: 1rem;
+}
+.task-item__complete {
+  grid-area: complete;
+}
 .task-item__actions {
   flex-grow: 2;
   justify-content: flex-end;
+  grid-area: actions;
+}
+.task-item__content {
+  grid-area: content;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
 .task-item__details,
+.task-item__description {
+  margin: 0;
+}
+
+
 .task-item__synced-label {
+  font-size: 0.6em;
+}
+
+
+
+.task-item__content > *:first-child:not(:only-child) {
   font-size: 0.6em;
 }
 

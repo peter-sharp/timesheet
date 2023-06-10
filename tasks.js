@@ -13,39 +13,29 @@ template.innerHTML = /*html*/`
     </div>
 </form>
 <div>
-    <!-- <thead>
-        <tr>
-            <th>complete</th>
-            <th>task</th>
-            <th>client</th>
-            <th>description</th>
-            <th>duration</th>
-            <th>Synced</th>
-            <th>Actions</th>
-        </tr>
-    </thead> -->
-    <ul data-task-totals class="unstyled-list stack" style="--gap: 1.6em"></ul>
+   
+    <ul data-task-totals class="tasks unstyled-list stack" style="--gap: 1.6em"></ul>
 </div>`
 
 
 const taskRow = document.createElement('template');
 taskRow.innerHTML = /*html*/`
 <li data-exid="" class="task-item" >
-    <div class="task-item__details row">
+        <input type="checkbox" name="complete" class="task-item__complete">
+        <div class="task-item__content">
+        <p class="task-item__details">
             <span data-task></span>
-            <output name="client"></output>
+            <span data-client></span>
             <output name="taskTotal"></output>
-    </div>
-    <div class="row" style="--align: center">
-        <input type="checkbox" name="complete">
-        <div class="task-item__description"><output name="description"></output></div>
+        </p>
+        <p class="task-item__description" data-description></p>
+        </div>
         <span class="task-item__actions row">
             <label class="task-item__synced-label">Synced <input type="checkbox" name="synced"></label>
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button>
             <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><span data-icon>&RightTriangle;</span></button>
             <button name="stop" class="pulseOpacity" data-state="started" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><span data-icon>&square;</span></button>
         </span>
-    </div>
 </li>`
 
 class TaskList extends HTMLElement {
@@ -119,8 +109,10 @@ class TaskList extends HTMLElement {
             item.dataset.exid = exid
             item.querySelector('[name="complete"]').checked = complete
             item.querySelector('[data-task]').innerText = exid;
-            item.querySelector('[name="client"]').value = client;
-            item.querySelector('[name="description"]').value = description;
+            item.querySelector('[data-client]').innerText = client;
+            const elDesc = item.querySelector('[data-description]');
+            elDesc.innerText = description;
+            if(description.length == 0) elDesc.remove();
             item.querySelector('[name="taskTotal"]').value = total;
             item.querySelector('[name="synced"]').checked = synced
 
