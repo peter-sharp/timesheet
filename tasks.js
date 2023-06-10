@@ -1,5 +1,6 @@
 import newtemplateItem from "./utils/newTemplateItem.js";
 import emitEvent from "./utils/emitEvent.js";
+import sortByMostRecentEntry from "./utils/sortByMostRecentEntry.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/`
@@ -96,15 +97,12 @@ class TaskList extends HTMLElement {
     renderTasks({ tasks = [] }) {
         const elTotals = this.elTotals;
         elTotals.innerHTML = '';
-        const toRender = tasks.filter(x => x.exid);
+        let toRender = tasks.filter(x => x.exid);
+
+        toRender = toRender.sort(sortByMostRecentEntry);
+
         for (let {exid, client= "", timingState="stop", description="", total = 0, synced = false, complete = false} of toRender) {
-            console.log({exid,
-                complete,
-                exid,
-                client,
-                description,
-                total,
-                synced})
+            
             const item = newtemplateItem(taskRow);
             item.dataset.exid = exid
             item.querySelector('[name="complete"]').checked = complete

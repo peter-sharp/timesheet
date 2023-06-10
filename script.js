@@ -296,11 +296,6 @@ import last from "./utils/last.js";
                             }
                         }
 
-                        tasks.sort(function sortByMostRecentEntry(a,b) {
-                            if(a.mostRecentEntry > b.mostRecentEntry) return -1;
-                            if(a.mostRecentEntry < b.mostRecentEntry) return 1;
-                            return 0;
-                        });
                         
                         // merging values
                         const tasksByExid = tasks.reduce((xs, x) => ({...xs, [x.exid]: {...(xs[x.exid] || []), ...x}}), {});
