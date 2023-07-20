@@ -23,14 +23,17 @@ import store from "./timesheetStore.js";
                 switch (type) {
                     case 'newEntry':
                         state.newEntry = {...data};
-                        if(!state.tasks.find(x => x.exid == ev.task)) {
-                            state.tasks = [...state.tasks, { exid: ev.task, id: Date.now(), mostRecentEntry: new Date()}]
+                        state.currentTask = state.tasks.find(x => x.exid == ev.task);
+                        console.log(state)
+                        if(!state.currentTask) {
+                            state.currentTask = { exid: ev.task, id: Date.now(), mostRecentEntry: new Date(), total: 0 }
+                            state.tasks = [...state.tasks, state.currentTask];
                         }
                         state.tasks = state.tasks.map(x =>  ({...x, timingState: x.exid == ev.task ? "start" : "stop" }) );
                         break;
                     case 'clearNewEntry':
                         state.newEntry = {};
-                       
+                        state.currentTask = {};
                         break;
                 }
                 return state;
@@ -172,13 +175,14 @@ import store from "./timesheetStore.js";
                             state.newEntry = {};
                         }
                         state.newEntry = {
-                                task: ev.exid,
-                                annotation: "Working...",
-                                start: new Date(),
-                                end:  null,
-                            }
-                            state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, timingState: "start"} : x);
-                            break;
+                            task: ev.exid,
+                            annotation: "Working...",
+                            start: new Date(),
+                            end:  null,
+                        }
+                        state.currentTask = state.tasks.find(x => x.exid == ev.exid);
+                        state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, timingState: "start"} : x);
+                        break;
                     case "stopTask":
                         console.log(ev)
                         if(state.newEntry.start) {
@@ -192,6 +196,7 @@ import store from "./timesheetStore.js";
                             ];
                             state.newEntry = {};
                         }
+                        state.currentTask = {};
                         state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, timingState: "stop"} : x);
                         break;
                     case "addTask":
@@ -314,6 +319,12 @@ import store from "./timesheetStore.js";
         renderTabTitle(model.state);
     })
 
+    // TODO make web component
+    const outputCurrentTask = document.querySelector('output[name="currentTask"]')
+    timeLoop(1000, () => {
+        renderCurrentTask(outputCurrentTask, model.state);
+    })
+
     document.body.addEventListener("updateState", function updateState(ev) {
         model.emit(ev.detail);
     });
@@ -340,15 +351,26 @@ function extract(regs, x) {
 }
 
 
-function renderTabTitle({ newEntry }) {
+function renderTabTitle({ newEntry, currentTask }) {
     const title = "Timesheet";
     let info = []
 
     if(newEntry.task) info.push(newEntry.task);
 
-    if(newEntry.start) info.push(calcDuration({ start: newEntry.start, end: new Date() }));
+    if(newEntry.start) info.push(calcDuration({ start: newEntry.start, end: new Date() }) + (currentTask?.total || 0));
 
     document.title = info.length ? `${info.join(' ')} | ${title}` : title;
+}
+
+function renderCurrentTask(outputCurrentTask, { newEntry, currentTask }) {
+   
+    let info = []
+
+    if(newEntry.task) info.push(newEntry.task);
+
+    if(newEntry.start) info.push(calcDuration({ start: newEntry.start, end: new Date() }) + (currentTask?.total || 0));
+
+    outputCurrentTask.value = info.length ? info.join(' ') : '';
 }
 
 
