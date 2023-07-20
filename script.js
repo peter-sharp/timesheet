@@ -1,4 +1,4 @@
-import { Store, Model } from "./model.js";
+import { Model } from "./model.js";
 import  "./timesheet.js";
 import  "./tasks.js";
 import  "./hash-router.js";
@@ -13,59 +13,10 @@ import format24hour from "./utils/format24Hour.js";
 import newtemplateItem from "./utils/newTemplateItem.js";
 import first from "./utils/first.js";
 import last from "./utils/last.js";
+import store from "./timesheetStore.js";
 
 (async () => {
 
-    const store = Store(
-        'timesheet',
-        function hydrate(state) {
-            state.newEntry = {
-                ...state.newEntry,
-                start: state.newEntry.start ? new Date(state.newEntry.start) : null,
-                end: state.newEntry.end ? new Date(state.newEntry.end) : null
-            };
-            state.entries = state.entries.map(
-                ({ start, end, ...x }) => ({
-                    start: new Date(start),
-                    end: new Date(end),
-                    ...x
-                })
-            );
-            state.archive = state.archive.map(
-                ({ start, end, ...x }) => ({
-                    start: new Date(start),
-                    end: new Date(end),
-                    ...x
-                })
-            );
-
-
-            state.tasks = Array.isArray(state.tasks) ? state.tasks : [];
-            state.taskTotals = Array.isArray(state.taskTotals) ? state.taskTotals : [];
-            
-            return state;
-        },
-        function dehydrate(state) {
-            if(state.settings && !state.settings.color) state.settings.color = "#112233";
-            return {...state };
-        },
-        function storageTypeSort({deleted, deletedTasks, ...local}) {
-            return {
-                session: { deleted, deletedTasks},
-                local
-            }
-        }, 
-        {
-            newEntry: {},
-            entries: [],
-            archive: [],
-            tasks: new Set(),
-            settings: {
-                color: "#112233"
-            },
-            stats: {},
-        }
-    );
     const model = Model([
             function newEntry(state, ev) {
                 const { type, ...data } = ev
