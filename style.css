@@ -249,7 +249,7 @@ button[data-style="subtle"]:hover {
     border-color: rgba(255,255,255, 0.5);
 }
 
-.row {
+.row:not([hidden]) {
   display: flex;
   flex-direction: row;
   gap: 1em;

@@ -4,6 +4,13 @@ import sortByMostRecentEntry from "./utils/sortByMostRecentEntry.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/`
+<div>
+   
+    <ul data-task-totals class="tasks unstyled-list stack" style="--gap: 1.6em"></ul>
+</div>`
+
+const taskForm = document.createElement("template");
+taskForm.innerHTML = /*html*/`
 <form data-new-task>
     <div class="row">
         <div>
@@ -12,11 +19,7 @@ template.innerHTML = /*html*/`
         </div>
         <button type="submit">Add</button>
     </div>
-</form>
-<div>
-   
-    <ul data-task-totals class="tasks unstyled-list stack" style="--gap: 1.6em"></ul>
-</div>`
+</form>`
 
 
 const taskRow = document.createElement('template');
@@ -31,7 +34,7 @@ taskRow.innerHTML = /*html*/`
         </p>
         <p class="task-item__description" data-description></p>
         </div>
-        <span class="task-item__actions row">
+        <span class="task-item__actions row" hidden="hidden" data-actions>
             <label class="task-item__synced-label">Synced <input type="checkbox" name="synced"></label>
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button>
             <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><span data-icon>&RightTriangle;</span></button>
@@ -44,20 +47,25 @@ class TaskList extends HTMLElement {
         super();
         //implementation
         this.classList.add('stack');
+        // TODO cleaner feature handling
+        if(this.getAttribute("features")?.includes("add") ) {
+            this.appendChild(newtemplateItem(taskForm));
+        }
         this.appendChild(newtemplateItem(template));
-        this.newTaskForm = this.querySelector('[data-new-task]');
         this.elTotals = this.querySelector('[data-task-totals]');
-
+        
         const that = this;
-        this.newTaskForm.addEventListener("submit", function addTask(ev){
-            ev.preventDefault();
-            const elTaskRaw = ev.target.elements.taskRaw
-            emitEvent(that, "addTask", {
-                raw: elTaskRaw.value
+        if(this.getAttribute("features")?.includes("add")){
+            this.newTaskForm = this.querySelector('[data-new-task]');
+            this.newTaskForm.addEventListener("submit", function addTask(ev){
+                ev.preventDefault();
+                const elTaskRaw = ev.target.elements.taskRaw
+                emitEvent(that, "addTask", {
+                    raw: elTaskRaw.value
+                });
+                elTaskRaw.value = ""
             });
-            elTaskRaw.value = ""
-        });
-
+        }
         this.addEventListener("change", function toggleTaskSynced(ev) {
             switch (ev.target.name) {
                 case 'synced':
@@ -111,12 +119,15 @@ class TaskList extends HTMLElement {
             const elDesc = item.querySelector('[data-description]');
             elDesc.innerText = description;
             if(description.length == 0) elDesc.remove();
-            item.querySelector('[name="taskTotal"]').value = total;
-            item.querySelector('[name="synced"]').checked = synced
+            const hasActions = this.getAttribute("features")?.includes("actions");
+            item.querySelector('[data-actions]').hidden = !hasActions
+            if(hasActions) {
+                item.querySelector('[name="taskTotal"]').value = total;
+                item.querySelector('[name="synced"]').checked = synced
 
-            item.querySelector('[name="start"]').hidden = "start" == timingState
-            item.querySelector('[name="stop"]').hidden =  "stop" == timingState
-
+                item.querySelector('[name="start"]').hidden = "start" == timingState
+                item.querySelector('[name="stop"]').hidden =  "stop" == timingState
+            }
             elTotals.append(item);
         }
     }

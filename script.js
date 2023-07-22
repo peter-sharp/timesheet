@@ -316,7 +316,7 @@ import store from "./timesheetStore.js";
     const timeSheet = document.querySelector('time-sheet');
     model.listen(timeSheet.update.bind(timeSheet));
 
-    const tasksList = document.querySelector('task-list');
+    const tasksList = document.querySelector('#tasks task-list');
     model.listen(tasksList.update.bind(tasksList));
 
     const syncStatus = document.querySelector('sync-status');
@@ -493,6 +493,9 @@ function archive(el, model) {
         item.querySelector("button").innerText = pageNo
         return item
     }
+
+    const tasksList = el.querySelector('task-list');
+    model.listen(({ archivedTasks }) => tasksList.update({ tasks: archivedTasks }));
 }
 
 

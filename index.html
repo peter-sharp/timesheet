@@ -16,8 +16,8 @@
 
     <hash-router default="tasks">
         <section class="wrapper__inner" id="tasks">
-            <summary><h2 class="h4">Tasks</h2></summary>
-            <task-list></task-list>
+            <h2 class="h4">Tasks</h2>
+            <task-list features="add,actions"></task-list>
         </section>
         <section class="wrapper__inner" id="time-entries">
             <h2 class=" h4">Time Entries</h2>
@@ -53,6 +53,7 @@
                     </div>
                 </dl>
             </div>
+            
             <div>
                 <h3  class="h5">Entries</h3>
                 <table>
@@ -74,6 +75,10 @@
                 <nav class="pagination overflow-x-scroll">
                     <ol  id="archive_entries_page_nav"></ol>
                 </nav>
+            </div>
+            <div>
+                <h3  class="h5">Tasks</h3>
+                <task-list></task-list>
             </div>
         </section>
         <section class="wrapper__inner stack" id="settings">
