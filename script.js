@@ -17,6 +17,16 @@ import store from "./timesheetStore.js";
 
 (async () => {
 
+    if('serviceWorker' in navigator) {
+        try {
+            console.log('CLIENT: registering service worker.');
+            await navigator.serviceWorker.register('/serviceWorker.js');
+            console.log('CLIENT: service worker registration complete.');
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
     const model = Model([
             function newEntry(state, ev) {
                 const { type, ...data } = ev
