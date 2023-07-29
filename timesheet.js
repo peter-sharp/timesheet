@@ -58,7 +58,6 @@ entryRow.innerHTML = /*html*/`
 class Timesheet extends HTMLElement {
     constructor() {
         super();
-        //implementation
         this.append(template.content.cloneNode(true));
         const el = this;
         this.entriesList = el.querySelector('#time_entries');

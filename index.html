@@ -56,25 +56,7 @@
             
             <div>
                 <h3  class="h5">Entries</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Task</th>
-                            <th>Annotation</th>
-                            <th>Date</th>
-                            <th>Time Start</th>
-                            <th>Time End</th>
-                            <th>Duration</th>
-                            <th>Synced</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="archive_entries">
-                    </tbody>
-                </table>
-                <nav class="pagination overflow-x-scroll">
-                    <ol  id="archive_entries_page_nav"></ol>
-                </nav>
+                <timesheet-archive></timesheet-archive>
             </div>
             <div>
                 <h3  class="h5">Tasks</h3>
@@ -147,21 +129,7 @@
     </template>
 
 
-    <template id="archive_entry_row">
-        <tr data-id="">
-            <td data-field="task"></td>
-            <td data-field="annotation"></td>
-            <td data-field="date_start" title="date started"></td>
-            <td data-field="time_start"></td>
-            <td data-field="time_end"></td>
-            <td data-field="duration"></td>
-            <td><span class="cb-state" data-field="synced"></span></td>
-            <td><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button></td>
-        </tr>
-    </template>
-    <template id="archive_entries_page_nav_item">
-        <li aria-selected="true"><button type="button" data-style="subtle"></button></li>
-    </template>
+    
     <script type="module" src="./script.js"></script>
 </body>
 

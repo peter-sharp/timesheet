@@ -6,14 +6,13 @@ import  "./hash-nav.js";
 import  "./sync-status.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration from "./utils/calcDuration.js";
-import round1dp from "./utils/round1dp.js";
-import formatPrice from "./utils/formatPrice.js";
 import percentOf from "./utils/percentOf.js";
-import format24hour from "./utils/format24Hour.js";
-import newtemplateItem from "./utils/newTemplateItem.js";
 import first from "./utils/first.js";
 import last from "./utils/last.js";
 import store from "./timesheetStore.js";
+import archive from "./archive/archive.js";
+
+
 
 (async () => {
 
@@ -383,120 +382,6 @@ function renderCurrentTask(outputCurrentTask, { newEntry, currentTask }) {
     outputCurrentTask.value = info.length ? info.join(' ') : '';
 }
 
-
-let formatDate = new Intl.DateTimeFormat('en-US');
-formatDate = formatDate.format.bind(formatDate);
-function archive(el, model) {
-    const archiveEntryRow = document.getElementById('archive_entry_row');
-    const archiveEntriesPageNavItem = document.getElementById('archive_entries_page_nav_item');
-    const elDetails = el
-    const elArchiveForm = el.querySelector('form[name="archive"]')
-
-    elArchiveForm.addEventListener('submit', function archive(ev) {
-        ev.preventDefault();
-        if (ev.submitter ?.name == 'archive') {
-            model.emit({
-                type: 'archive'
-            })
-        }
-    });
-
-    elDetails.addEventListener('toggle', function updateArchiveActiveState(){
-        model.emit({
-            type: 'archiveState',
-            state: elDetails.open
-        })
-    })
-
-    model.listen(function renderStats({ stats = {} }) {
-        const { 
-            totalDurationWeek = 0, 
-            totalNetIncomeWeek = 0,
-            totalDurationLastWeek = 0,
-            totalNetIncomeLastWeek = 0,
-            totalDurationMonth = 0, 
-            totalNetIncomeMonth = 0,
-            totalDurationLastMonth = 0, 
-            totalNetIncomeLastMonth = 0
-        } = stats;
-        el.querySelector('[name="totalDurationWeek"]').value = round1dp(totalDurationWeek);
-        el.querySelector('[name="totalNetIncomeWeek"]').value = formatPrice(totalNetIncomeWeek);
-        el.querySelector('[name="totalDurationLastWeek"]').value = round1dp(totalDurationLastWeek);
-        el.querySelector('[name="totalNetIncomeLastWeek"]').value = formatPrice(totalNetIncomeLastWeek);
-        el.querySelector('[name="totalDurationMonth"]').value = round1dp(totalDurationMonth);
-        el.querySelector('[name="totalNetIncomeMonth"]').value = formatPrice(totalNetIncomeMonth);
-        el.querySelector('[name="totalDurationLastMonth"]').value = round1dp(totalDurationLastMonth);
-        el.querySelector('[name="totalNetIncomeLastMonth"]').value = formatPrice(totalNetIncomeLastMonth);
-    })
-
-    const elArchiveEntries = el.querySelector("#archive_entries")
-    const elArchiveEntriesNav = el.querySelector("#archive_entries_page_nav")
-    
-    elArchiveEntries.addEventListener("click", function handleArchiveAction(ev) {
-        if(ev.target.nodeName.toLowerCase() == "button") {
-            model.emit({
-                type: ev.target.name + "ArchiveEntry",
-                id: parseInt(ev.target.closest('[data-id]').dataset.id, 10)
-            })
-        }
-    });
-
-    elArchiveEntriesNav.addEventListener("click", function updatePage(ev) {
-        if(ev.target.nodeName.toLowerCase() == "button") {
-            model.emit({
-                type: "updateArchivePage",
-                page: parseInt(ev.target.innerText, 10)
-            })
-        }
-    });
-
-    model.listen(function renderArchiveBrowser({ archiveOpen, archive, archiveBrowserPage = 0, archiveBrowserPageSize = 20 }) {
-        if(!archiveOpen) return;
-        
-        const rows = document.createDocumentFragment();
-        const offset = archiveBrowserPage * archiveBrowserPageSize;
-        const lastIndex = Math.min(offset + archiveBrowserPageSize, archive.length);
-        for (let i = offset; i < lastIndex; i += 1) {
-            rows.append(renderEntry(archive[i]))
-        } 
-
-        elArchiveEntries.innerHTML = "";
-        elArchiveEntries.append(rows);
-
-        const pageCount = Math.ceil(archive.length / archiveBrowserPageSize);
-        const pages = document.createDocumentFragment();
-        for (let i = 0; i < pageCount; i += 1) {
-            pages.append(renderPageNavItem({ pageNo: i, selectedPage: archiveBrowserPage }))
-        } 
-
-        elArchiveEntriesNav.innerHTML = ""
-        elArchiveEntriesNav.append(pages)
-    })
-
-    function renderEntry( entry) {
-        const row = newtemplateItem(archiveEntryRow)
-        row.dataset.id = entry.id
-        row.querySelector('[data-field="task"]').innerText = entry.task || '';
-        row.querySelector('[data-field="annotation"]').innerText = entry.annotation || '';
-        row.querySelector('[data-field="date_start"]').innerText = entry.start ? formatDate(entry.start) : '';
-        row.querySelector('[data-field="time_start"]').innerText = entry.start ? format24hour(entry.start) : '';
-        row.querySelector('[data-field="time_end"]').innerText = entry.end ? format24hour(entry.end) : '';
-        const duration = calcDuration(entry);
-        row.querySelector('[data-field="duration"]').innerText = duration;
-        row.querySelector('[data-field="synced"]').innerText = entry.synced ? "yes" : "no";
-        return row
-    }
-
-    function renderPageNavItem({ pageNo, selectedPage }) {
-        const item = newtemplateItem(archiveEntriesPageNavItem)
-        item.setAttribute('aria-selected', pageNo == selectedPage )
-        item.querySelector("button").innerText = pageNo
-        return item
-    }
-
-    const tasksList = el.querySelector('task-list');
-    model.listen(({ archivedTasks }) => tasksList.update({ tasks: archivedTasks }));
-}
 
 
 function settings(el, model) {
