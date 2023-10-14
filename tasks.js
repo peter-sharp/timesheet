@@ -3,14 +3,14 @@ import emitEvent from "./utils/emitEvent.js";
 import sortByMostRecentEntry from "./utils/sortByMostRecentEntry.js";
 
 const template = document.createElement("template");
-template.innerHTML = /*html*/`
+template.innerHTML = /*html*/ `
 <div>
    
     <ul data-task-totals class="tasks unstyled-list stack" style="--gap: 1.6em"></ul>
-</div>`
+</div>`;
 
 const taskForm = document.createElement("template");
-taskForm.innerHTML = /*html*/`
+taskForm.innerHTML = /*html*/ `
 <form data-new-task>
     <div class="row">
         <div>
@@ -19,11 +19,10 @@ taskForm.innerHTML = /*html*/`
         </div>
         <button type="submit">Add</button>
     </div>
-</form>`
+</form>`;
 
-
-const taskRow = document.createElement('template');
-taskRow.innerHTML = /*html*/`
+const taskRow = document.createElement("template");
+taskRow.innerHTML = /*html*/ `
 <li data-exid="" class="task-item" >
         <input type="checkbox" name="complete" class="task-item__complete">
         <div class="task-item__content">
@@ -40,98 +39,102 @@ taskRow.innerHTML = /*html*/`
             <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><span data-icon>&RightTriangle;</span></button>
             <button name="stop" class="pulseOpacity" data-state="started" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><span data-icon>&square;</span></button>
         </span>
-</li>`
+</li>`;
 
 class TaskList extends HTMLElement {
-    constructor() {
-        super();
-        //implementation
-        this.classList.add('stack');
-        // TODO cleaner feature handling
-        if(this.getAttribute("features")?.includes("add") ) {
-            this.appendChild(newtemplateItem(taskForm));
-        }
-        this.appendChild(newtemplateItem(template));
-        this.elTotals = this.querySelector('[data-task-totals]');
-        
-        const that = this;
-        if(this.getAttribute("features")?.includes("add")){
-            this.newTaskForm = this.querySelector('[data-new-task]');
-            this.newTaskForm.addEventListener("submit", function addTask(ev){
-                ev.preventDefault();
-                const elTaskRaw = ev.target.elements.taskRaw
-                emitEvent(that, "addTask", {
-                    raw: elTaskRaw.value
-                });
-                elTaskRaw.value = ""
-            });
-        }
-        this.addEventListener("change", function toggleTaskSynced(ev) {
-            switch (ev.target.name) {
-                case 'synced':
-                    emitEvent(that, "taskSyncChanged", {
-                        exid: ev.target.closest('li').querySelector('[data-task]').innerText,
-                        synced: ev.target.checked
-                    })
-                    break;
-                case 'complete':
-                    emitEvent(that, "taskComplete", {
-                        exid: ev.target.closest('li').querySelector('[data-task]').innerText,
-                        complete: ev.target.checked
-                    })
-                    break;
-            }
+  constructor() {
+    super();
+    //implementation
+    this.classList.add("stack");
+    // TODO cleaner feature handling
+    if (this.getAttribute("features")?.includes("add")) {
+      this.appendChild(newtemplateItem(taskForm));
+    }
+    this.appendChild(newtemplateItem(template));
+    this.elTotals = this.querySelector("[data-task-totals]");
+
+    const that = this;
+    if (this.getAttribute("features")?.includes("add")) {
+      this.newTaskForm = this.querySelector("[data-new-task]");
+      this.newTaskForm.addEventListener("submit", function addTask(ev) {
+        ev.preventDefault();
+        const elTaskRaw = ev.target.elements.taskRaw;
+        emitEvent(that, "addTask", {
+          raw: elTaskRaw.value,
         });
+        elTaskRaw.value = "";
+      });
+    }
+    this.addEventListener("change", function toggleTaskSynced(ev) {
+      switch (ev.target.name) {
+        case "synced":
+          emitEvent(that, "taskSyncChanged", {
+            exid: ev.target.closest("li").querySelector("[data-task]")
+              .innerText,
+            synced: ev.target.checked,
+          });
+          break;
+        case "complete":
+          emitEvent(that, "taskComplete", {
+            exid: ev.target.closest("li").querySelector("[data-task]")
+              .innerText,
+            complete: ev.target.checked,
+          });
+          break;
+      }
+    });
 
-        this.addEventListener("click", function handleArchiveAction(ev) {
-            if(ev.target.closest("button")) {
-                const btn = ev.target.closest("button")
-                emitEvent(that, btn.name + "Task", {
-                    exid: btn.closest('[data-exid]').dataset.exid
-                });
-                return false;
-            }
+    this.addEventListener("click", function handleArchiveAction(ev) {
+      if (ev.target.closest("button")) {
+        const btn = ev.target.closest("button");
+        emitEvent(that, btn.name + "Task", {
+          exid: btn.closest("[data-exid]").dataset.exid,
         });
+        return false;
+      }
+    });
+  }
 
-        
+  update(state) {
+    this.renderTasks(state);
+  }
+
+  renderTasks({ tasks = [] }) {
+    const elTotals = this.elTotals;
+    elTotals.innerHTML = "";
+    let toRender = tasks.filter((x) => x.exid);
+
+    toRender = toRender.sort(sortByMostRecentEntry);
+
+    for (let {
+      exid,
+      client = "",
+      timingState = "stop",
+      description = "",
+      total = 0,
+      synced = false,
+      complete = false,
+    } of toRender) {
+      const item = newtemplateItem(taskRow);
+      item.dataset.exid = exid;
+      item.querySelector('[name="complete"]').checked = complete;
+      item.querySelector("[data-task]").innerText = exid;
+      item.querySelector("[data-client]").innerText = client;
+      const elDesc = item.querySelector("[data-description]");
+      elDesc.innerText = description;
+      if (description.length == 0) elDesc.remove();
+      const hasActions = this.getAttribute("features")?.includes("actions");
+      item.querySelector("[data-actions]").hidden = !hasActions;
+      if (hasActions) {
+        item.querySelector('[name="taskTotal"]').value = total;
+        item.querySelector('[name="synced"]').checked = synced;
+
+        item.querySelector('[name="start"]').hidden = "start" == timingState;
+        item.querySelector('[name="stop"]').hidden = "stop" == timingState;
+      }
+      elTotals.append(item);
     }
-
-  
-
-    update(state) {
-        this.renderTasks(state);
-    }
-
-    renderTasks({ tasks = [] }) {
-        const elTotals = this.elTotals;
-        elTotals.innerHTML = '';
-        let toRender = tasks.filter(x => x.exid);
-
-        toRender = toRender.sort(sortByMostRecentEntry);
-
-        for (let {exid, client= "", timingState="stop", description="", total = 0, synced = false, complete = false} of toRender) {
-            
-            const item = newtemplateItem(taskRow);
-            item.dataset.exid = exid
-            item.querySelector('[name="complete"]').checked = complete
-            item.querySelector('[data-task]').innerText = exid;
-            item.querySelector('[data-client]').innerText = client;
-            const elDesc = item.querySelector('[data-description]');
-            elDesc.innerText = description;
-            if(description.length == 0) elDesc.remove();
-            const hasActions = this.getAttribute("features")?.includes("actions");
-            item.querySelector('[data-actions]').hidden = !hasActions
-            if(hasActions) {
-                item.querySelector('[name="taskTotal"]').value = total;
-                item.querySelector('[name="synced"]').checked = synced
-
-                item.querySelector('[name="start"]').hidden = "start" == timingState
-                item.querySelector('[name="stop"]').hidden =  "stop" == timingState
-            }
-            elTotals.append(item);
-        }
-    }
-
+  }
 }
 
-window.customElements.define('task-list', TaskList);
+window.customElements.define("task-list", TaskList);
