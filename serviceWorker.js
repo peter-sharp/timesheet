@@ -1,4 +1,4 @@
-const VERSION = "0.0.4.c";
+const VERSION = "0.0.5";
 
 const assets = [
   "./",
@@ -15,6 +15,7 @@ const assets = [
   "./timesheetStore.js",
   "./archive/archive.js",
   "./archive/timesheet-archive.js",
+  "./archive/task-archive.js",
   "./utils/apply.js",
   "./utils/calcDuration.js",
   "./utils/emitEvent.js",
