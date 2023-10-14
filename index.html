@@ -12,7 +12,6 @@
 </head>
 
 <body class="wrapper stack">
-    <h1 class="wrapper__inner">Timesheet</h1>
 
     <hash-router default="tasks">
         <section class="wrapper__inner" id="tasks">
@@ -94,25 +93,30 @@
             <sync-status></sync-status>
         </section>
     </hash-router>
-    <nav class="fixed-nav app-menu">
-        <hash-nav>
-            <ul class="wrapper__inner unstyled-list row">
-                <li><a href="#tasks">Tasks</a></li>
-                <li><a href="#time-entries">Time entries</a></li>
-                <li><output name="currentTask"></output></li>
-                <li>
-                    <details class="popup-menu">
-                        <summary>...</summary>
-                        <ul class="unstyled-list stack popup-menu__body" style="--gap: 0.2em">
-                            <li><a href="#archive">Archive</a></li>
-                            <li><a href="#settings">Settings</a></li>
-                            <li><a href="#sync">Sync</a></li>
-                        </ul>
-                    </details>
-                </li>
-            </ul>
-        </hash-nav>
-    </nav>
+    <footer class="fixed-footer app-footer">
+        <div class="wrapper__inner row padding-y-1" style="--align: center">
+        <h1 class="h4 margin-0">Timesheet</h1>
+        <nav>
+            <hash-nav>
+                <ul class=" unstyled-list row">
+                    <li><a href="#tasks">Tasks</a></li>
+                    <li><a href="#time-entries">Time entries</a></li>
+                    <li><output name="currentTask"></output></li>
+                    <li>
+                        <details class="popup-menu">
+                            <summary>...</summary>
+                            <ul class="unstyled-list stack popup-menu__body" style="--gap: 0.2em">
+                                <li><a href="#archive">Archive</a></li>
+                                <li><a href="#settings">Settings</a></li>
+                                <li><a href="#sync">Sync</a></li>
+                            </ul>
+                        </details>
+                    </li>
+                </ul>
+            </hash-nav>
+        </nav>
+    </div>
+    </footer>
     <div class="fixed-nav-placeholder"></div>
 
     
