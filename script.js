@@ -140,7 +140,7 @@ import  reduceDuration  from "./utils/reduceDuration.js";
                         state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, timingState: "stop"} : x);
                         break;
                     case "addTask":
-                        const [exid, client, description] = extract([/#(\w+)/, /client:(\w+)/], ev.raw);
+                        const [exid = Date.now(), client, description] = extract([/#(\w+)/, /client:(\w+)/], ev.raw);
                         // mostRecentEntry to ensure new tasks are at the top
                         state.tasks = [...state.tasks, { exid, client, description, id: Date.now(), mostRecentEntry: new Date()}]
                         break;
@@ -179,7 +179,7 @@ import  reduceDuration  from "./utils/reduceDuration.js";
                         }
                         // state.taskTotals = Object.entries(taskTotals).map(([task, stats]) => ({task, ...stats}));
                         let tasks = [];
-                        const oldTasks = state.tasks.map(x => x.exid ? x : { exid: x })
+                        const oldTasks = state.tasks.map(x => typeof x == "string" ? { exid: x, description: x } : x)
                         if(oldTasks.length >= Object.keys(taskTotals).length) {
                             for (const task of oldTasks) {
                                 tasks.push({...task, ...(taskTotals[task.exid] || {})});
