@@ -2,6 +2,7 @@ import newtemplateItem from "../utils/newTemplateItem.js";
 import formatDate from "../utils/formatDate.js";
 import format24hour from "../utils/format24Hour.js";
 import calcDuration from "../utils/calcDuration.js";
+import emitEvent from "../utils/emitEvent.js";
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`
@@ -56,8 +57,7 @@ class TimesheetArchive extends HTMLElement {
         
         elArchiveEntries.addEventListener("click", function handleArchiveAction(ev) {
             if(ev.target.nodeName.toLowerCase() == "button") {
-                model.emit({
-                    type: ev.target.name + "ArchiveEntry",
+                emitEvent(el, ev.target.name + "ArchiveEntry", {
                     id: parseInt(ev.target.closest('[data-id]').dataset.id, 10)
                 })
             }
@@ -65,8 +65,7 @@ class TimesheetArchive extends HTMLElement {
     
         elArchiveEntriesNav.addEventListener("click", function updatePage(ev) {
             if(ev.target.nodeName.toLowerCase() == "button") {
-                model.emit({
-                    type: "updateArchivePage",
+                emitEvent(el, "updateArchivePage", {
                     page: parseInt(ev.target.innerText, 10)
                 })
             }

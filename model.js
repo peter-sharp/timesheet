@@ -4,13 +4,20 @@
  * @param initialState initial state of model
  **/
 export function Model(fns, initialState) {
+    let reducers = fns || [];
     let state = { ...initialState };
+    console.log(initialState, state)
+    const listeners = [];
     function emit(ev) {
-        state = fns.reduce((s, fn) => fn(s, ev), state)
+        state = reducers.reduce((s, fn) => fn(s, ev), state)
         listeners.forEach(fn => fn({ ...state }));
     }
 
-    const listeners = [];
+    function use(fns, initialState) {
+        reducers = [...reducers, ...fns]
+        state = { ...state, ...initialState };
+    }
+
     function listen(fn) {
         listeners.push(fn);
     }
@@ -18,6 +25,7 @@ export function Model(fns, initialState) {
         get state() {
             return {...state}
         },
+        use,
         emit,
         listen
     }
