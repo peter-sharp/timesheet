@@ -122,7 +122,7 @@ label > input {
 }
 
 [name="taskRaw"] {
-  width: 16em;
+  width: 25em;
 }
 
 th + th,
@@ -185,7 +185,6 @@ summary > :where(h1, h2, h3, h4) {
   left: 0;
   position: fixed;
   width: 100vw;
-  height: 3em;
 }
 
 .fixed-footer + .fixed-nav-placeholder {
