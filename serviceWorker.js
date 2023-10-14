@@ -1,4 +1,4 @@
-const VERSION = "0.0.3";
+const VERSION = "0.0.4.a";
 
 const assets = [
   "./",
@@ -15,19 +15,27 @@ const assets = [
   "./timesheetStore.js",
   "./archive/archive.js",
   "./archive/timesheet-archive.js",
+  "./utils/apply.js",
   "./utils/calcDuration.js",
   "./utils/emitEvent.js",
+  "./utils/filter.js",
   "./utils/first.js",
   "./utils/format24Hour.js",
   "./utils/formatDate.js",
   "./utils/formatPrice.js",
   "./utils/getNetIncome.js",
   "./utils/inputsEntered.js",
+  "./utils/isSameWeek.js",
   "./utils/last.js",
   "./utils/newTemplateItem.js",
   "./utils/percentOf.js",
+  "./utils/reduce.js",
+  "./utils/reduceDuration.js",
   "./utils/round1dp.js",
+  "./utils/shallowClone.js",
   "./utils/sortByMostRecentEntry.js",
+  "./utils/subMonth.js",
+  "./utils/subWeek.js",
   "./utils/timeLoop.js",
   "./utils/timeToDate.js",
 ];
