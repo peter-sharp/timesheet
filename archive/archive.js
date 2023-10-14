@@ -1,4 +1,5 @@
 import "./timesheet-archive.js"
+import "./task-archive.js"
 import round1dp from "../utils/round1dp.js";
 import formatPrice from "../utils/formatPrice.js";
 import subWeek from "../utils/subWeek.js";
@@ -32,6 +33,9 @@ export default function archive(el, model) {
                     break;
                 case 'updateArchivePage':
                     state.archiveBrowserPage = ev.page
+                    break;
+                case 'updateArchiveTaskPage':
+                    state.archiveBrowserTaskPage = ev.page
                     break;
                 case 'deleteArchiveEntry':
                     const archive = [];
@@ -126,7 +130,9 @@ export default function archive(el, model) {
 
     const timesheetArchive = el.querySelector('timesheet-archive');
     model.listen(timesheetArchive.update.bind(timesheetArchive));
+
+    const taskArchive = el.querySelector('task-archive');
+    model.listen(taskArchive.update.bind(taskArchive));
     
-    const tasksList = el.querySelector('task-list');
-    model.listen(({ archivedTasks }) => tasksList.update({ tasks: archivedTasks }));
+   
 }

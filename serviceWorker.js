@@ -1,4 +1,4 @@
-const VERSION = "0.0.4.a";
+const VERSION = "0.0.4.c";
 
 const assets = [
   "./",
