@@ -71,6 +71,13 @@ import  reduceDuration  from "./utils/reduceDuration.js";
                             state.newEntry = {};
                             state.tasks = state.tasks.map(x => x.exid == ev.task ? {...x, timingState: "stop"} : x);
                         }
+                        state.entries.sort(function sortByStart(a,b) {
+                            a.start = new Date(a.start);
+                            b.start = new Date(b.start);
+                            if(a.start.getTime() < b.start.getTime()) return -1;
+                            if(a.start.getTime() > b.start.getTime()) return 1;
+                            return 0;
+                        })
                         state.tasks = [...Array.from(state.tasks), { exid: change.task }];
         
                         

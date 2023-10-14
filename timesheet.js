@@ -7,6 +7,7 @@ import round1dp from "./utils/round1dp.js";
 import formatPrice from "./utils/formatPrice.js";
 import format24hour from "./utils/format24Hour.js";
 import emitEvent from "./utils/emitEvent.js";
+import shallowClone from "./utils/shallowClone.js";
 
 
 const template = document.createElement('template');
@@ -139,17 +140,19 @@ class Timesheet extends HTMLElement {
                 if (![newTask,footer].includes(x)) x.remove();
             }
         }
-        
-        for (const entry of state.entries) {
+        const entries = state.entries.map(shallowClone);
+       
+        for (const entry of entries) {
             let row = this.entriesList.querySelector(`[data-id="${entry.id}"]`);
             if (!row) {
                 row = this.newTimeentryRow();
                 row.dataset.id = entry.id
-                if (newTask.nextElementSibling) {
-                    this.entriesList.insertBefore(row, newTask.nextElementSibling);
-                } else {
-                    this.entriesList.append(row);
-                }
+               
+            }
+            if (newTask.nextElementSibling) {
+                this.entriesList.insertBefore(row, newTask.nextElementSibling);
+            } else {
+                this.entriesList.append(row);
             }
             this.renderEntry(row, entry);
             const duration = calcDuration(entry);
