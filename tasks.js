@@ -85,7 +85,7 @@ class TaskList extends HTMLElement {
     });
 
     this.addEventListener("click", function handleArchiveAction(ev) {
-      if (ev.target.closest("button")) {
+      if (ev.target.closest("button") && ev.target.closest("[data-exid]")) {
         const btn = ev.target.closest("button");
         emitEvent(that, btn.name + "Task", {
           exid: btn.closest("[data-exid]").dataset.exid,
