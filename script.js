@@ -241,7 +241,6 @@ import archive from "./archive/archive.js";
                     case "archive":
                         const taskTotals = {};
                         for (const entry of state.entries) {
-        
                             taskTotals[entry.task] = taskTotals[entry.task] || { task: entry.task, total: 0, mostRecentEntry: new Date(0,0,0), synced: true };
                             taskTotals[entry.task].total += calcDuration(entry);
                             if(!entry.synced) taskTotals[entry.task].synced = false;
@@ -261,11 +260,9 @@ import archive from "./archive/archive.js";
                             }
                         }
 
-                        
                         // merging values
                         const tasksByExid = tasks.reduce((xs, x) => ({...xs, [x.exid]: {...(xs[x.exid] || []), ...x}}), {});
-                        tasks = Object.values(tasksByExid)
-                       
+                        tasks = Object.values(tasksByExid);
                         state.tasks = tasks;
                         break;
                 }
@@ -311,7 +308,6 @@ import archive from "./archive/archive.js";
         await store.read()
     )
 
-    
     const timeSheet = document.querySelector('time-sheet');
     model.listen(timeSheet.update.bind(timeSheet));
 
