@@ -9,6 +9,26 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+button {
+  background-color: #000;
+  border: solid #000 1px;
+  border-radius: 0.6em;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.6em 0.9em;
+  position: relative;
+  transition: all 0.2s;
+}
+
+button:hover,
+button:focus {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+button:active {
+  background-color: rgba(0, 0, 0, 0.5);
+  top: 1px;
+}
 
 span,
 input,
