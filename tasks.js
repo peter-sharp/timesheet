@@ -1,6 +1,8 @@
 import newtemplateItem from "./utils/newTemplateItem.js";
 import emitEvent from "./utils/emitEvent.js";
 import sortByMostRecentEntry from "./utils/sortByMostRecentEntry.js";
+import timeLoop from "./utils/timeLoop.js";
+import calcDuration from "./utils/calcDuration.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/ `
@@ -54,6 +56,10 @@ class TaskList extends HTMLElement {
     this.elTotals = this.querySelector("[data-task-totals]");
 
     const that = this;
+    timeLoop(1000, () => {
+        this.renderNewTaskDuration(this.state);
+    })
+
     if (this.getAttribute("features")?.includes("add")) {
       this.newTaskForm = this.querySelector("[data-new-task]");
       this.newTaskForm.addEventListener("submit", function addTask(ev) {
@@ -97,6 +103,7 @@ class TaskList extends HTMLElement {
 
   update(state) {
     this.renderTasks(state);
+    this.state = state;
   }
 
   renderTasks({ tasks = [] }) {
@@ -126,6 +133,7 @@ class TaskList extends HTMLElement {
       const hasActions = this.getAttribute("features")?.includes("actions");
       item.querySelector("[data-actions]").hidden = !hasActions;
       if (hasActions) {
+        item.dataset.timingState = timingState
         item.querySelector('[name="taskTotal"]').value = total;
         item.querySelector('[name="synced"]').checked = synced;
 
@@ -134,6 +142,19 @@ class TaskList extends HTMLElement {
       }
       elTotals.append(item);
     }
+  }
+
+  renderNewTaskDuration({ newEntry, tasks = [] } = {}) {
+    if(!newEntry || !tasks.length) return;
+    const activeTaskEl = this.elTotals.querySelector('[data-timing-state="start"]');
+    if(!activeTaskEl) return;
+    const {start} = newEntry
+    const exid = activeTaskEl.dataset.exid;
+    const {total = 0} = tasks.find(x => x.exid == exid)
+    const duration = total + calcDuration({ start, end: new Date() });
+    const elDuration = activeTaskEl.querySelector('[name="taskTotal"]'); 
+    elDuration.value = duration;
+    elDuration.dataset.state = duration > 0 ? "started" : "stopped";
   }
 }
 
