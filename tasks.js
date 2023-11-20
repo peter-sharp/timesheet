@@ -136,7 +136,8 @@ class TaskList extends HTMLElement {
         item.dataset.timingState = timingState
         item.querySelector('[name="taskTotal"]').value = total;
         item.querySelector('[name="synced"]').checked = synced;
-
+        
+        item.querySelector('[name="taskTotal"]').classList.toggle("pulseOpacity", "start" == timingState);
         item.querySelector('[name="start"]').hidden = "start" == timingState;
         item.querySelector('[name="stop"]').hidden = "stop" == timingState;
       }
