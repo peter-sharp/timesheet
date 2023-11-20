@@ -261,6 +261,10 @@ button[data-style="subtle"]:hover {
     background-color: rgba(255,255,255, 0.5);
     color: rgba(0,0,0, 0.5)
 }
+
+button[data-state="started"] {
+  border-color: #fff;
+}
 .pagination ol {
     display: flex;
     flex-direction: row;
