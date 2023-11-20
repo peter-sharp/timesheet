@@ -1,10 +1,11 @@
-const VERSION = "0.0.5";
+const VERSION = "0.0.6";
 
 const assets = [
   "./",
   "./style.css",
   "./script.js",
   "./favicon.ico",
+  "./icon.svg",
   "./hash-nav.js",
   "./hash-router.js",
   "./model.js",
