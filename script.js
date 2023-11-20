@@ -5,7 +5,7 @@ import  "./hash-router.js";
 import  "./hash-nav.js";
 import  "./sync-status.js";
 import timeLoop from "./utils/timeLoop.js";
-import calcDuration from "./utils/calcDuration.js";
+import calcDuration, { toFixedFloat } from "./utils/calcDuration.js";
 
 import first from "./utils/first.js";
 import last from "./utils/last.js";
@@ -302,7 +302,7 @@ function renderTabTitle({ newEntry = {}, currentTask = {} }) {
 
     if(newEntry.task) info.push(newEntry.task);
 
-    if(newEntry.start) info.push(calcDuration({ start: newEntry.start, end: new Date() }) + (currentTask?.total || 0));
+    if(newEntry.start) info.push(toFixedFloat(calcDuration({ start: newEntry.start, end: new Date() }) + (currentTask?.total || 0)));
 
     document.title = info.length ? `${info.join(' ')} | ${title}` : title;
 }
@@ -313,7 +313,7 @@ function renderCurrentTask(outputCurrentTask, { newEntry, currentTask }) {
 
     if(newEntry.task) info.push(newEntry.task);
 
-    if(newEntry.start) info.push(calcDuration({ start: newEntry.start, end: new Date() }) + (currentTask?.total || 0));
+    if(newEntry.start) info.push(toFixedFloat(calcDuration({ start: newEntry.start, end: new Date() }) + (currentTask?.total || 0)));
 
     outputCurrentTask.value = info.length ? info.join(' ') : '';
 }

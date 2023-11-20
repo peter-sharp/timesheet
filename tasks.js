@@ -2,7 +2,7 @@ import newtemplateItem from "./utils/newTemplateItem.js";
 import emitEvent from "./utils/emitEvent.js";
 import sortByMostRecentEntry from "./utils/sortByMostRecentEntry.js";
 import timeLoop from "./utils/timeLoop.js";
-import calcDuration from "./utils/calcDuration.js";
+import calcDuration, { toFixedFloat } from "./utils/calcDuration.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/ `
@@ -144,14 +144,13 @@ class TaskList extends HTMLElement {
     }
   }
 
-  renderNewTaskDuration({ newEntry, tasks = [] } = {}) {
-    if(!newEntry || !tasks.length) return;
+  renderNewTaskDuration({ newEntry, currentTask } = {}) {
+    if(!newEntry || !currentTask) return;
     const activeTaskEl = this.elTotals.querySelector('[data-timing-state="start"]');
     if(!activeTaskEl) return;
-    const {start} = newEntry
-    const exid = activeTaskEl.dataset.exid;
-    const {total = 0} = tasks.find(x => x.exid == exid)
-    const duration = total + calcDuration({ start, end: new Date() });
+    const {start} = newEntry;
+    const {total = 0} = currentTask
+    const duration = toFixedFloat(total + calcDuration({ start, end: new Date() }));
     const elDuration = activeTaskEl.querySelector('[name="taskTotal"]'); 
     elDuration.value = duration;
     elDuration.dataset.state = duration > 0 ? "started" : "stopped";
