@@ -44,7 +44,8 @@ const store = Store(
         archive: [],
         tasks: new Set(),
         settings: {
-            color: "#112233"
+            color: "#112233",
+            focusInterval: 0.4
         },
         stats: {},
     }

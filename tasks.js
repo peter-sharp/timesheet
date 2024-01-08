@@ -39,7 +39,7 @@ taskRow.innerHTML = /*html*/ `
             <label class="task-item__synced-label">Synced <input type="checkbox" name="synced"></label>
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button>
             <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><span data-icon>&RightTriangle;</span></button>
-            <button name="stop" class="pulseOpacity" data-state="started" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><span data-icon>&square;</span></button>
+            <button name="stop" class="pulseOpacity" data-state="started" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><span data-icon>&square;</span><pie-progress></pie-progress></pie-progress></button>
         </span>
 </li>`;
 
@@ -57,7 +57,23 @@ class TaskList extends HTMLElement {
 
     const that = this;
     timeLoop(1000, () => {
-        this.renderNewTaskDuration(this.state);
+      let { newEntry, currentTask, settings } = (this.state || {});
+      if(!newEntry || !currentTask) return;
+      const activeTaskEl = this.elTotals.querySelector('[data-timing-state="start"]');
+      if(!activeTaskEl) return;
+      const {focusInterval} = settings;
+      const {start} = newEntry;
+      const {total = 0} = currentTask;
+      const duration = calcDuration({ start, end: new Date() });
+      if(duration > focusInterval) {
+        emitEvent(that, "stopTask", {
+          exid: activeTaskEl.closest("[data-exid]").dataset.exid,
+        });
+      }
+
+      const taskTotal = toFixedFloat(total + duration);
+
+      this.renderNewTaskDuration(activeTaskEl, { duration, taskTotal, focusInterval});
     })
 
     if (this.getAttribute("features")?.includes("add")) {
@@ -145,16 +161,15 @@ class TaskList extends HTMLElement {
     }
   }
 
-  renderNewTaskDuration({ newEntry, currentTask } = {}) {
-    if(!newEntry || !currentTask) return;
-    const activeTaskEl = this.elTotals.querySelector('[data-timing-state="start"]');
-    if(!activeTaskEl) return;
-    const {start} = newEntry;
-    const {total = 0} = currentTask
-    const duration = toFixedFloat(total + calcDuration({ start, end: new Date() }));
-    const elDuration = activeTaskEl.querySelector('[name="taskTotal"]'); 
-    elDuration.value = duration;
-    elDuration.dataset.state = duration > 0 ? "started" : "stopped";
+  renderNewTaskDuration(el, { duration, taskTotal, focusInterval } = {}) {
+
+
+    
+    const pieProgress = el.querySelector('pie-progress'); 
+    pieProgress.setAttribute("percent", duration / focusInterval); 
+    const elDuration = el.querySelector('[name="taskTotal"]'); 
+    elDuration.value = taskTotal;
+    elDuration.dataset.state = taskTotal > 0 ? "started" : "stopped";
   }
 }
 

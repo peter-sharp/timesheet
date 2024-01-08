@@ -4,6 +4,7 @@ import  "./tasks.js";
 import  "./hash-router.js";
 import  "./hash-nav.js";
 import  "./sync-status.js";
+import "./pie-progress.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { toFixedFloat } from "./utils/calcDuration.js";
 

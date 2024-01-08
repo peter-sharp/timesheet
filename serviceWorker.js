@@ -1,4 +1,4 @@
-const VERSION = "0.0.7";
+const VERSION = "0.0.8";
 
 const assets = [
   "./",
@@ -11,6 +11,7 @@ const assets = [
   "./model.js",
   "./store.js",
   "./sync-status.js",
+  "./pie-progress.js",
   "./tasks.js",
   "./timesheet.js",
   "./timesheetStore.js",
