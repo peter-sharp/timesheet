@@ -3,6 +3,10 @@
 }
 html {font-size: 112.5%;} /*18px*/
 
+html, body {
+  min-height: calc(100% - 4em);
+}
+
 body {
   background-color: var(--theme-color, #123);
   background: linear-gradient(transparent, hsla(220,50%,50%, 0.6) ), var(--theme-color, #123);
