@@ -1,9 +1,9 @@
-import getNetIncome from "./utils/getNetIncome.js";
-import calcDuration from "./utils/calcDuration.js";
-import round1dp from "./utils/round1dp.js";
-import formatPrice from "./utils/formatPrice.js";
-import format24hour from "./utils/format24Hour.js";
-import emitEvent from "./utils/emitEvent.js";
+import getNetIncome from "../utils/getNetIncome.js";
+import calcDuration from "../utils/calcDuration.js";
+import round1dp from "../utils/round1dp.js";
+import formatPrice from "../utils/formatPrice.js";
+import format24hour from "../utils/format24Hour.js";
+import emitEvent from "../utils/emitEvent.js";
 
 const timeentires = document.createElement('template');
 timeentires.innerHTML = /*html*/`<form class="wrapper__inner">

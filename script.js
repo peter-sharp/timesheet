@@ -3,7 +3,7 @@ import  "./timesheet.js";
 import  "./tasks.js";
 import  "./hash-router.js";
 import  "./hash-nav.js";
-import  "./sync-status.js";
+
 import "./pie-progress.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { toFixedFloat } from "./utils/calcDuration.js";
@@ -12,6 +12,7 @@ import first from "./utils/first.js";
 import last from "./utils/last.js";
 import store from "./timesheetStore.js";
 import archive from "./archive/archive.js";
+import sync from "./sync/sync.js";
 import reduce from "./utils/reduce.js";
 import  reduceDuration  from "./utils/reduceDuration.js";
 
@@ -253,10 +254,7 @@ import  reduceDuration  from "./utils/reduceDuration.js";
     const tasksList = document.querySelector('#tasks task-list');
     model.listen(tasksList.update.bind(tasksList));
 
-    const syncStatus = document.querySelector('sync-status');
-    model.listen(syncStatus.update.bind(syncStatus));
-
-
+    sync(document.getElementById('sync'), model)
     archive(document.getElementById('archive'), model);
     settings(document.getElementById('settings'), model);
    

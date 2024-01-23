@@ -36,7 +36,6 @@ taskRow.innerHTML = /*html*/ `
         <p class="task-item__description" data-description></p>
         </div>
         <span class="task-item__actions row" hidden="hidden" data-actions>
-            <label class="task-item__synced-label">Synced <input type="checkbox" name="synced"></label>
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button>
             <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><span data-icon>&RightTriangle;</span></button>
             <button name="stop" class="pulseOpacity" data-state="started" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><span data-icon>&square;</span><pie-progress></pie-progress></pie-progress></button>
@@ -89,13 +88,7 @@ class TaskList extends HTMLElement {
     }
     this.addEventListener("change", function toggleTaskSynced(ev) {
       switch (ev.target.name) {
-        case "synced":
-          emitEvent(that, "taskSyncChanged", {
-            exid: ev.target.closest("li").querySelector("[data-task]")
-              .innerText,
-            synced: ev.target.checked,
-          });
-          break;
+        
         case "complete":
           emitEvent(that, "taskComplete", {
             exid: ev.target.closest("li").querySelector("[data-task]")
@@ -135,7 +128,6 @@ class TaskList extends HTMLElement {
       timingState = "stop",
       description = "",
       total = 0,
-      synced = false,
       complete = false,
     } of toRender) {
       const item = newtemplateItem(taskRow);
@@ -151,7 +143,6 @@ class TaskList extends HTMLElement {
       if (hasActions) {
         item.dataset.timingState = timingState
         item.querySelector('[name="taskTotal"]').value = total;
-        item.querySelector('[name="synced"]').checked = synced;
         
         item.querySelector('[name="taskTotal"]').classList.toggle("pulseOpacity", "start" == timingState);
         item.querySelector('[name="start"]').hidden = "start" == timingState;
