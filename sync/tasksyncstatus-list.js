@@ -90,7 +90,7 @@ class TaskSyncStatusList extends HTMLElement {
       
         item.querySelector('[name="synced"]').checked = synced;
         
-        item.querySelector('[name="taskTotal"]')
+        item.querySelector('[name="taskTotal"]').value = total;
       elTotals.append(item);
     }
   }
