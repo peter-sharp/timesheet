@@ -142,7 +142,7 @@ class TaskList extends HTMLElement {
       item.querySelector("[data-actions]").hidden = !hasActions;
       if (hasActions) {
         item.dataset.timingState = timingState
-        item.querySelector('[name="taskTotal"]').value = total;
+        item.querySelector('[name="taskTotal"]').value = toFixedFloat(total);
         
         item.querySelector('[name="taskTotal"]').classList.toggle("pulseOpacity", "start" == timingState);
         item.querySelector('[name="start"]').hidden = "start" == timingState;

@@ -1,6 +1,7 @@
 import newtemplateItem from "../utils/newTemplateItem.js";
 import emitEvent from "../utils/emitEvent.js";
 import sortByMostRecentEntry from "../utils/sortByMostRecentEntry.js";
+import { toFixedFloat } from "../utils/calcDuration.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/ `
@@ -90,7 +91,7 @@ class TaskSyncStatusList extends HTMLElement {
       
         item.querySelector('[name="synced"]').checked = synced;
         
-        item.querySelector('[name="taskTotal"]').value = total;
+        item.querySelector('[name="taskTotal"]').value =  toFixedFloat(total);
       elTotals.append(item);
     }
   }
