@@ -3,6 +3,7 @@ import emitEvent from "./utils/emitEvent.js";
 import sortByMostRecentEntry from "./utils/sortByMostRecentEntry.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { toFixedFloat } from "./utils/calcDuration.js";
+import { playTripleBeep } from "./media.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/ `
@@ -55,6 +56,7 @@ class TaskList extends HTMLElement {
     this.elTotals = this.querySelector("[data-task-totals]");
 
     const that = this;
+    
     timeLoop(1000, () => {
       let { newEntry, currentTask, settings } = (this.state || {});
       if(!newEntry || !currentTask) return;
@@ -65,6 +67,8 @@ class TaskList extends HTMLElement {
       const {total = 0} = currentTask;
       const duration = calcDuration({ start, end: new Date() });
       if(duration > focusInterval) {
+        // FIXME should use unique event
+        playTripleBeep()
         emitEvent(that, "stopTask", {
           exid: activeTaskEl.closest("[data-exid]").dataset.exid,
         });

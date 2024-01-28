@@ -1,4 +1,4 @@
-const VERSION = "0.1.0";
+const VERSION = "0.1.1";
 
 const assets = [
   "./",
@@ -12,6 +12,7 @@ const assets = [
   "./hash-nav.js",
   "./hash-router.js",
   "./model.js",
+  "./media.js",
   "./store.js",
   "./sync/sync.js",
   "./sync/tasksyncstatus-list.js",
