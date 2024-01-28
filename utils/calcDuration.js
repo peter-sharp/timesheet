@@ -4,9 +4,9 @@ export default function calcDuration({ start, end }) {
 
 export function formatDurationDecimal(duration) {
     const HOUR = 60 * 60 * 1000;
-    return toFixedFloat(Math.ceil((duration / HOUR) * 10) / 10)
+    return toFixedFloat(Math.ceil((duration / HOUR) * 1000) / 1000)
 }
 
 export function toFixedFloat(x) {
-    return parseFloat(x.toFixed(2))
+    return parseFloat(x.toFixed(3))
 }
