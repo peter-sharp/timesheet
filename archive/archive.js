@@ -23,7 +23,23 @@ export default function archive(el, model) {
                         if(a.start < b.start) return 1;
                         return 0;
                     });
-                    state.archivedTasks = [...state.tasks.map(shallowClone), ...(state.archivedTasks || [])];
+
+                    const tasksToArchive = [...state.tasks, ...(state.archivedTasks || [])]
+                  
+                    tasksToArchive.sort(function byMostRecentEntryAsc(a,b){
+                        if(a.mostRecentEntry < b.mostRecentEntry) return -1;
+                        if(a.mostRecentEntry > b.mostRecentEntry) return 1;
+                        return 0;
+                    });
+                    const archivedTasks = {};
+                    for (const task of tasksToArchive) {
+                        if(!(task.exid in archivedTasks)) {
+                            archivedTasks[task.exid] = { history: []};
+                        }
+
+                        archivedTasks[task.exid] = {...task, history: [{...task}, ...archivedTasks[task.exid].history]}
+                    }
+                    state.archivedTasks = Object.values(archivedTasks)
                     state.tasks = [];
                     state.entries = [];
                     break;
