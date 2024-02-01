@@ -1,1 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14"><title>pause</title><text y=".85em" font-size="14" x="-0.2em">⏸️</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
+<title>pause</title>
+<rect 
+       x="2"
+       y="2"
+       width="3"
+        height="10"
+        style="stroke: currentColor; fill: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2"
+        />
+<rect 
+       x="10"
+       y="2"
+       width="3"
+        height="10"
+        style="stroke: currentColor; fill: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2"
+        />
+</svg>
