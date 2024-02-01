@@ -53,7 +53,7 @@ entryRow.innerHTML = /*html*/`
     <td><input type="time" name="time_start"></td>
     <td><input type="time" name="time_end"></td>
     <td><output name="duration"></output></td>
-    <td><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span>&times;</button></td>
+    <td><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button></td>
 </tr>`
 
 class Timesheet extends HTMLElement {
