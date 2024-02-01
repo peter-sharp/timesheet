@@ -27,7 +27,7 @@ taskForm.innerHTML = /*html*/ `
 
 const taskRow = document.createElement("template");
 taskRow.innerHTML = /*html*/ `
-<li data-exid="" class="task-item" >
+<li data-exid="" class="task-item context-reveal" >
         <input type="checkbox" name="complete" class="task-item__complete">
         <div class="task-item__content">
         <p class="task-item__details">
@@ -37,7 +37,7 @@ taskRow.innerHTML = /*html*/ `
         </p>
         <p class="task-item__description" data-description></p>
         </div>
-        <span class="task-item__actions row" hidden="hidden" data-actions>
+        <span class="task-item__actions row context-reveal__item" hidden="hidden" data-actions>
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button>
             <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><svg width=16 height=16><title>play</title><use href="#icon-play"></use></svg></button>
             <button name="stop" class="pulseOpacity" data-state="started" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><svg width=16 height=16><title>pause</title><use href="#icon-pause"></use></svg><pie-progress></pie-progress></pie-progress></button>
@@ -160,7 +160,7 @@ class TaskList extends HTMLElement {
   renderNewTaskDuration(el, { duration, taskTotal, focusInterval } = {}) {
 
 
-    
+    el.dataset.state = taskTotal > 0 ? "active" : "inactive";
     const pieProgress = el.querySelector('pie-progress'); 
     pieProgress.setAttribute("percent", duration / focusInterval); 
     const elDuration = el.querySelector('[name="taskTotal"]'); 

@@ -340,7 +340,19 @@ button[data-state="started"] {
   font-size: 0.6em;
 }
 
+.context-reveal__item {
+  transition: opacity 600ms ease;
+  opacity: 0;
+}
 
+.context-reveal:where(:hover,:focus-within, :target, [data-state="active"]) {
+  outline: 1px solid hsla(0,0%,100%, 0.3);
+  outline-offset: 0.4em;
+}
+
+.context-reveal:where(:hover,:focus-within, :target, [data-state="active"]) .context-reveal__item {
+  opacity: 1;
+}
 
 .task-item__content > *:first-child:not(:only-child) {
   font-size: 0.6em;
