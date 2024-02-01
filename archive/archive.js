@@ -40,6 +40,11 @@ export default function archive(el, model) {
                         archivedTasks[task.exid] = {...task, history: [{...task}, ...archivedTasks[task.exid].history]}
                     }
                     state.archivedTasks = Object.values(archivedTasks)
+                    state.archivedTasks.sort(function byMostRecentEntryDesc(a,b){
+                        if(a.mostRecentEntry > b.mostRecentEntry) return -1;
+                        if(a.mostRecentEntry < b.mostRecentEntry) return 1;
+                        return 0;
+                    });
                     state.tasks = [];
                     state.entries = [];
                     break;
