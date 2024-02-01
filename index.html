@@ -8,6 +8,7 @@
     <title>Timesheet</title>
     <link rel="stylesheet" href="./style.css" />
     <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏲️</text></svg>" />
+    
 </head>
 
 <body class="wrapper stack">
@@ -135,7 +136,40 @@
             </ul>
         </nav>
     </template>
-
+    <svg>
+        <symbol id="icon-close"  viewBox="0 0 16 16">
+            <polyline 
+                    points="2 2, 14 14" 
+                    style="fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"
+                    />
+            <polyline 
+                    points="2 14, 14 2" 
+                    style="fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"
+                    />
+        </symbol>
+        <symbol id="icon-play"  viewBox="0 0 16 16">
+            <polyline 
+        points="2,1 14,8 2,15 2,1" 
+        style="fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"
+        />
+        </symbol>
+        <symbol id="icon-pause"  viewBox="0 0 16 16">
+            <rect 
+                x="2"
+                y="2"
+                width="3"
+                height="12"
+                style="fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"
+                />
+            <rect 
+                    x="10"
+                    y="2"
+                    width="3"
+                    height="12"
+                    style="fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"
+                    />
+        </symbol>
+    </svg>
 
     
     <script type="module" src="./script.js"></script>

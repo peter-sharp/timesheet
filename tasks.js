@@ -38,9 +38,9 @@ taskRow.innerHTML = /*html*/ `
         <p class="task-item__description" data-description></p>
         </div>
         <span class="task-item__actions row" hidden="hidden" data-actions>
-            <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><img src="./delete.svg" alt="delete" width=16 height=16></button>
-            <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><img src="./play.svg" alt="play" width=16 height=16></button>
-            <button name="stop" class="pulseOpacity" data-state="started" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><img src="./pause.svg" alt="pause" width=16 height=16><pie-progress></pie-progress></pie-progress></button>
+            <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button>
+            <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><svg width=16 height=16><title>play</title><use href="#icon-play"></use></svg></button>
+            <button name="stop" class="pulseOpacity" data-state="started" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><svg width=16 height=16><title>pause</title><use href="#icon-pause"></use></svg><pie-progress></pie-progress></pie-progress></button>
         </span>
 </li>`;
 
