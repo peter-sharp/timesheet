@@ -16,7 +16,7 @@ const taskForm = document.createElement("template");
 taskForm.innerHTML = /*html*/ `
 <form data-new-task>
     <div class="row">
-        <div>
+        <div class="input-group row__col-2">
             <label for="newTask">Task</label>
             <input id="newTask" type="text" name="taskRaw">
           </div>

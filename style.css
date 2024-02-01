@@ -298,7 +298,9 @@ button[data-state="started"] {
   gap: 1em;
   align-items: var(--align, end);
 }
-
+.row__col-2 {
+  flex-grow: 2;
+}
 
 .tasks {
   max-width: 100%;
