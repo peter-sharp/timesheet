@@ -19,6 +19,7 @@ taskForm.innerHTML = /*html*/ `
         <div>
             <label for="newTask">Task</label>
             <input id="newTask" type="text" name="taskRaw">
+            <p>#TASKNO description client:Client</p>
         </div>
         <button type="submit">Add</button>
     </div>
