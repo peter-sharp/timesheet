@@ -1,9 +1,15 @@
 :root {
   --space-1: 0.2rem; 
 }
-html {font-size: 112.5%;} /*18px*/
+html {
+  font-size: 112.5%;
+  width: 100%;
+  min-height: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+} /*18px*/
 
-html, body {
+ body {
   min-height: calc(100% - 4em);
 }
 
@@ -132,8 +138,8 @@ label > input {
   max-width: 5em;
 }
 
-[name="taskRaw"] {
-  width: 25em;
+.input-group > input {
+  width: 100%;
 }
 
 th + th,
@@ -195,7 +201,7 @@ summary > :where(h1, h2, h3, h4) {
   bottom: 0;
   left: 0;
   position: fixed;
-  width: 100vw;
+  right: 0;
 }
 
 .fixed-footer + .fixed-nav-placeholder {

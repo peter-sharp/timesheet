@@ -11,7 +11,7 @@ import shallowClone from "./utils/shallowClone.js";
 
 
 const template = document.createElement('template');
-template.innerHTML = /*html*/`<form class="wrapper__inner" id=timesheet>
+template.innerHTML = /*html*/`<form class="wrapper__inner overflow-x-scroll" id=timesheet>
 <table>
     <thead>
         <tr>
