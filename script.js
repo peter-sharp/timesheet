@@ -191,7 +191,7 @@ import  reduceDuration  from "./utils/reduceDuration.js";
                         const oldTasks = state.tasks.map(x => typeof x == "string" ? { exid: x, description: x } : x)
                         if(oldTasks.length >= Object.keys(taskTotals).length) {
                             for (const task of oldTasks) {
-                                tasks.push({...task, ...(taskTotals[task.exid] || {})});
+                                tasks.push({...task, ...(taskTotals[task.exid] || { total: 0 })});
                             }
                         } else {
                             const tasksByExid = oldTasks.reduce((xs, x) => ({...xs, [x.exid]: x}), {})
