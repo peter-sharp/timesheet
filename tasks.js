@@ -1,3 +1,4 @@
+import "./taskStatus.js";
 import newtemplateItem from "./utils/newTemplateItem.js";
 import emitEvent from "./utils/emitEvent.js";
 import sortByMostRecentEntry from "./utils/sortByMostRecentEntry.js";
@@ -28,7 +29,9 @@ taskForm.innerHTML = /*html*/ `
 const taskRow = document.createElement("template");
 taskRow.innerHTML = /*html*/ `
 <li data-exid="" class="task-item context-reveal" >
-        <input type="checkbox" name="complete" class="task-item__complete">
+        <task-status class="task-item__complete">
+          <input type="checkbox" name="complete" >
+        </task-status>
         <div class="task-item__content">
         <p class="task-item__details">
             <span data-task></span>
@@ -57,19 +60,21 @@ class TaskList extends HTMLElement {
     this.elTotals = this.querySelector("[data-task-totals]");
 
     const that = this;
-    
+
     timeLoop(1000, () => {
-      let { newEntry, currentTask, settings } = (this.state || {});
-      if(!newEntry || !currentTask) return;
-      const activeTaskEl = this.elTotals.querySelector('[data-timing-state="start"]');
-      if(!activeTaskEl) return;
-      const {focusInterval} = settings;
-      const {start} = newEntry;
-      const {total = 0} = currentTask;
+      let { newEntry, currentTask, settings } = this.state || {};
+      if (!newEntry || !currentTask) return;
+      const activeTaskEl = this.elTotals.querySelector(
+        '[data-timing-state="start"]'
+      );
+      if (!activeTaskEl) return;
+      const { focusInterval } = settings;
+      const { start } = newEntry;
+      const { total = 0 } = currentTask;
       const duration = calcDuration({ start, end: new Date() });
-      if(duration > focusInterval) {
+      if (duration > focusInterval) {
         // FIXME should use unique event
-        playTripleBeep()
+        playTripleBeep();
         emitEvent(that, "stopTask", {
           exid: activeTaskEl.closest("[data-exid]").dataset.exid,
         });
@@ -77,8 +82,12 @@ class TaskList extends HTMLElement {
 
       const taskTotal = toFixedFloat(total + duration);
 
-      this.renderNewTaskDuration(activeTaskEl, { duration, taskTotal, focusInterval});
-    })
+      this.renderNewTaskDuration(activeTaskEl, {
+        duration,
+        taskTotal,
+        focusInterval,
+      });
+    });
 
     if (this.getAttribute("features")?.includes("add")) {
       this.newTaskForm = this.querySelector("[data-new-task]");
@@ -91,9 +100,8 @@ class TaskList extends HTMLElement {
         elTaskRaw.value = "";
       });
     }
-    this.addEventListener("change", function toggleTaskSynced(ev) {
+    this.addEventListener("change", function toggleTaskComplete(ev) {
       switch (ev.target.name) {
-        
         case "complete":
           emitEvent(that, "taskComplete", {
             exid: ev.target.closest("li").querySelector("[data-task]")
@@ -122,48 +130,66 @@ class TaskList extends HTMLElement {
 
   renderTasks({ tasks = [] }) {
     const elTotals = this.elTotals;
-    elTotals.innerHTML = "";
+
     let toRender = tasks.filter((x) => x.exid);
 
     toRender = toRender.sort(sortByMostRecentEntry);
 
-    for (let {
+    if (!toRender.length || elTotals.childNodes.length > toRender.length) {
+      for (const x of [...elTotals.childNodes]) {
+        x.remove();
+      }
+    }
+
+    for (let task of toRender) {
+      let item = elTotals.querySelector(`[data-exid="${task.exid}"]`);
+
+      if (!item) {
+        item = newtemplateItem(taskRow);
+        elTotals.append(item);
+      }
+
+      this.renderTask(item, task);
+    }
+  }
+
+  renderTask(
+    item,
+    {
       exid,
       client = "",
       timingState = "stop",
       description = "",
       total = 0,
       complete = false,
-    } of toRender) {
-      const item = newtemplateItem(taskRow);
-      item.dataset.exid = exid;
-      item.querySelector('[name="complete"]').checked = complete;
-      item.querySelector("[data-task]").innerText = exid;
-      item.querySelector("[data-client]").innerText = client;
-      const elDesc = item.querySelector("[data-description]");
-      elDesc.innerText = description;
-      if (description.length == 0) elDesc.remove();
-      const hasActions = this.getAttribute("features")?.includes("actions");
-      item.querySelector("[data-actions]").hidden = !hasActions;
-      if (hasActions) {
-        item.dataset.timingState = timingState
-        item.querySelector('[name="taskTotal"]').value = toFixedFloat(total);
-        
-        item.querySelector('[name="taskTotal"]').classList.toggle("pulseOpacity", "start" == timingState);
-        item.querySelector('[name="start"]').hidden = "start" == timingState;
-        item.querySelector('[name="stop"]').hidden = "stop" == timingState;
-      }
-      elTotals.append(item);
+    }
+  ) {
+    item.dataset.exid = exid;
+    item.querySelector("task-status").checked = complete;
+    item.querySelector("[data-task]").innerText = exid;
+    item.querySelector("[data-client]").innerText = client;
+    const elDesc = item.querySelector("[data-description]");
+    elDesc.innerText = description;
+    elDesc.hidden = description.length == 0;
+    const hasActions = this.getAttribute("features")?.includes("actions");
+    item.querySelector("[data-actions]").hidden = !hasActions;
+    if (hasActions) {
+      item.dataset.timingState = timingState;
+      item.querySelector('[name="taskTotal"]').value = toFixedFloat(total);
+
+      item
+        .querySelector('[name="taskTotal"]')
+        .classList.toggle("pulseOpacity", "start" == timingState);
+      item.querySelector('[name="start"]').hidden = "start" == timingState;
+      item.querySelector('[name="stop"]').hidden = "stop" == timingState;
     }
   }
 
   renderNewTaskDuration(el, { duration, taskTotal, focusInterval } = {}) {
-
-
     el.dataset.state = taskTotal > 0 ? "active" : "inactive";
-    const pieProgress = el.querySelector('pie-progress'); 
-    pieProgress.setAttribute("percent", duration / focusInterval); 
-    const elDuration = el.querySelector('[name="taskTotal"]'); 
+    const pieProgress = el.querySelector("pie-progress");
+    pieProgress.setAttribute("percent", duration / focusInterval);
+    const elDuration = el.querySelector('[name="taskTotal"]');
     elDuration.value = taskTotal;
     elDuration.dataset.state = taskTotal > 0 ? "started" : "stopped";
   }

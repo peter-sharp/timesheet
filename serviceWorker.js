@@ -19,6 +19,7 @@ const assets = [
   "./sync/sync-status.js",
   "./pie-progress.js",
   "./tasks.js",
+  "./taskStatus.js",
   "./timesheet.js",
   "./timesheetStore.js",
   "./archive/archive.js",

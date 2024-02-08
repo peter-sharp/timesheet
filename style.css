@@ -1,5 +1,6 @@
 :root {
   --space-1: 0.2rem; 
+  --color-success: hsl(140deg, 80%, 40%);
 }
 html {
   font-size: 112.5%;
@@ -312,7 +313,7 @@ button[data-state="started"] {
   grid-template-areas:
   ".        content        ." 
   "complete content actions";
-  grid-template-columns: 2rem 1fr min-content;
+  grid-template-columns: 3rem 1fr min-content;
   grid-template-rows: 1fr 1fr;
   gap: 1rem;
 }
