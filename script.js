@@ -80,6 +80,7 @@ import  reduceDuration  from "./utils/reduceDuration.js";
                             if(a.start.getTime() > b.start.getTime()) return 1;
                             return 0;
                         })
+                        state = calculateGaps(state);
                         state.tasks = [...Array.from(state.tasks), { exid: change.task }];
         
                         
@@ -145,6 +146,7 @@ import  reduceDuration  from "./utils/reduceDuration.js";
                             ];
                             state.newEntry = {};
                         }
+                        state = calculateGaps(state);
                         state.currentTask = {};
                         state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, timingState: "stop"} : x);
                         break;
@@ -181,6 +183,8 @@ import  reduceDuration  from "./utils/reduceDuration.js";
                     case "archive":
                         const taskTotals = {};
                         for (const entry of state.entries) {
+
+                            //calc totals
                             taskTotals[entry.task] = taskTotals[entry.task] || { task: entry.task, total: 0, mostRecentEntry: new Date(0,0,0), synced: true };
                             taskTotals[entry.task].total += calcDuration(entry);
                             if(!entry.synced) taskTotals[entry.task].synced = false;
@@ -247,6 +251,18 @@ import  reduceDuration  from "./utils/reduceDuration.js";
         ],
         await store.read()
     )
+    function calculateGaps(state) {
+        //calc gaps
+        state.entries = state.entries.map(function calculateGaps(entry, i, entries){
+            const prevEntry = entries[i - 1];
+            let gap
+            if(prevEntry) {
+                gap = calcDuration({start: prevEntry.end, end: entry.start});
+            }
+            return {...entry, gap};
+        });
+        return state;
+    }
 
     const timeSheet = document.querySelector('time-sheet');
     model.listen(timeSheet.update.bind(timeSheet));

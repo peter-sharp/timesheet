@@ -357,6 +357,10 @@ button[data-state="started"] {
   font-size: 0.6em;
 }
 
+.time-entry td {
+  border-top: min(var(--gap-size, 0), 10em) solid var(--gap-color, #fff);
+}
+
 .pulseOpacity {
   opacity: 0.6;
 }

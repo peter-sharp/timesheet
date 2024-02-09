@@ -125,17 +125,20 @@ class TaskStatus extends HTMLElement {
     static observedAttributes = ["checked"];
 
 
-  
+    constructor() {
+        super();
+        const shadow = this.attachShadow({ mode: "open" });
+        shadow.append(template.content.cloneNode(true));
+    }
     state = {
         checked: false,
         state: "todo",
         id: null
     }
     connectedCallback() {
-        const shadow = this.attachShadow({ mode: "open" });
-        shadow.append(template.content.cloneNode(true));
+       
         this.checkBox = this.querySelector("input");
-        this.replacementCheckbox =  shadow.querySelector("input");
+        this.replacementCheckbox =  this.shadowRoot.querySelector("input");
         this.state.id = this.id || Date.now()
         
       

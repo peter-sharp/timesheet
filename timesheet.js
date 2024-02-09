@@ -47,7 +47,7 @@ template.innerHTML = /*html*/`<form class="wrapper__inner overflow-x-scroll" id=
 
 const entryRow = document.createElement('template');
 entryRow.innerHTML = /*html*/`
-<tr class="context-reveal">
+<tr class="context-reveal time-entry">
     <td><input type="text" name="task" list="prevTasks"></td>
     <td><input type="text" name="annotation"></td>
     <td><input type="time" name="time_start"></td>
@@ -170,6 +170,9 @@ class Timesheet extends HTMLElement {
     }
 
     renderEntry(row, entry) {
+        row.style.setProperty("--gap-color", entry.gap && entry.gap > 0.1 ? "rgba(255, 255, 255, 0.2)" : "transparent");
+        row.style.setProperty("--gap-size", entry.gap && entry.gap > 0.1 ? `${entry.gap}em` : 0);
+
         row.querySelector('[name="task"]').value = entry.task || '';
         row.querySelector('[name="annotation"]').value = entry.annotation || '';
         row.querySelector('[name="time_start"]').value = entry.start ? format24hour(entry.start) : '';
