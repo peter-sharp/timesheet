@@ -358,7 +358,7 @@ button[data-state="started"] {
 }
 
 .time-entry td {
-  border-top: min(var(--gap-size, 0), 10em) solid var(--gap-color, #fff);
+  border-bottom: min(var(--gap-size, 0), 10em) solid var(--gap-color, #fff);
 }
 
 .pulseOpacity {
