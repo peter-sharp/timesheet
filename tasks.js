@@ -173,6 +173,7 @@ class TaskList extends HTMLElement {
     elDesc.hidden = description.length == 0;
     const hasActions = this.getAttribute("features")?.includes("actions");
     item.querySelector("[data-actions]").hidden = !hasActions;
+    item.dataset.state = "start" == timingState ? "active" : "inactive";
     if (hasActions) {
       item.dataset.timingState = timingState;
       item.querySelector('[name="taskTotal"]').value = toFixedFloat(total);
