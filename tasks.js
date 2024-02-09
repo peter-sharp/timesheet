@@ -146,9 +146,9 @@ class TaskList extends HTMLElement {
 
       if (!item) {
         item = newtemplateItem(taskRow);
-        elTotals.append(item);
+        
       }
-
+      elTotals.append(item);
       this.renderTask(item, task);
     }
   }
