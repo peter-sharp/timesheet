@@ -20,10 +20,10 @@ taskForm.innerHTML = /*html*/ `
         <div class="input-group row__col-2">
             <label for="newTask">Task</label>
             <input id="newTask" type="text" name="taskRaw">
-          </div>
-          <button type="submit">Add</button>
         </div>
-        <p>#TASKNO description client:Client</p>
+        <button type="submit">Add</button>
+    </div>
+    <p>#TASKNO description client:Client</p>
 </form>`;
 
 const taskRow = document.createElement("template");
