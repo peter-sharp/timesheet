@@ -21,6 +21,7 @@ archiveTasksPageNavItem.innerHTML = /*html*/`
 
 
 class TaskArchive extends HTMLElement {
+    archivedTasksSearchTerm = ""
     constructor() {
         super();
         this.append(template.content.cloneNode(true));
@@ -42,7 +43,8 @@ class TaskArchive extends HTMLElement {
         this.searchForm.addEventListener("submit", searchArchive);
         function searchArchive(ev) {
             ev.preventDefault();
-            el.render({archivedTasksSearchTerm: el.searchForm.elements.term.value, ...el.state});
+            this.archivedTasksSearchTerm = el.searchForm.elements.term.value
+            el.render({ ...el.state, archivedTasksSearchTerm: this.archivedTasksSearchTerm });
         }
 
         this.tasksList = tasksList;
@@ -50,7 +52,7 @@ class TaskArchive extends HTMLElement {
     }
 
     update(state) {
-        this.render(state);
+        this.render({...state, archivedTasksSearchTerm: this.archivedTasksSearchTerm});
         this.state = state;
     }
     
