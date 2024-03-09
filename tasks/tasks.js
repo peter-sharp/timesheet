@@ -49,8 +49,9 @@ export default function tasks(el, model) {
                     break;
                 case "addTask":
                     const [exid = Date.now(), client, description] = extract([/#(\w+)/, /client:(\w+)/], ev.raw);
+
                     // mostRecentEntry to ensure new tasks are at the top
-                    state.tasks = [...state.tasks, { exid, client, description, id: Date.now(), mostRecentEntry: new Date()}]
+                    state.tasks = [...state.tasks, { exid: ev.exid || exid, client: ev.client || client, description, id: Date.now(), mostRecentEntry: new Date()}]
                     break;
                 case "taskSyncChanged":
                     state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, synced: ev.synced} : x);

@@ -23,7 +23,19 @@ taskForm.innerHTML = /*html*/ `
         </div>
         <button type="submit">Add</button>
     </div>
-    <p>#TASKNO description client:Client</p>
+    <details >
+      <summary>More info</summary>
+      <div class="row">
+        <div class="input-group">
+            <label for="newTask">ID</label>
+            <input id="newTask" type="text" name="exid">
+        </div>
+        <div class="input-group">
+            <label for="newTask">client</label>
+            <input id="newTask" type="text" name="client">
+        </div>
+      </div>
+    </details>
 </form>`;
 
 const taskRow = document.createElement("template");
@@ -88,16 +100,22 @@ class TaskList extends HTMLElement {
         focusInterval,
       });
     });
-
+    // FIXME add form should be a separate web component
     if (this.getAttribute("features")?.includes("add")) {
       this.newTaskForm = this.querySelector("[data-new-task]");
       this.newTaskForm.addEventListener("submit", function addTask(ev) {
         ev.preventDefault();
         const elTaskRaw = ev.target.elements.taskRaw;
+        const elExid = ev.target.elements.exid;
+        const elClient = ev.target.elements.client;
         emitEvent(that, "addTask", {
           raw: elTaskRaw.value,
+          exid: elExid.value,
+          client: elClient.value,
         });
         elTaskRaw.value = "";
+        elExid.value = "";
+        elClient.value = "";
       });
     }
     this.addEventListener("change", function toggleTaskComplete(ev) {
