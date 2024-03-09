@@ -41,8 +41,8 @@ export default function archive(el, model) {
                     }
                     archivedTasks = Object.values(archivedTasks)
                     archivedTasks.sort(function byMostRecentEntryDesc(a,b){
-                        if(a.mostRecentEntry > b.mostRecentEntry) return -1;
-                        if(a.mostRecentEntry < b.mostRecentEntry) return 1;
+                        if(new Date(a.mostRecentEntry) > new Date(b.mostRecentEntry)) return -1;
+                        if(new Date(a.mostRecentEntry) < new Date(b.mostRecentEntry)) return 1;
                         return 0;
                     });
                     state.archivedTasks = archivedTasks;
