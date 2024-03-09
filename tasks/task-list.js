@@ -48,10 +48,12 @@ taskRow.innerHTML = /*html*/ `
         <p class="task-item__details">
             <span data-task></span>
             <span data-client></span>
-            <output name="taskTotal"></output>
+            
         </p>
         <p class="task-item__description" data-description></p>
+        
         </div>
+        <span class="row task-item__time"><output name="taskTotal"></output></span>
         <span class="task-item__actions row context-reveal__item" hidden="hidden" data-actions>
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button>
             <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><svg width=16 height=16><title>play</title><use href="#icon-play"></use></svg></button>

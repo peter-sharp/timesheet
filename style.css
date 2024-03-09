@@ -310,23 +310,27 @@ button[data-state="started"] {
 .task-item {
   display: grid;
   grid-template-areas:
-  "complete content actions";
-  grid-template-columns: 3rem 1fr min-content;
+  "complete content time actions";
+  grid-template-columns: 3rem 1fr min-content min-content;
   gap: 1rem;
 }
 .task-item__complete {
   grid-area: complete;
-}
-.task-item__actions {
-  flex-grow: 2;
-  justify-content: flex-end;
-  grid-area: actions;
 }
 .task-item__content {
   grid-area: content;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+}
+.task-item__time {
+  grid-area: time;
+  justify-content: flex-end;
+}
+.task-item__actions {
+  flex-grow: 2;
+  justify-content: flex-end;
+  grid-area: actions;
 }
 .task-item__details,
 .task-item__description {
