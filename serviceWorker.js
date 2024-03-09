@@ -1,4 +1,4 @@
-const VERSION = "0.1.7";
+const VERSION = "0.1.8";
 
 const assets = [
   "./",
@@ -18,8 +18,9 @@ const assets = [
   "./sync/tasksyncstatus-list.js",
   "./sync/sync-status.js",
   "./pie-progress.js",
-  "./tasks.js",
-  "./taskStatus.js",
+  "./tasks/tasks.js",
+  "./tasks/task-status.js",
+  "./tasks/task-list.js",
   "./timesheet.js",
   "./timesheetStore.js",
   "./archive/archive.js",
@@ -27,7 +28,9 @@ const assets = [
   "./archive/task-archive.js",
   "./utils/apply.js",
   "./utils/calcDuration.js",
+  "./utils/calculateGaps.js",
   "./utils/emitEvent.js",
+  "./utils/extract.js",
   "./utils/filter.js",
   "./utils/first.js",
   "./utils/format24Hour.js",

@@ -1,10 +1,10 @@
-import "./taskStatus.js";
-import newtemplateItem from "./utils/newTemplateItem.js";
-import emitEvent from "./utils/emitEvent.js";
-import sortByMostRecentEntry from "./utils/sortByMostRecentEntry.js";
-import timeLoop from "./utils/timeLoop.js";
-import calcDuration, { toFixedFloat } from "./utils/calcDuration.js";
-import { playTripleBeep } from "./media.js";
+import "./task-status.js";
+import newtemplateItem from "../utils/newTemplateItem.js";
+import emitEvent from "../utils/emitEvent.js";
+import sortByMostRecentEntry from "../utils/sortByMostRecentEntry.js";
+import timeLoop from "../utils/timeLoop.js";
+import calcDuration, { toFixedFloat } from "../utils/calcDuration.js";
+import { playTripleBeep } from "../media.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/ `
