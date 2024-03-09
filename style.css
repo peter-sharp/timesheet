@@ -305,7 +305,6 @@ button[data-state="started"] {
 
 .tasks {
   max-width: 100%;
-  width: max-content;
 }
 
 .task-item {
