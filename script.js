@@ -1,6 +1,6 @@
 import { Model } from "./model.js";
 import  "./timesheet.js";
-
+import "./time-duration.js";
 import  "./hash-router.js";
 import  "./hash-nav.js";
 

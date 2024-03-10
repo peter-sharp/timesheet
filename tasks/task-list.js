@@ -53,7 +53,7 @@ taskRow.innerHTML = /*html*/ `
         <p class="task-item__description" data-description></p>
         
         </div>
-        <span class="row task-item__time"><output name="taskTotal"></output></span>
+        <span class="row task-item__time"><time-duration data-task-total></time-duration></span>
         <span class="task-item__actions row context-reveal__item" hidden="hidden" data-actions>
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button>
             <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><svg width=16 height=16><title>play</title><use href="#icon-play"></use></svg></button>
@@ -194,13 +194,12 @@ class TaskList extends HTMLElement {
     const hasActions = this.getAttribute("features")?.includes("actions");
     item.querySelector("[data-actions]").hidden = !hasActions;
     item.dataset.state = "start" == timingState ? "active" : "inactive";
+    const elTotal = item.querySelector('[data-task-total]')
+    elTotal.setAttribute("duration-in-hours", total);
     if (hasActions) {
       item.dataset.timingState = timingState;
-      item.querySelector('[name="taskTotal"]').value = toFixedFloat(total);
 
-      item
-        .querySelector('[name="taskTotal"]')
-        .classList.toggle("pulseOpacity", "start" == timingState);
+      elTotal.classList.toggle("pulseOpacity", "start" == timingState);
       item.querySelector('[name="start"]').hidden = "start" == timingState;
       item.querySelector('[name="stop"]').hidden = "stop" == timingState;
     }
@@ -210,8 +209,8 @@ class TaskList extends HTMLElement {
     el.dataset.state = taskTotal > 0 ? "active" : "inactive";
     const pieProgress = el.querySelector("pie-progress");
     pieProgress.setAttribute("percent", duration / focusInterval);
-    const elDuration = el.querySelector('[name="taskTotal"]');
-    elDuration.value = taskTotal;
+    const elDuration = el.querySelector('[data-task-total]');
+    elDuration.setAttribute("duration-in-hours", taskTotal);
     elDuration.dataset.state = taskTotal > 0 ? "started" : "stopped";
   }
 }
