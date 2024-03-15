@@ -58,7 +58,8 @@ export default function tasks(el, model) {
                     state.entries = state.entries.map(x => x.task == ev.exid ? {...x, synced: ev.synced} : x);
                     break;
                 case "taskComplete":
-                    state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, complete: ev.complete} : x);
+                    state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, complete: ev.complete, synced: ev.complete} : x);
+                    state.entries = state.entries.map(x => x.task == ev.exid ? {...x, synced: ev.complete} : x);
                     break;
                 case 'deleteTask':
                     const tasks = [];
