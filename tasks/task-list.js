@@ -195,7 +195,7 @@ class TaskList extends HTMLElement {
     item.querySelector("[data-actions]").hidden = !hasActions;
     item.dataset.state = "start" == timingState ? "active" : "inactive";
     const elTotal = item.querySelector('[data-task-total]')
-    elTotal.setAttribute("duration-in-hours", total);
+    elTotal.setAttribute("hours", total);
     if (hasActions) {
       item.dataset.timingState = timingState;
 
@@ -210,7 +210,7 @@ class TaskList extends HTMLElement {
     const pieProgress = el.querySelector("pie-progress");
     pieProgress.setAttribute("percent", duration / focusInterval);
     const elDuration = el.querySelector('[data-task-total]');
-    elDuration.setAttribute("duration-in-hours", taskTotal);
+    elDuration.setAttribute("hours", taskTotal);
     elDuration.dataset.state = taskTotal > 0 ? "started" : "stopped";
   }
 }

@@ -2,7 +2,7 @@ import calcDuration from "./utils/calcDuration.js";
 import zeroPad from "./utils/zeroPad.js";
 class TimeDuration extends HTMLElement {
     static get observedAttributes() {
-        return ['start', 'end', 'format', 'duration', 'duration-in-hours'];
+        return ['start', 'end', 'format', 'duration', 'hours'];
     }
 
     constructor() {
@@ -39,7 +39,7 @@ class TimeDuration extends HTMLElement {
 
     attributeChangedCallback(name, oldValue, newValue) {
         switch (name) {
-          case 'duration-in-hours':
+          case 'hours':
             console.log(newValue);
             this.duration = Math.round(parseFloat(newValue) * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLISECONDS_PER_SECOND);
             console.log(this.duration);
