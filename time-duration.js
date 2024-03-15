@@ -18,6 +18,10 @@ class TimeDuration extends HTMLElement {
     connectedCallback() {
       this.addEventListener('click', this.toggleFormat.bind(this));
     }
+
+    disconnectedCallback() {
+      this.removeEventListener('click', this.toggleFormat.bind(this));
+    }
   
     render() {
       this.innerHTML = this.formattedTime
