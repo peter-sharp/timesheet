@@ -17,6 +17,7 @@ import sync from "./sync/sync.js";
 import reduce from "./utils/reduce.js";
 import  reduceDuration  from "./utils/reduceDuration.js";
 import { calculateGaps } from "./utils/calculateGaps.js";
+import { hydrate } from "./timesheetStore.js";
 
 
 (async () => {
@@ -115,29 +116,34 @@ import { calculateGaps } from "./utils/calculateGaps.js";
                 switch (ev.type) {
                     case 'import':
                         const data = JSON.parse(ev.data);
-                        const imported = data.map(x => {
+                        if(Array.isArray(data)) {
+                            const imported = data.map(x => {
 
-                            let start = new Date(x.start); 
-                            let end = new Date(x.end); 
-                            if(isNaN(start)) {
-                                start = importTimewtime(x.start)
-                            }
-                            if(isNaN(end)) {
-                                end = importTimewtime(x.end)
-                            }
-                            return {
-                                ...x,
-                                id: x.id.toString() + Date.now().toString(),
-                                task: x.task || x.tags.join('_'),
-                                annotation: x.annotation || x.tags ? x.tags.join(' ') : 'Imported '+ new Date(),
-                                start,
-                                end
-                            }
-                        });
-                        state.archive = [...state.archive, ...imported]
+                                let start = new Date(x.start); 
+                                let end = new Date(x.end); 
+                                if(isNaN(start)) {
+                                    start = importTimewtime(x.start)
+                                }
+                                if(isNaN(end)) {
+                                    end = importTimewtime(x.end)
+                                }
+                                return {
+                                    ...x,
+                                    id: x.id.toString() + Date.now().toString(),
+                                    task: x.task || x.tags.join('_'),
+                                    annotation: x.annotation || x.tags ? x.tags.join(' ') : 'Imported '+ new Date(),
+                                    start,
+                                    end
+                                }
+                            });
+                            state.archive = [...state.archive, ...imported];
+                        } else {
+                            state = {...state, ...hydrate(data)};
+                          
+                        }
                         break;
                     case "export":
-                        state.export = JSON.stringify([...state.archive, ...state.entries])
+                        state.export = JSON.stringify(state)
                         break;
                     case "updateSettings":
                         state.settings = {...state.settings, ...ev.data}
@@ -218,6 +224,7 @@ function settings(el, model) {
             type: 'import',
             data: elImport.elements.data.value
         })
+        elImport.elements.data.value = ""
     });
 
     const elExport = el.querySelector('#export');
