@@ -5,12 +5,18 @@ import sortByMostRecentEntry from "../utils/sortByMostRecentEntry.js";
 import timeLoop from "../utils/timeLoop.js";
 import calcDuration, { toFixedFloat } from "../utils/calcDuration.js";
 import { playTripleBeep } from "../media.js";
+import round1dp from "../utils/round1dp.js";
+import formatPrice from "../utils/formatPrice.js";
+import getNetIncome from "../utils/getNetIncome.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/ `
 <div>
    
     <ul data-task-totals class="tasks unstyled-list stack" style="--gap: 1.6em"></ul>
+    <section class="border-top-1 text-align-right">
+            <span><time-duration data-duration-total></time-duration> <output class="opacity50" name="durationNetIncome"></output></span>
+    </section>
 </div>`;
 
 const taskForm = document.createElement("template");
@@ -148,7 +154,7 @@ class TaskList extends HTMLElement {
     this.state = state;
   }
 
-  renderTasks({ tasks = [] }) {
+  renderTasks({ tasks = [], settings = {}, durationTotal = 0 }) {
     const elTotals = this.elTotals;
 
     let toRender = tasks.filter((x) => x.exid);
@@ -171,6 +177,11 @@ class TaskList extends HTMLElement {
       elTotals.append(item);
       this.renderTask(item, task);
     }
+    const el = this;
+    // TODO: convert to component
+    const elDurationTotal = el.querySelector('[data-duration-total]');
+    elDurationTotal.setAttribute("hours", durationTotal);
+    el.querySelector('[name="durationNetIncome"]').value = formatPrice(getNetIncome(durationTotal || 0, settings.rate || 0, settings.tax || 0))
   }
 
   renderTask(

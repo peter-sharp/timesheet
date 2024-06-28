@@ -193,6 +193,7 @@ summary > :where(h1, h2, h3, h4) {
   margin-top: var(--gap, 1rem);
 }
 
+.border-top-1,
 .table-footer td {
   border-top: solid 0.05em;
   padding-top: 0.4em;
@@ -412,4 +413,8 @@ button[data-state="started"] {
 .padding-y-1 {
   padding-top: var(--space-1);
   padding-bottom: var(--space-1);
+}
+
+.text-align-right {
+  text-align: right;
 }
