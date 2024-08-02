@@ -83,7 +83,7 @@ export default function archive(el, model) {
             const isLastWeek = (x) => isSameWeek(lastWeek, x.start);
 
             function isSameMonth(date, x) {
-                return x.start.getMonth() == date.getMonth()
+                return x.start.getMonth() == date.getMonth() && x.start.getFullYear() == date.getFullYear()
             }
 
             const totalDurationWeek = reduce(reduceDuration, 0, filter(isCurrentWeek, state.archive))
