@@ -11,25 +11,22 @@ class TimeDuration extends HTMLElement {
       this.start = null;
       this.end = null;
       this.format = 'standard';
+      this.tootipFormat = 'decimal'
   
       this.render();
     }
   
-    connectedCallback() {
-      this.addEventListener('click', this.toggleFormat.bind(this));
-    }
-
-    disconnectedCallback() {
-      this.removeEventListener('click', this.toggleFormat.bind(this));
-    }
+   
   
     render() {
       this.innerHTML = this.formattedTime
-         
+      this.title = this.getFormattedTime({...this, format:  this.tootipFormat})
     }
     
     get formattedTime() {
-        const {start, end, duration, format} = this;
+        return this.getFormattedTime(this);
+    }
+    getFormattedTime({start, end, duration, format}) {
       if (format === 'standard') {
         return formatDurationToStandard({ start, end, duration });
       } else {
@@ -66,10 +63,7 @@ class TimeDuration extends HTMLElement {
         }
       }
   
-    toggleFormat() {
-      this.format = this.format === 'standard'? 'decimal' : 'standard';
-      this.render();
-    }
+
   }
   
   customElements.define('time-duration', TimeDuration);
@@ -90,13 +84,13 @@ class TimeDuration extends HTMLElement {
   }
 
   function millisecondsToHours(milliseconds) {
-    return Math.floor(milliseconds / MILLISECONDS_PER_SECOND / SECONDS_PER_MINUTE / MINUTES_PER_HOUR);
+    return milliseconds && Math.floor(milliseconds / MILLISECONDS_PER_SECOND / SECONDS_PER_MINUTE / MINUTES_PER_HOUR);
   }
 
   function getRemainingMinutes(milliseconds) {
-    return Math.floor(milliseconds / MILLISECONDS_PER_SECOND / SECONDS_PER_MINUTE) % MINUTES_PER_HOUR;
+    return milliseconds && Math.floor(milliseconds / MILLISECONDS_PER_SECOND / SECONDS_PER_MINUTE) % MINUTES_PER_HOUR;
   }
 
   function getRemainingSeconds(milliseconds) {
-    return Math.floor(milliseconds / MILLISECONDS_PER_SECOND ) % SECONDS_PER_MINUTE;
+    return milliseconds && Math.floor(milliseconds / MILLISECONDS_PER_SECOND ) % SECONDS_PER_MINUTE;
   }

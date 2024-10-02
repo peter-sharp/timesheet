@@ -186,9 +186,9 @@ import { hydrate } from "./timesheetStore.js";
     })
 
     // TODO make web component
-    const outputCurrentTask = document.querySelector('output[name="currentTask"]')
+    const outputCurrentTask = document.querySelector('current-task')
     timeLoop(1000, () => {
-        renderCurrentTask(outputCurrentTask, model.state);
+        outputCurrentTask.update(model.state);
     })
 })();
 
@@ -203,16 +203,40 @@ function renderTabTitle({ newEntry = {}, currentTask = {} }) {
     document.title = info.length ? `${info.join(' ')} | ${title}` : title;
 }
 
-function renderCurrentTask(outputCurrentTask, { newEntry, currentTask }) {
-   
-    let info = []
+const currentTaskTemplate = document.createElement("template");
+currentTaskTemplate.innerHTML = /*html*/`<output name="taskEXID"></output> <time-duration></time-duration>`
 
-    if(newEntry.task) info.push(newEntry.task);
+class CurrentTask extends HTMLElement {
+    constructor() {
+        super();
+        //implementation
+        this.appendChild(currentTaskTemplate.content.cloneNode(true));
+    }
 
-    if(newEntry.start) info.push(toFixedFloat(calcDuration({ start: newEntry.start, end: new Date() }) + (currentTask?.total || 0)));
+   update(state) {
 
-    outputCurrentTask.value = info.length ? info.join(' ') : '';
+      this.render(state);
+   }
+
+   render({ newEntry }) {
+
+
+        const taskEXID = this.querySelector('[name="taskEXID"]')
+        taskEXID.value = newEntry.task || '';
+        const duration = this.querySelector('time-duration')
+        duration.hidden = newEntry.start == undefined;
+        if(!duration.hidden) { 
+            duration.setAttribute("start", newEntry.start)
+            duration.setAttribute("end", new Date() )
+        }
+    
+
+    
+   }
 }
+
+window.customElements.define('current-task', CurrentTask);
+
 
 
 

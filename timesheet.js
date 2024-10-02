@@ -29,7 +29,7 @@ template.innerHTML = /*html*/`<form class="wrapper__inner overflow-x-scroll" id=
             <td><input type="text" name="annotation"></td>
             <td><input type="time" name="time_start"></td>
             <td><input type="time" name="time_end"></td>
-            <td><output class="pulseOpacity" name="duration"></output></td>
+            <td><time-duration class="pulseOpacity"></time-duration></td>
             <td></td>
         </tr>
         <tr class="table-footer">
@@ -52,7 +52,7 @@ entryRow.innerHTML = /*html*/`
     <td><input type="text" name="annotation"></td>
     <td><input type="time" name="time_start"></td>
     <td><input type="time" name="time_end"></td>
-    <td><output name="duration"></output></td>
+    <td><time-duration></time-duration></td>
     <td class="context-reveal__item"><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button></td>
 </tr>`
 
@@ -155,9 +155,9 @@ class Timesheet extends HTMLElement {
                 this.entriesList.append(row);
             }
             this.renderEntry(row, entry);
-            const duration = calcDuration(entry);
-            row.querySelector('[name="duration"]').value = duration;
-
+          
+            row.querySelector('time-duration').setAttribute('start', entry.start);
+            row.querySelector('time-duration').setAttribute('end', entry.end);
           
         }
         this.renderTaskdatalist(state.tasks)
@@ -194,10 +194,18 @@ class Timesheet extends HTMLElement {
         if(!newEntry) return;
         const newTask = this.entriesList.querySelector('[data-new="task"]');
         const {start} = newEntry
-        const duration = calcDuration({ start, end: new Date() });
-        const elDuration = newTask.querySelector('[name="duration"]'); 
-        elDuration.value = duration;
-        elDuration.dataset.state = duration > 0 ? "started" : "stopped";
+    
+        const elDuration = newTask.querySelector('time-duration'); 
+        console.log(start)
+        elDuration.dataset.state = start ? "started" : "stopped";
+        if(elDuration.dataset.state == "started") {
+            elDuration.setAttribute('start', start);
+            elDuration.setAttribute('end', new Date());
+        } else {
+            elDuration.setAttribute('duration', 0);
+        }
+       
+        
     }
 
 
