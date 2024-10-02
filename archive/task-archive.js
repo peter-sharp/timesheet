@@ -52,8 +52,8 @@ class TaskArchive extends HTMLElement {
     }
 
     update(state) {
-        this.render({...state, archivedTasksSearchTerm: this.archivedTasksSearchTerm});
         this.state = state;
+        this.render({...this.state, archivedTasksSearchTerm: this.archivedTasksSearchTerm});
     }
     
     
