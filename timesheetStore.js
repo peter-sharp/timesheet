@@ -4,6 +4,7 @@ const store = Store(
     hydrate,
     function dehydrate(state) {
         if(state.settings && !state.settings.color) state.settings.color = "#112233";
+        if(state.export) state.export = null;
         return {...state };
     },
     function storageTypeSort({deleted, deletedTasks, ...local}) {
@@ -19,7 +20,8 @@ const store = Store(
         tasks: new Set(),
         settings: {
             color: "#112233",
-            focusInterval: 0.4
+            focusInterval: 0.4,
+            export: null
         },
         stats: {},
     }
@@ -49,6 +51,7 @@ export function hydrate(state) {
 
     state.tasks = Array.isArray(state.tasks) ? state.tasks : [];
     state.taskTotals = Array.isArray(state.taskTotals) ? state.taskTotals : [];
+    if(state.export) state.export = null;
     
     return state;
 }
