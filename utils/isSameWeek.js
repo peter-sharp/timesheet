@@ -6,5 +6,5 @@ export default function isSameWeek(date1, date2) {
     const lastDayOfWeek = new Date(firstDayOfWeek.getTime() + 6 * oneDay); // get the last day of the week
 
     // check if the second date is between the first and last day of the week
-    return date2 >= firstDayOfWeek && date2 <= lastDayOfWeek;
+    return date2 >= firstDayOfWeek && date2 <= lastDayOfWeek  && date1.getFullYear() == date2.getFullYear();
 }
