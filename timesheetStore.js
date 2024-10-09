@@ -28,32 +28,29 @@ const store = Store(
 );
 
 export function hydrate(state) {
-    state.newEntry = {
-        ...state.newEntry,
-        start: state.newEntry.start ? new Date(state.newEntry.start) : null,
-        end: state.newEntry.end ? new Date(state.newEntry.end) : null
+    return {
+        export: null,
+        ...state,
+        newEntry: {
+            ...state.newEntry,
+            start: state.newEntry.start ? new Date(state.newEntry.start) : null,
+            end: state.newEntry.end ? new Date(state.newEntry.end) : null
+        },
+        entries: state.entries.map(entry => ({
+            ...entry,
+            start: new Date(entry.start),
+            end: new Date(entry.end)
+        })),
+        archive: state.archive.map(entry => ({
+            ...entry,
+            start: new Date(entry.start),
+            end: new Date(entry.end)
+        })),
+        tasks: Array.isArray(state.tasks) ? state.tasks : [],
+        taskTotals: Array.isArray(state.taskTotals) ? state.taskTotals : [],
+        
     };
-    state.entries = state.entries.map(
-        ({ start, end, ...x }) => ({
-            start: new Date(start),
-            end: new Date(end),
-            ...x
-        })
-    );
-    state.archive = state.archive.map(
-        ({ start, end, ...x }) => ({
-            start: new Date(start),
-            end: new Date(end),
-            ...x
-        })
-    );
-
-
-    state.tasks = Array.isArray(state.tasks) ? state.tasks : [];
-    state.taskTotals = Array.isArray(state.taskTotals) ? state.taskTotals : [];
-    if(state.export) state.export = null;
-    
-    return state;
+   
 }
 
 export default store;
