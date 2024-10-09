@@ -33,7 +33,7 @@ template.innerHTML = /*html*/`<form class="wrapper__inner overflow-x-scroll" id=
             <td></td>
         </tr>
         <tr class="table-footer">
-            <td colspan="4"><abbr title="Gaps between entries">Gaps</abbr> <output name="durationTotalGaps"></output></td>
+            <td colspan="4"><abbr title="Gaps between entries">Gaps</abbr> <time-duration data-durationTotalGaps></time-duration></td>
             <td><output name="durationTotal"></output> <output class="opacity50" name="durationNetIncome"></output></td>
             <td></td>
         </tr>
@@ -56,6 +56,13 @@ entryRow.innerHTML = /*html*/`
     <td class="context-reveal__item"><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button></td>
 </tr>`
 
+const entryRowGap = document.createElement('template');
+entryRowGap.innerHTML = /*html*/`
+<tr class="context-reveal time-entry row-gap">
+    <td colspan="6"><time-duration data-gap></time-duration></td>
+</tr>`
+
+const MILLISECONDS_PER_HOUR = 3600000
 class Timesheet extends HTMLElement {
     constructor() {
         super();
@@ -103,10 +110,12 @@ class Timesheet extends HTMLElement {
             }
         });
 
-        el.addEventListener("click", function handleArchiveAction(ev) {
-            if(ev.target.nodeName.toLowerCase() == "button") {
-                emitEvent(el, ev.target.name + "Entry", {
-                    id: parseInt(ev.target.closest('[data-id]').dataset.id, 10)
+        el.addEventListener("click", function handleTimesheetAction(ev) {
+           
+            if(ev.target.closest("button")) {
+                const btn = ev.target.closest("button");
+                emitEvent(el, btn.name + "Entry", {
+                    id: parseInt(btn.closest('[data-id]').dataset.id, 10)
                 })
             }
         });
@@ -135,10 +144,9 @@ class Timesheet extends HTMLElement {
         
         const footer = this.entriesList.querySelector('.table-footer')
         
-        if (!state.entries.length || this.entriesList.childNodes.length - 2 > state.entries.length) {
-            for (const x of [...this.entriesList.childNodes]) {
-                if (![newTask,footer].includes(x)) x.remove();
-            }
+  
+        for (const x of [...this.entriesList.childNodes]) {
+            if (![newTask,footer].includes(x)) x.remove();
         }
         const entries = state.entries.map(shallowClone);
        
@@ -149,15 +157,17 @@ class Timesheet extends HTMLElement {
                 row.dataset.id = entry.id
                
             }
-            if (newTask.nextElementSibling) {
-                this.entriesList.insertBefore(row, newTask.nextElementSibling);
+
+        
+            row = this.renderEntryGap(this.renderEntry(row, entry), entry);
+            if(newTask) {
+                newTask.after(row);
             } else {
-                this.entriesList.append(row);
+                this.entriesList.append(row)
             }
-            this.renderEntry(row, entry);
-          
-            row.querySelector('time-duration').setAttribute('start', entry.start);
-            row.querySelector('time-duration').setAttribute('end', entry.end);
+             
+           
+           
           
         }
         this.renderTaskdatalist(state.tasks)
@@ -165,18 +175,40 @@ class Timesheet extends HTMLElement {
         const elDurationTotal = el.querySelector('[name="durationTotal"]');
         elDurationTotal.value = round1dp(state.durationTotal);
         el.querySelector('[name="durationNetIncome"]').value = formatPrice(getNetIncome(state.durationTotal || 0, state.settings.rate || 0, state.settings.tax || 0))
-        const elDurationTotalGaps = el.querySelector('[name="durationTotalGaps"]');
-        elDurationTotalGaps.value = round1dp(state.durationTotalGaps);
+        const elDurationTotalGaps = el.querySelector('[data-durationTotalGaps]');
+        elDurationTotalGaps.setAttribute("duration", round1dp(state.durationTotalGaps * MILLISECONDS_PER_HOUR));
     }
 
     renderEntry(row, entry) {
-        row.style.setProperty("--gap-color", entry.gap && entry.gap > 0.1 ? "rgba(255, 255, 255, 0.2)" : "transparent");
-        row.style.setProperty("--gap-size", entry.gap && entry.gap > 0.1 ? `${entry.gap}em` : 0);
-
+       
         row.querySelector('[name="task"]').value = entry.task || '';
         row.querySelector('[name="annotation"]').value = entry.annotation || '';
         row.querySelector('[name="time_start"]').value = entry.start ? format24hour(entry.start) : '';
         row.querySelector('[name="time_end"]').value = entry.end ? format24hour(entry.end) : '';
+        if(entry.start && entry.end) {
+            row.querySelector('time-duration').setAttribute('end', entry.end);
+            row.querySelector('time-duration').setAttribute('start', entry.start);
+        } else {
+            row.querySelector('time-duration').setAttribute('duration', 0);
+        }
+    
+        return row
+    }
+
+    renderEntryGap(row, entry) {
+        const rowGroup = document.createDocumentFragment();
+       
+        
+        rowGroup.appendChild(row);
+
+        if(entry.gap && entry.gap > 0.05 ) {
+            const gapRow = entryRowGap.content.cloneNode(true).querySelector('tr');
+            gapRow.querySelector('time-duration').setAttribute('duration', entry.gap * MILLISECONDS_PER_HOUR);
+            gapRow.style.setProperty("--gap-color", "rgba(255, 255, 255, 0.2)" );
+            gapRow.style.setProperty("--gap-size",  `${entry.gap + 1}em` );
+            rowGroup.appendChild(gapRow);
+        }
+        return rowGroup
     }
 
 
@@ -191,8 +223,9 @@ class Timesheet extends HTMLElement {
     }
 
     renderNewEntryDuration({ newEntry }) {
-        if(!newEntry) return;
+        if(!newEntry || !newEntry.start) return;
         const newTask = this.entriesList.querySelector('[data-new="task"]');
+        
         const {start} = newEntry
     
         const elDuration = newTask.querySelector('time-duration'); 
