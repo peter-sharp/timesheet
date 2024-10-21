@@ -1,184 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Timesheet</title>
     <link rel="stylesheet" href="./style.css" />
-    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏲️</text></svg>" />
-    
-</head>
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏲️</text></svg>"
+    />
+  </head>
 
-<body class="wrapper stack">
-
-    <hash-router default="tasks">
+  <body class="wrapper stack">
+    <app-context>
+      <hash-router default="tasks">
         <section class="wrapper__inner" id="tasks">
-            <h2 class="h4">Tasks</h2>
-            <task-list features="add,actions"></task-list>
+          <h2 class="h4">Tasks</h2>
+          <task-list features="add,actions"></task-list>
         </section>
         <section class="wrapper__inner" id="time-entries">
-            <h2 class=" h4">Timeline</h2>
-            <time-sheet></time-sheet>
+          <h2 class="h4">Timeline</h2>
+          <time-sheet></time-sheet>
         </section>
         <section class="stack wrapper__inner" id="archive">
-            <h2 class="h4">Archive</h2>
-            <form name="archive">
-                <button name="archive">Archive</button>
-            </form>
-            <div>
-                <h3  class="h5">Totals</h3>
-                <dl>
-                    <div>
-                        <dt>Week</dt>
-                        <dd><output name="totalDurationWeek"></output></dd>
-                        <dd><output name="totalNetIncomeWeek"></output></dd>
-                    </div>
-                    <div>
-                        <dt>Last Week</dt>
-                        <dd><output name="totalDurationLastWeek"></output></dd>
-                        <dd><output name="totalNetIncomeLastWeek"></output></dd>
-                    </div>
-                    <div>
-                        <dt>Month</dt>
-                        <dd><output name="totalDurationMonth"></output></dd>
-                        <dd><output name="totalNetIncomeMonth"></output></dd>
-                    </div>
-                    <div>
-                        <dt>Last Month</dt>
-                        <dd><output name="totalDurationLastMonth"></output></dd>
-                        <dd><output name="totalNetIncomeLastMonth"></output></dd>
-                    </div>
-                </dl>
-            </div>
-            
-            <div>
-                <h3  class="h5">Tasks</h3>
-                <task-archive></task-archive>
-            </div>
-            <div>
-                <h3  class="h5">Timeline</h3>
-                <timesheet-archive></timesheet-archive>
-            </div>
+          <h2 class="h4">Archive</h2>
+          <form name="archive">
+            <button name="archive">Archive</button>
+          </form>
+          <div>
+            <h3 class="h5">Totals</h3>
+            <dl>
+              <div>
+                <dt>Week</dt>
+                <dd><output name="totalDurationWeek"></output></dd>
+                <dd><output name="totalNetIncomeWeek"></output></dd>
+              </div>
+              <div>
+                <dt>Last Week</dt>
+                <dd><output name="totalDurationLastWeek"></output></dd>
+                <dd><output name="totalNetIncomeLastWeek"></output></dd>
+              </div>
+              <div>
+                <dt>Month</dt>
+                <dd><output name="totalDurationMonth"></output></dd>
+                <dd><output name="totalNetIncomeMonth"></output></dd>
+              </div>
+              <div>
+                <dt>Last Month</dt>
+                <dd><output name="totalDurationLastMonth"></output></dd>
+                <dd><output name="totalNetIncomeLastMonth"></output></dd>
+              </div>
+            </dl>
+          </div>
+
+          <div>
+            <h3 class="h5">Tasks</h3>
+            <task-archive></task-archive>
+          </div>
+          <div>
+            <h3 class="h5">Timeline</h3>
+            <timesheet-archive></timesheet-archive>
+          </div>
         </section>
         <section class="wrapper__inner stack" id="settings">
-            <h2 class="h4">Settings</h2>
-            <form class="stack" id="settings">
-                <p>
-                    <label for="settings_rate">Color</label>
-                    <input id="settings_rate" type="color" name="color" />
-                </p>
-                <p>
-                    <label for="settings_rate">Rate</label>
-                    <input id="settings_rate" type="number" name="rate" step="0.01"/>
-                </p>
-                <p>
-                    <label for="settings_tax">Tax %</label>
-                    <input id="settings_tax" type="number" name="tax" step="0.01"/>
-                </p>
-                <p>
-                    <label for="settings_focus_interval">Focus Interval</label>
-                    <input id="settings_focus_interval" type="number" name="focusInterval" step="0.01"/>
-                </p>
-                <button name="save">Save</button>
-            </form>
-            <form class="stack" id="import">
-                <textarea name="data"></textarea>
-                <button name="import">Import</button>
-            </form>
-            <form class="stack" id="export">
-                <textarea name="data"></textarea>
-                <button name="export">Export</button>
-            </form>
+          <h2 class="h4">Settings</h2>
+          <form class="stack" id="settings">
+            <p>
+              <label for="settings_rate">Color</label>
+              <input id="settings_rate" type="color" name="color" />
+            </p>
+            <p>
+              <label for="settings_rate">Rate</label>
+              <input id="settings_rate" type="number" name="rate" step="0.01" />
+            </p>
+            <p>
+              <label for="settings_tax">Tax %</label>
+              <input id="settings_tax" type="number" name="tax" step="0.01" />
+            </p>
+            <p>
+              <label for="settings_focus_interval">Focus Interval</label>
+              <input
+                id="settings_focus_interval"
+                type="number"
+                name="focusInterval"
+                step="0.01"
+              />
+            </p>
+            <button name="save">Save</button>
+          </form>
+          <form class="stack" id="import">
+            <textarea name="data"></textarea>
+            <button name="import">Import</button>
+          </form>
+          <form class="stack" id="export">
+            <textarea name="data"></textarea>
+            <button name="export">Export</button>
+          </form>
         </section>
         <section class="wrapper__inner stack" id="sync">
-            <h2 class="h4">Sync</h2>
-            <tasksyncstatus-list></tasksyncstatus-list>
-            <sync-status></sync-status>
+          <h2 class="h4">Sync</h2>
+          <tasksyncstatus-list></tasksyncstatus-list>
+          <sync-status></sync-status>
         </section>
-    </hash-router>
-    <footer class="fixed-footer app-footer">
+      </hash-router>
+      <footer class="fixed-footer app-footer">
         <div class="wrapper__inner row padding-y-1" style="--align: center">
-        <h1 class="h4 margin-0"><img src="./icon.svg" width="23" height="23"></h1>
-        <nav>
+          <h1 class="h4 margin-0">
+            <img src="./icon.svg" width="23" height="23" />
+          </h1>
+          <nav>
             <hash-nav>
-                <ul class="unstyled-list row">
-                    <li><a href="#tasks">Tasks</a></li>
-                    <li><a href="#time-entries">Timeline</a></li>
-                    <li><current-task></current-task></li>
-                    <li>
-                        <details class="popup-menu">
-                            <summary>...</summary>
-                            <ul class="unstyled-list stack popup-menu__body" style="--gap: 0.2em">
-                                <li><a href="#archive">Archive</a></li>
-                                <li><a href="#settings">Settings</a></li>
-                                <li><a href="#sync">Sync</a></li>
-                            </ul>
-                        </details>
-                    </li>
-                </ul>
+              <ul class="unstyled-list row">
+                <li><a href="#tasks">Tasks</a></li>
+                <li><a href="#time-entries">Timeline</a></li>
+                <li><current-task></current-task></li>
+                <li>
+                  <details class="popup-menu">
+                    <summary>...</summary>
+                    <ul
+                      class="unstyled-list stack popup-menu__body"
+                      style="--gap: 0.2em"
+                    >
+                      <li><a href="#archive">Archive</a></li>
+                      <li><a href="#settings">Settings</a></li>
+                      <li><a href="#sync">Sync</a></li>
+                    </ul>
+                  </details>
+                </li>
+              </ul>
             </hash-nav>
-        </nav>
-    </div>
-    </footer>
-    <div class="fixed-nav-placeholder"></div>
-
-    
-    
+          </nav>
+        </div>
+      </footer>
+      <div class="fixed-nav-placeholder"></div>
+    </app-context>
 
     <template id="week_nav">
-        <nav data-week-nav>
-            <ul>
-                <li data-next-week><a href="#"><time></time></a></li>
-                <li data-current-week><time></time></li>
-                <li data-previous-week><a href="#"><time></time></a></li>
-            </ul>
-        </nav>
+      <nav data-week-nav>
+        <ul>
+          <li data-next-week>
+            <a href="#"><time></time></a>
+          </li>
+          <li data-current-week><time></time></li>
+          <li data-previous-week>
+            <a href="#"><time></time></a>
+          </li>
+        </ul>
+      </nav>
     </template>
     <svg>
-        <symbol id="icon-close"  viewBox="0 0 16 16">
-            <polyline 
-                    points="2 2, 14 14" 
-                    style="fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"
-                    />
-            <polyline 
-                    points="2 14, 14 2" 
-                    style="fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"
-                    />
-        </symbol>
-        <symbol id="icon-play"  viewBox="0 0 16 16">
-            <polyline 
-        points="2,1 14,8 2,15 2,1" 
-        style="fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"
+      <symbol id="icon-close" viewBox="0 0 16 16">
+        <polyline
+          points="2 2, 14 14"
+          style="
+            fill: currentColor;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+          "
         />
-        </symbol>
-        <symbol id="icon-pause"  viewBox="0 0 16 16">
-            <rect 
-                x="2"
-                y="2"
-                width="3"
-                height="12"
-                style="fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"
-                />
-            <rect 
-                    x="10"
-                    y="2"
-                    width="3"
-                    height="12"
-                    style="fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"
-                    />
-        </symbol>
-        <symbol  id="icon-check"  viewBox="0 0 16 16">
-            <polyline 
-        points="1.5 6 4.5 9 10.5 1" 
-        style="stroke: currentColor; fill: transparent; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2"
+        <polyline
+          points="2 14, 14 2"
+          style="
+            fill: currentColor;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+          "
         />
-        </symbol>
+      </symbol>
+      <symbol id="icon-play" viewBox="0 0 16 16">
+        <polyline
+          points="2,1 14,8 2,15 2,1"
+          style="
+            fill: currentColor;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+          "
+        />
+      </symbol>
+      <symbol id="icon-pause" viewBox="0 0 16 16">
+        <rect
+          x="2"
+          y="2"
+          width="3"
+          height="12"
+          style="
+            fill: currentColor;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+          "
+        />
+        <rect
+          x="10"
+          y="2"
+          width="3"
+          height="12"
+          style="
+            fill: currentColor;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+          "
+        />
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 16 16">
+        <polyline
+          points="1.5 6 4.5 9 10.5 1"
+          style="
+            stroke: currentColor;
+            fill: transparent;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 2;
+          "
+        />
+      </symbol>
     </svg>
 
-    
     <script type="module" src="./script.js"></script>
-</body>
-
+  </body>
 </html>

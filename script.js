@@ -1,8 +1,10 @@
 import { Model } from "./model.js";
+import  "./app-context.js";
 import  "./timesheet.js";
 import "./time-duration.js";
 import  "./hash-router.js";
 import  "./hash-nav.js";
+import  "./current-task.js";
 
 
 import timeLoop from "./utils/timeLoop.js";
@@ -18,7 +20,7 @@ import reduce from "./utils/reduce.js";
 import  reduceDuration  from "./utils/reduceDuration.js";
 import { calculateGaps } from "./utils/calculateGaps.js";
 import { hydrate } from "./timesheetStore.js";
-
+// TODO: Move from redux-style state management to Signals.
 
 (async () => {
 
@@ -179,17 +181,18 @@ import { hydrate } from "./timesheetStore.js";
         }
     })
 
+    //TODO: remove this when model replaced by signals
+    const appContext = document.querySelector('app-context');
+    model.listen(appContext.update.bind(appContext));
+
     model.emit({ type: 'init' });
 
     timeLoop(1000, () => {
         renderTabTitle(model.state);
     })
 
-    // TODO make web component
-    const outputCurrentTask = document.querySelector('current-task')
-    timeLoop(1000, () => {
-        outputCurrentTask.update(model.state);
-    })
+    
+   
 })();
 
 function renderTabTitle({ newEntry = {}, currentTask = {} }) {
@@ -202,43 +205,6 @@ function renderTabTitle({ newEntry = {}, currentTask = {} }) {
 
     document.title = info.length ? `${info.join(' ')} | ${title}` : title;
 }
-
-const currentTaskTemplate = document.createElement("template");
-currentTaskTemplate.innerHTML = /*html*/`<output name="taskEXID"></output> <time-duration></time-duration>`
-
-class CurrentTask extends HTMLElement {
-    constructor() {
-        super();
-        //implementation
-        this.appendChild(currentTaskTemplate.content.cloneNode(true));
-    }
-
-   update(state) {
-
-      this.render(state);
-   }
-
-   render({ newEntry }) {
-
-
-        const taskEXID = this.querySelector('[name="taskEXID"]')
-        taskEXID.value = newEntry.task || '';
-        const duration = this.querySelector('time-duration')
-        duration.hidden = newEntry.start == undefined;
-        if(!duration.hidden) { 
-            duration.setAttribute("start", newEntry.start)
-            duration.setAttribute("end", new Date() )
-        }
-    
-
-    
-   }
-}
-
-window.customElements.define('current-task', CurrentTask);
-
-
-
 
 function settings(el, model) {
     const elImport = el.querySelector('#import');

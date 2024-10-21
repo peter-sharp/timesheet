@@ -1,4 +1,4 @@
-const VERSION = "0.2.4";
+const VERSION = "0.2.53";
 
 const assets = [
   "./",
@@ -13,6 +13,8 @@ const assets = [
   "./tasks/task-list.js",
   "./utils/apply.js",
   "./utils/calcDuration.js",
+  "./utils/Computed.js",
+  "./utils/Context.js",
   "./utils/calculateGaps.js",
   "./utils/emitEvent.js",
   "./utils/extract.js",
@@ -30,6 +32,8 @@ const assets = [
   "./utils/reduce.js",
   "./utils/reduceDuration.js",
   "./utils/round1dp.js",
+  "./utils/shallowClone.js",
+  "./utils/Signal.js",
   "./utils/shallowClone.js",
   "./utils/sortByMostRecentEntry.js",
   "./utils/subMonth.js",
@@ -49,10 +53,12 @@ const assets = [
   "./model.js",
   "./media.js",
   "./store.js",
+  "./app-context.js",
   "./pie-progress.js",
   "./time-duration.js",
   "./timesheet.js",
   "./timesheetStore.js",
+  "./current-task.js"
   
 ];
 
