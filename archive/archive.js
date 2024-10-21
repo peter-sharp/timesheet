@@ -11,7 +11,7 @@ import shallowClone from "../utils/shallowClone.js";
 import reduceDuration from "../utils/reduceDuration.js";
 import filter from "../utils/filter.js";
 import apply from "../utils/apply.js";
-
+//TODO: Add graphs for week and month totals
 export default function archive(el, model) {
     model.use([
         function archiveEntries(state, ev) {
