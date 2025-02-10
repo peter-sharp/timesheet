@@ -1,4 +1,6 @@
 import getNetIncome from "./utils/getNetIncome.js";
+import {ContextRequestEvent} from './utils/Context.js';
+import {effect} from './utils/Signal.js';
 import { allInputsEntered, noInputsEntered, allInputsEnteredExcept } from "./utils/inputsEntered.js"
 import timeToDate from "./utils/timeToDate.js";
 import timeLoop from "./utils/timeLoop.js";
@@ -24,7 +26,7 @@ template.innerHTML = /*html*/`<form class="wrapper__inner overflow-x-scroll" id=
         </tr>
     </thead>
     <tbody id="time_entries">
-        <tr data-new="task">
+        <tr data-new="entry">
             <td><input type="text" name="task" list="prevTasks"></td>
             <td><input type="text" name="annotation"></td>
             <td><input type="time" name="time_start"></td>
@@ -64,6 +66,14 @@ entryRowGap.innerHTML = /*html*/`
 
 const MILLISECONDS_PER_HOUR = 3600000
 class Timesheet extends HTMLElement {
+
+    #settings;
+    #newEntry;
+    #entries;
+    #tasks;
+    #durationTotal;
+    #durationTotalGaps;
+    #unsubscribe = {};
     constructor() {
         super();
         this.append(template.content.cloneNode(true));
@@ -77,6 +87,26 @@ class Timesheet extends HTMLElement {
         })
         this.task = null;
         const that = this;
+        this.dispatchEvent(new ContextRequestEvent('state', (state, unsubscribe) => {
+            this.#settings = state.settings;
+            this.#newEntry = state.newEntry;
+            this.#entries = state.entries;
+            this.#tasks = state.tasks;
+            this.#durationTotal = state.durationTotal;
+            this.#durationTotalGaps = state.durationTotalGaps;
+
+            this.#unsubscribe.signals = effect(
+                this.update.bind(this),
+                this.#settings,
+                this.#newEntry,
+                this.#entries,
+                this.#tasks,
+                this.#durationTotal,
+                this.#durationTotalGaps
+            );
+            this.#unsubscribe.state = unsubscribe;
+        }, true));
+
         el.addEventListener('focusout', function handleNewTimeEntry(ev) {
             if (ev.target.nodeName == 'INPUT') {
                 const input = ev.target;
@@ -132,21 +162,33 @@ class Timesheet extends HTMLElement {
         });
     }
 
-    update(state) {
-        this.render(state);
-        this.state = state;
+    diconnectedCallback() {
+        this.#unsubscribe.signals()
+        this.#unsubscribe.state()
+    }
+
+    update() {
+        this.render({
+            settings: this.#settings.value,
+            newEntry: this.#newEntry.value,
+            entries: this.#entries.value,
+            tasks: this.#tasks.value,
+            durationTotal: this.#durationTotal.value,
+            durationTotalGaps: this.#durationTotalGaps.value
+        });
+ 
     }
 
     render(state) {
         const el = this;
-        const newTask = this.entriesList.querySelector('[data-new="task"]');
-        this.renderEntry(newTask, state.newEntry);
+        const newEntry = this.entriesList.querySelector('[data-new="entry"]');
+        this.renderEntry(newEntry, state.newEntry);
         
         const footer = this.entriesList.querySelector('.table-footer')
         
   
         for (const x of [...this.entriesList.childNodes]) {
-            if (![newTask,footer].includes(x)) x.remove();
+            if (![newEntry,footer].includes(x)) x.remove();
         }
         const entries = state.entries.map(shallowClone);
        
@@ -160,8 +202,8 @@ class Timesheet extends HTMLElement {
 
         
             row = this.renderEntryGap(this.renderEntry(row, entry), entry);
-            if(newTask) {
-                newTask.after(row);
+            if(newEntry) {
+                newEntry.after(row);
             } else {
                 this.entriesList.append(row)
             }
@@ -224,12 +266,12 @@ class Timesheet extends HTMLElement {
 
     renderNewEntryDuration({ newEntry }) {
         if(!newEntry || !newEntry.start) return;
-        const newTask = this.entriesList.querySelector('[data-new="task"]');
+        const newTask = this.entriesList.querySelector('[data-new="entry"]');
         
         const {start} = newEntry
     
         const elDuration = newTask.querySelector('time-duration'); 
-        console.log(start)
+
         elDuration.dataset.state = start ? "started" : "stopped";
         if(elDuration.dataset.state == "started") {
             elDuration.setAttribute('start', start);
