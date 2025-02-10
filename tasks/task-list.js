@@ -95,8 +95,18 @@ class TaskList extends HTMLElement {
       if (duration > focusInterval) {
         // FIXME should use unique event
         playTripleBeep();
+        const { exid } = (activeTaskEl.closest("[data-exid]")?.dataset || {});
+        Notification.requestPermission().then(function(permission) {
+          if (permission === "granted") {
+            // Permission was granted, create a notification
+            new Notification(`Time's up for task ${exid}`);
+          } else {
+            // Permission was denied or not granted
+            console.log("Permission not granted");
+          }
+        });
         emitEvent(that, "stopTask", {
-          exid: activeTaskEl.closest("[data-exid]").dataset.exid,
+          exid
         });
       }
 
