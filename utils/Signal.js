@@ -25,6 +25,18 @@ export class Signal extends EventTarget {
 
 }
 
+export function effect(fn,...signals) {
+    fn();
+    for(let signal of signals) {
+        signal.addEventListener('change', fn);
+    }
+    return () => {
+        for(let signal of signals) {
+            signal.removeEventListener('change', fn)
+        }
+    };
+}
+
 export default function signal(_) {
     return new Signal(_);
 }
