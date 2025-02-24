@@ -8,7 +8,7 @@ import  "./current-task.js";
 
 
 import timeLoop from "./utils/timeLoop.js";
-import calcDuration, { toFixedFloat } from "./utils/calcDuration.js";
+import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
 
 import first from "./utils/first.js";
 import last from "./utils/last.js";
@@ -201,7 +201,11 @@ function renderTabTitle({ newEntry = {}, currentTask = {} }) {
 
     if(newEntry.task) info.push(newEntry.task);
 
-    if(newEntry.start) info.push(toFixedFloat(calcDuration({ start: newEntry.start, end: new Date() }) + (currentTask?.total || 0)));
+    if(newEntry.start) {
+        info.push(formatDurationToStandard({ 
+            duration: calcDuration({ start: newEntry.start, end: new Date() }, 'milliseconds') + hoursToMilliseconds(currentTask?.total || 0)
+        }));
+    }
 
     document.title = info.length ? `${info.join(' ')} | ${title}` : title;
 }

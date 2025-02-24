@@ -1,5 +1,5 @@
-import calcDuration from "./utils/calcDuration.js";
-import zeroPad from "./utils/zeroPad.js";
+import calcDuration, { formatDurationToStandard } from "./utils/calcDuration.js";
+
 class TimeDuration extends HTMLElement {
     static get observedAttributes() {
         return ['start', 'end', 'format', 'duration', 'hours'];
@@ -75,30 +75,3 @@ class TimeDuration extends HTMLElement {
   }
   
   customElements.define('time-duration', TimeDuration);
-
-  const MILLISECONDS_PER_SECOND = 1000;
-  const SECONDS_PER_MINUTE = 60
-  const MINUTES_PER_HOUR = 60
-
-  /**
- * Formats a duration between two dates as a string in the standard format of "HH:mm".
- * @param {{start: Date, end: Date}} duration - The duration to format, represented as an object with start and end properties, both of type Date.
- * @returns {string} The formatted duration, with a negative sign if the duration is negative.
- */
-  function formatDurationToStandard ({ start = null, end = null, duration = null }) {
-    const milliseconds  = duration || (start && end ?  end.getTime() - start.getTime() : 0);
-   return `${milliseconds < 0 ? '-' : ''} ${Math.floor(millisecondsToHours(milliseconds))}:${zeroPad(2, getRemainingMinutes(milliseconds))}:${zeroPad(2, getRemainingSeconds(milliseconds))}`
-
-  }
-
-  function millisecondsToHours(milliseconds) {
-    return milliseconds && Math.floor(milliseconds / MILLISECONDS_PER_SECOND / SECONDS_PER_MINUTE / MINUTES_PER_HOUR);
-  }
-
-  function getRemainingMinutes(milliseconds) {
-    return milliseconds && Math.floor(milliseconds / MILLISECONDS_PER_SECOND / SECONDS_PER_MINUTE) % MINUTES_PER_HOUR;
-  }
-
-  function getRemainingSeconds(milliseconds) {
-    return milliseconds && Math.floor(milliseconds / MILLISECONDS_PER_SECOND ) % SECONDS_PER_MINUTE;
-  }
