@@ -92,7 +92,7 @@ class TaskList extends HTMLElement {
       const { start } = newEntry;
       const { total = 0 } = currentTask;
       const duration = calcDuration({ start, end: new Date() });
-      if (duration > focusInterval) {
+      if (focusInterval && focusInterval > 0 && duration > focusInterval) {
         // FIXME should use unique event
         playTripleBeep();
         const { exid } = (activeTaskEl.closest("[data-exid]")?.dataset || {});
