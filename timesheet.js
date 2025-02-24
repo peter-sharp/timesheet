@@ -83,7 +83,7 @@ class Timesheet extends HTMLElement {
         this.prevTasks = form.querySelector(`#prevTasks`);
         this.state = {};
         timeLoop(1000, () => {
-            this.renderNewEntryDuration(this.state);
+            this.renderNewEntryDuration({ newEntry: this.#newEntry?.value });
         })
         this.task = null;
         const that = this;
