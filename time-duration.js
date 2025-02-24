@@ -1,4 +1,4 @@
-import calcDuration, { formatDurationToStandard } from "./utils/calcDuration.js";
+import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
 
 class TimeDuration extends HTMLElement {
     static get observedAttributes() {
@@ -46,7 +46,7 @@ class TimeDuration extends HTMLElement {
         switch (name) {
           case 'hours':
             console.log(newValue);
-            this.duration = Math.round(parseFloat(newValue) * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MILLISECONDS_PER_SECOND);
+            this.duration = Math.round(hoursToMilliseconds(parseFloat(newValue)));
             console.log(this.duration);
             this.render();
             break;
