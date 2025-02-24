@@ -26,6 +26,14 @@ class TimeDuration extends HTMLElement {
     get formattedTime() {
         return this.getFormattedTime(this);
     }
+
+    /**
+     * 
+     * @param {Date} start 
+     * @param {Date} end 
+     * @param {Integer} duration milliseconds 
+     * @returns String
+     */
     getFormattedTime({start, end, duration, format}) {
       if (format === 'standard') {
         return formatDurationToStandard({ start, end, duration });

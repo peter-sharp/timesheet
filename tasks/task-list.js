@@ -3,9 +3,8 @@ import newtemplateItem from "../utils/newTemplateItem.js";
 import emitEvent from "../utils/emitEvent.js";
 import sortByMostRecentEntry from "../utils/sortByMostRecentEntry.js";
 import timeLoop from "../utils/timeLoop.js";
-import calcDuration, { toFixedFloat } from "../utils/calcDuration.js";
+import calcDuration, { formatDurationDecimal, hoursToMilliseconds } from "../utils/calcDuration.js";
 import { playTripleBeep } from "../media.js";
-import round1dp from "../utils/round1dp.js";
 import formatPrice from "../utils/formatPrice.js";
 import getNetIncome from "../utils/getNetIncome.js";
 
@@ -110,12 +109,12 @@ class TaskList extends HTMLElement {
         });
       }
 
-      const taskTotal = toFixedFloat(total + duration);
+      
 
       this.renderNewTaskDuration(activeTaskEl, {
-        duration,
-        taskTotal,
-        focusInterval,
+        start,
+        total,
+        focusInterval
       });
     });
     // FIXME add form should be a separate web component
@@ -226,13 +225,16 @@ class TaskList extends HTMLElement {
     }
   }
 
-  renderNewTaskDuration(el, { duration, taskTotal, focusInterval } = {}) {
-    el.dataset.state = taskTotal > 0 ? "active" : "inactive";
+  // FIXME could be split out a little better
+  renderNewTaskDuration(el, { start, total,  focusInterval } = {}) {
+    const duration = calcDuration({ start, end: new Date() }, 'milliseconds');
+
+    el.dataset.state = start ? "active" : "inactive";
     const pieProgress = el.querySelector("pie-progress");
-    pieProgress.setAttribute("percent", duration / focusInterval);
+    pieProgress.setAttribute("percent", duration / formatDurationDecimal(focusInterval));
     const elDuration = el.querySelector('[data-task-total]');
-    elDuration.setAttribute("hours", taskTotal);
-    elDuration.dataset.state = taskTotal > 0 ? "started" : "stopped";
+    elDuration.setAttribute("duration", hoursToMilliseconds(total) + duration);
+    elDuration.dataset.state = start ? "started" : "stopped";
   }
 }
 
