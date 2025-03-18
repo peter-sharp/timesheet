@@ -52,6 +52,9 @@ export default function tasks(el, model) {
 
                     // mostRecentEntry to ensure new tasks are at the top
                     state.tasks = [...state.tasks, { exid: ev.exid || exid, client: ev.client || client, description, id: Date.now(), mostRecentEntry: new Date()}]
+                    // Ensure they are unique
+                    // TODO handle clients with other properties than name 
+                    state.clients = Array.from(new Set([...state.clients, {name: ev.client}].map(x => x.name))).map(x => ({name: x}))
                     break;
                 case "taskSyncChanged":
                     state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, synced: ev.synced} : x);

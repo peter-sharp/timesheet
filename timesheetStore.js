@@ -16,6 +16,7 @@ const store = Store(
     {
         newEntry: {},
         entries: [],
+        clients: [],
         archive: [],
         tasks: new Set(),
         settings: {
@@ -48,6 +49,7 @@ export function hydrate(state) {
         })),
         tasks: Array.isArray(state.tasks) ? state.tasks : [],
         taskTotals: Array.isArray(state.taskTotals) ? state.taskTotals : [],
+        clients: Array.isArray(state.clients) ? state.clients : [],
         
     };
    

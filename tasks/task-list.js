@@ -1,9 +1,15 @@
 import "./task-status.js";
 import newtemplateItem from "../utils/newTemplateItem.js";
+
+import { ContextRequestEvent } from "../utils/Context.js";
+import { effect } from "../utils/Signal.js";
 import emitEvent from "../utils/emitEvent.js";
 import sortByMostRecentEntry from "../utils/sortByMostRecentEntry.js";
 import timeLoop from "../utils/timeLoop.js";
-import calcDuration, { formatDurationDecimal, hoursToMilliseconds } from "../utils/calcDuration.js";
+import calcDuration, {
+  formatDurationDecimal,
+  hoursToMilliseconds,
+} from "../utils/calcDuration.js";
 import { playTripleBeep } from "../media.js";
 import formatPrice from "../utils/formatPrice.js";
 import getNetIncome from "../utils/getNetIncome.js";
@@ -37,9 +43,10 @@ taskForm.innerHTML = /*html*/ `
         </div>
         <div class="input-group">
             <label for="newTask">client</label>
-            <input id="newTask" type="text" name="client">
+            <input id="newTask" type="text" name="client" list="prev-clients">
         </div>
       </div>
+      <datalist id="prev-clients"></datalist>
     </details>
 </form>`;
 
@@ -67,6 +74,13 @@ taskRow.innerHTML = /*html*/ `
 </li>`;
 
 class TaskList extends HTMLElement {
+  #clients;
+  #tasks;
+  #settings;
+  #currentTask;
+  #newEntry;
+  #durationTotal;
+  #unsubscribe = {};
   constructor() {
     super();
     //implementation
@@ -79,9 +93,37 @@ class TaskList extends HTMLElement {
     this.elTotals = this.querySelector("[data-task-totals]");
 
     const that = this;
+    this.dispatchEvent(
+      new ContextRequestEvent(
+        "state",
+        (state, unsubscribe) => {
+          this.#tasks = state.tasks;
+          this.#settings = state.settings;
+          this.#clients = state.clients;
+          this.#currentTask = state.currentTask;
+          this.#newEntry = state.newEntry;
+          this.#durationTotal = state.durationTotal;
+
+          this.#unsubscribe.signals = effect(
+            this.update.bind(this),
+            this.#tasks,
+            this.#settings,
+            this.#clients,
+            this.#currentTask,
+            this.#newEntry,
+            this.#durationTotal
+          );
+
+          this.#unsubscribe.state = unsubscribe;
+        },
+        true
+      )
+    );
 
     timeLoop(1000, () => {
-      let { newEntry, currentTask, settings } = this.state || {};
+      let newEntry = this.#newEntry?.value,
+        currentTask = this.#currentTask?.value,
+        settings = this.#settings?.value;
       if (!newEntry || !currentTask) return;
       const activeTaskEl = this.elTotals.querySelector(
         '[data-timing-state="start"]'
@@ -94,8 +136,8 @@ class TaskList extends HTMLElement {
       if (focusInterval && focusInterval > 0 && duration > focusInterval) {
         // FIXME should use unique event
         playTripleBeep();
-        const { exid } = (activeTaskEl.closest("[data-exid]")?.dataset || {});
-        Notification.requestPermission().then(function(permission) {
+        const { exid } = activeTaskEl.closest("[data-exid]")?.dataset || {};
+        Notification.requestPermission().then(function (permission) {
           if (permission === "granted") {
             // Permission was granted, create a notification
             new Notification(`Time's up for task ${exid}`);
@@ -105,16 +147,14 @@ class TaskList extends HTMLElement {
           }
         });
         emitEvent(that, "stopTask", {
-          exid
+          exid,
         });
       }
-
-      
 
       this.renderNewTaskDuration(activeTaskEl, {
         start,
         total,
-        focusInterval
+        focusInterval,
       });
     });
     // FIXME add form should be a separate web component
@@ -158,9 +198,22 @@ class TaskList extends HTMLElement {
     });
   }
 
-  update(state) {
-    this.renderTasks(state);
-    this.state = state;
+  diconnectedCallback() {
+    this.#unsubscribe.signals();
+    this.#unsubscribe.state();
+  }
+
+  update() {
+    this.renderTasks({
+      settings: this.#settings.value,
+      tasks: this.#tasks.value,
+      durationTotal: this.#durationTotal.value,
+    });
+
+    this.renderPrevClientDatalist(
+      this.querySelector("#prev-clients"),
+      this.#clients?.value || []
+    );
   }
 
   renderTasks({ tasks = [], settings = {}, durationTotal = 0 }) {
@@ -181,16 +234,17 @@ class TaskList extends HTMLElement {
 
       if (!item) {
         item = newtemplateItem(taskRow);
-        
       }
       elTotals.append(item);
       this.renderTask(item, task);
     }
     const el = this;
     // TODO: convert to component
-    const elDurationTotal = el.querySelector('[data-duration-total]');
+    const elDurationTotal = el.querySelector("[data-duration-total]");
     elDurationTotal.setAttribute("hours", durationTotal);
-    el.querySelector('[name="durationNetIncome"]').value = formatPrice(getNetIncome(durationTotal || 0, settings.rate || 0, settings.tax || 0))
+    el.querySelector('[name="durationNetIncome"]').value = formatPrice(
+      getNetIncome(durationTotal || 0, settings.rate || 0, settings.tax || 0)
+    );
   }
 
   renderTask(
@@ -214,7 +268,7 @@ class TaskList extends HTMLElement {
     const hasActions = this.getAttribute("features")?.includes("actions");
     item.querySelector("[data-actions]").hidden = !hasActions;
     item.dataset.state = "start" == timingState ? "active" : "inactive";
-    const elTotal = item.querySelector('[data-task-total]')
+    const elTotal = item.querySelector("[data-task-total]");
     elTotal.setAttribute("hours", total);
     if (hasActions) {
       item.dataset.timingState = timingState;
@@ -226,15 +280,31 @@ class TaskList extends HTMLElement {
   }
 
   // FIXME could be split out a little better
-  renderNewTaskDuration(el, { start, total,  focusInterval } = {}) {
-    const duration = calcDuration({ start, end: new Date() }, 'milliseconds');
+  renderNewTaskDuration(el, { start, total, focusInterval } = {}) {
+    const duration = calcDuration({ start, end: new Date() }, "milliseconds");
 
     el.dataset.state = start ? "active" : "inactive";
     const pieProgress = el.querySelector("pie-progress");
-    pieProgress.setAttribute("percent", duration / formatDurationDecimal(focusInterval));
-    const elDuration = el.querySelector('[data-task-total]');
+    pieProgress.setAttribute(
+      "percent",
+      duration / formatDurationDecimal(focusInterval)
+    );
+    const elDuration = el.querySelector("[data-task-total]");
     elDuration.setAttribute("duration", hoursToMilliseconds(total) + duration);
     elDuration.dataset.state = start ? "started" : "stopped";
+  }
+
+  renderPrevClientDatalist($prevClients, clients) {
+    if (!$prevClients) return;
+    const $frag = document.createDocumentFragment();
+    for (const client of clients) {
+      const opt = document.createElement("OPTION");
+      opt.value = client.name;
+      opt.innerText = client.name;
+      $frag.append(opt);
+    }
+    $prevClients.innerHTML = "";
+    $prevClients.append($frag);
   }
 }
 
