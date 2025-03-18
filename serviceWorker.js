@@ -1,4 +1,4 @@
-const VERSION = "0.2.62"; // TODO: can this be pulled from query param?
+const VERSION = "0.2.63"; // TODO: can this be pulled from query param?
 
 const assets = [
   "./",
