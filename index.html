@@ -29,32 +29,7 @@
           <form name="archive">
             <button name="archive">Archive</button>
           </form>
-          <div>
-            <h3 class="h5">Totals</h3>
-            <dl>
-              <div>
-                <dt>Week</dt>
-                <dd><output name="totalDurationWeek"></output></dd>
-                <dd><output name="totalNetIncomeWeek"></output></dd>
-              </div>
-              <div>
-                <dt>Last Week</dt>
-                <dd><output name="totalDurationLastWeek"></output></dd>
-                <dd><output name="totalNetIncomeLastWeek"></output></dd>
-              </div>
-              <div>
-                <dt>Month</dt>
-                <dd><output name="totalDurationMonth"></output></dd>
-                <dd><output name="totalNetIncomeMonth"></output></dd>
-              </div>
-              <div>
-                <dt>Last Month</dt>
-                <dd><output name="totalDurationLastMonth"></output></dd>
-                <dd><output name="totalNetIncomeLastMonth"></output></dd>
-              </div>
-            </dl>
-          </div>
-
+          <archive-stats></archive-stats>
           <div>
             <h3 class="h5">Tasks</h3>
             <task-archive></task-archive>

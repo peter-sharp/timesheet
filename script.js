@@ -5,7 +5,7 @@ import "./time-duration.js";
 import  "./hash-router.js";
 import  "./hash-nav.js";
 import  "./current-task.js";
-
+import './archive/archive-stats.js';
 
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
@@ -170,6 +170,8 @@ import { hydrate } from "./timesheetStore.js";
     archive(document.getElementById('archive'), model);
     settings(document.getElementById('settings'), model);
    
+    const archiveStats = document.querySelector('archive-stats');
+    model.listen(archiveStats.update.bind(archiveStats));
 
     document.body.addEventListener("updateState", function updateState(ev) {
         model.emit(ev.detail);
