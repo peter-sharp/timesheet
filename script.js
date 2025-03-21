@@ -27,7 +27,7 @@ import { hydrate } from "./timesheetStore.js";
     if('serviceWorker' in navigator) {
         try {
             console.log('CLIENT: registering service worker.');
-            await navigator.serviceWorker.register('./serviceWorker.js?version=0.2.63');
+            await navigator.serviceWorker.register('./serviceWorker.js?version=0.2.64');
             console.log('CLIENT: service worker registration complete.');
         } catch(e) {
             console.error(e);
