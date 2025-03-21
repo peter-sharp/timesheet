@@ -32,7 +32,7 @@ template.innerHTML = /*html*/
 .checkbox {
   
   user-select: none;
-  cursor: pointer;
+  
   padding: 0.42em 0.57em;
   border-radius: 6px;
   overflow: hidden;
@@ -40,11 +40,15 @@ template.innerHTML = /*html*/
   display: flex;
 }
 
+.checkbox-input:not([disabled]) + .checkbox {
+  cursor: pointer;
+}
+
 .checkbox:not(:last-child) {
   margin-right: 6px;
 }
 
-.checkbox:hover {
+.checkbox-input:not([disabled]) + .checkbox:hover {
   background: rgba(0, 119, 255, 0.06);
 }
 
@@ -81,7 +85,11 @@ template.innerHTML = /*html*/
   line-height: 1.3em;
 }
 
-.checkbox:hover span:first-child {
+.checkbox-input[disabled] + .checkbox {
+  --color-success: #99999999;
+}
+
+.checkbox-input:not([disabled]) + .checkbox:hover span:first-child {
   border-color: var(--color-success);
 }
 
@@ -140,7 +148,7 @@ class TaskStatus extends HTMLElement {
         this.checkBox = this.querySelector("input");
         this.replacementCheckbox =  this.shadowRoot.querySelector("input");
         this.state.id = this.id || Date.now()
-        
+        this.replacementCheckbox.disabled = this.checkBox.disabled
       
         this.updateCheckbox = () => {
             const {checked} = this.replacementCheckbox

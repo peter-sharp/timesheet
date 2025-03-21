@@ -20,6 +20,9 @@ archiveTasksPageNavItem.innerHTML = /*html*/`
 const archiveTaskItem = document.createElement('template');
 archiveTaskItem.innerHTML = /*html*/`
 <li data-exid="" class="task-item context-reveal">
+    <task-status class="task-item__complete">
+        <input type="checkbox" name="complete" disabled>
+    </task-status>
     <div class="task-item__content">
         <p class="task-item__details">
             <span data-task></span>
@@ -106,6 +109,7 @@ class TaskArchive extends HTMLElement {
             const elDesc = item.querySelector("[data-description]");
             elDesc.innerText = task.description;
             elDesc.hidden = !task.description?.length;
+            item.querySelector("task-status input").checked = task.complete;
             tasksList.append(item);
         });
     }
