@@ -1,4 +1,6 @@
-const VERSION = "0.2.64"; // TODO: can this be pulled from query param?
+importScripts('./version.js');
+
+const CACHE_NAME = `timesheet-cache-v${APP_VERSION}`;
 
 const assets = [
   "./",
@@ -71,7 +73,7 @@ async function install() {
              a VERSIONed cache name here so that we can remove old cache entries in
              one fell swoop later, when phasing out an older service worker.
           */
-  const cache = await caches.open(VERSION + "fundamentals");
+  const cache = await caches.open(CACHE_NAME);
   /* After the cache is opened, we can fill it with the offline fundamentals.
                The method below will add all resources we've indicated to the cache,
                after making HTTP requests for each of them.
@@ -146,7 +148,7 @@ async function handleFetch(event) {
 
     caches
       // We open a cache to store the response for this request.
-      .open(VERSION + "pages")
+      .open(CACHE_NAME)
       .then(function add(cache) {
         /* We store the response for this request. It'll later become
                    available to caches.match(event.request) calls, when looking
@@ -215,7 +217,7 @@ async function cleanup() {
     keys
       .filter(function (key) {
         // Filter by keys that don't start with the latest VERSION prefix.
-        return !key.startsWith(VERSION);
+        return !key.startsWith(CACHE_NAME);
       })
       .map(function (key) {
         /* Return a promise that's fulfilled

@@ -6,6 +6,7 @@ import  "./hash-router.js";
 import  "./hash-nav.js";
 import  "./current-task.js";
 import './archive/archive-stats.js';
+import { APP_VERSION } from "./version.js";
 
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
@@ -27,7 +28,7 @@ import { hydrate } from "./timesheetStore.js";
     if('serviceWorker' in navigator) {
         try {
             console.log('CLIENT: registering service worker.');
-            await navigator.serviceWorker.register('./serviceWorker.js?version=0.2.64');
+            await navigator.serviceWorker.register(`./serviceWorker.js?version=${APP_VERSION}`);
             console.log('CLIENT: service worker registration complete.');
         } catch(e) {
             console.error(e);
@@ -182,6 +183,9 @@ import { hydrate } from "./timesheetStore.js";
             document.body.style.setProperty("--theme-color", settings.color);
         }
     })
+
+    // Render the version number in the footer
+    document.getElementById('app-version').innerText = APP_VERSION;
 
     //TODO: remove this when model replaced by signals
     const appContext = document.querySelector('app-context');

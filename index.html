@@ -100,7 +100,7 @@
                       <li><a href="#archive">Archive</a></li>
                       <li><a href="#settings">Settings</a></li>
                       <li><a href="#sync">Sync</a></li>
-                      <li>Version&nbsp;0.2.64</li>
+                      <li>Version&nbsp;<span id="app-version"></span></li>
                     </ul>
                   </details>
                 </li>
@@ -191,6 +191,10 @@
       </symbol>
     </svg>
 
+    <script type="module">
+      import { APP_VERSION } from './version.js';
+      document.getElementById('app-version').innerText = APP_VERSION;
+    </script>
     <script type="module" src="./script.js?version=0.2.64"></script>
   </body>
 </html>
