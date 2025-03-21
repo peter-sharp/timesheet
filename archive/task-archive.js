@@ -7,18 +7,27 @@ template.innerHTML = /*html*/`
     <input type="search" name="term" id="search_archive" class="row__col-2">
     <button type="submit">Search</button>
 </form>
-<task-list></task-list>
+<ul id="archive_tasks_list" class="unstyled-list stack"></ul>
 <nav class="pagination overflow-x-scroll">
 <ol  id="archive_tasks_page_nav"></ol>
 </nav>`
-
 
 const archiveTasksPageNavItem = document.createElement('template');
 archiveTasksPageNavItem.innerHTML = /*html*/`
         <li aria-selected="true"><button type="button" data-style="subtle"></button></li>
 `
 
-
+const archiveTaskItem = document.createElement('template');
+archiveTaskItem.innerHTML = /*html*/`
+<li data-exid="" class="task-item context-reveal">
+    <div class="task-item__content">
+        <p class="task-item__details">
+            <span data-task></span>
+            <span data-client></span>
+        </p>
+        <p class="task-item__description" data-description></p>
+    </div>
+</li>`
 
 class TaskArchive extends HTMLElement {
     archivedTasksSearchTerm = ""
@@ -28,9 +37,8 @@ class TaskArchive extends HTMLElement {
         const el = this;
 
         const elArchiveTasksNav = el.querySelector("#archive_tasks_page_nav")
-        const tasksList = el.querySelector('task-list');
+        const tasksList = el.querySelector('#archive_tasks_list');
 
-        
         elArchiveTasksNav.addEventListener("click", function updatePage(ev) {
             if(ev.target.nodeName.toLowerCase() == "button") {
                 emitEvent(el, "updateArchiveTaskPage", {
@@ -40,11 +48,11 @@ class TaskArchive extends HTMLElement {
         });
 
         this.searchForm = el.querySelector("form");
-        this.searchForm.addEventListener("submit", searchArchive);
+        this.searchForm.addEventListener("submit", searchArchive.bind(this));
         function searchArchive(ev) {
             ev.preventDefault();
-            this.archivedTasksSearchTerm = el.searchForm.elements.term.value
-            el.render({ ...el.state, archivedTasksSearchTerm: this.archivedTasksSearchTerm });
+            this.archivedTasksSearchTerm = this.searchForm.elements.term.value;
+            this.render({ ...this.state, archivedTasksSearchTerm: this.archivedTasksSearchTerm, archiveBrowserTaskPage: 0 });
         }
 
         this.tasksList = tasksList;
@@ -56,10 +64,9 @@ class TaskArchive extends HTMLElement {
         this.render({...this.state, archivedTasksSearchTerm: this.archivedTasksSearchTerm});
     }
     
-    
     render({ archiveOpen, archivedTasks, archivedTasksSearchTerm=null, archiveBrowserTaskPage = 0, archiveBrowserTaskPageSize = 20 }) {
         if(!archiveOpen) return;
-        const { tasksList, elArchiveTasksNav } = this;
+        const { elArchiveTasksNav } = this;
         const filteredTasks = archivedTasksSearchTerm ? archivedTasks.filter(this.filterBySearchTerm(archivedTasksSearchTerm)) : archivedTasks;
         const offset = archiveBrowserTaskPage * archiveBrowserTaskPageSize;
         const lastIndex = Math.min(offset + archiveBrowserTaskPageSize, filteredTasks.length);
@@ -68,7 +75,7 @@ class TaskArchive extends HTMLElement {
             toRender.push(filteredTasks[i]);
         } 
         console.log("tasks", {toRender, archiveBrowserTaskPage, archiveBrowserTaskPageSize})
-        tasksList.update({ tasks: toRender })
+        this.renderTasks(toRender);
 
         const pageCount = Math.ceil(filteredTasks.length / archiveBrowserTaskPageSize);
         const pages = document.createDocumentFragment();
@@ -86,6 +93,21 @@ class TaskArchive extends HTMLElement {
                  || (description|| '').toLowerCase().includes(term) 
                  || (client|| '').toLowerCase().includes(term)
         }
+    }
+
+    renderTasks(tasks) {
+        const tasksList = this.tasksList;
+        tasksList.innerHTML = "";
+        tasks.forEach(task => {
+            const item = newtemplateItem(archiveTaskItem);
+            item.dataset.exid = task.exid;
+            item.querySelector("[data-task]").innerText = task.exid;
+            item.querySelector("[data-client]").innerText = task.client;
+            const elDesc = item.querySelector("[data-description]");
+            elDesc.innerText = task.description;
+            elDesc.hidden = !task.description?.length;
+            tasksList.append(item);
+        });
     }
 
     renderPageNavItem({ pageNo, selectedPage }) {
