@@ -27,6 +27,17 @@ template.innerHTML = /*html*/`
             y-label="Hours"
         ></graph-chart>
     </div>
+    <div>
+        <h3 class="h5">Completed Tasks This Month</h3>
+        <graph-chart 
+            width="600" 
+            height="200" 
+            padding="40"
+            x-label="Day of Month"
+            y-label="Tasks Completed"
+            class="completed-tasks-chart"
+        ></graph-chart>
+    </div>
 </div>`
 
 class ArchiveStats extends HTMLElement {
@@ -34,6 +45,7 @@ class ArchiveStats extends HTMLElement {
         super();
         this.append(template.content.cloneNode(true));
         this.graphChart = this.querySelector('graph-chart');
+        this.completedTasksChart = this.querySelector('.completed-tasks-chart');
     }
 
     update(state) {
@@ -48,7 +60,7 @@ class ArchiveStats extends HTMLElement {
                 totalNetIncomeLastWeek = 0, 
                 } = state?.stats;
 
-        const { archive = [] } = state;
+        const { archive = [], archivedTasks = [] } = state;
         
         this.querySelector('[name="totalDurationWeek"]').value = round1dp(totalDurationWeek);
         this.querySelector('[name="totalNetIncomeWeek"]').value = formatPrice(totalNetIncomeWeek);
@@ -89,7 +101,34 @@ class ArchiveStats extends HTMLElement {
             };
         });
 
+        // Calculate completed tasks for each day
+        const dailyCompletedTasks = daysInMonth.map(date => {
+            const dayStart = new Date(date);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(date);
+            dayEnd.setHours(23, 59, 59, 999);
+
+            // Count tasks that were completed on this day
+            const completedTasksCount = archivedTasks.filter(task => {
+                // Check if task is complete and was completed on this day
+                if (!task.complete) return false;
+                
+                // Look through task history to find when it was completed
+                const completedEntry = task.history?.find(h => h.complete);
+                if (!completedEntry) return false;
+
+                const completedDate = new Date(completedEntry.mostRecentEntry);
+                return completedDate >= dayStart && completedDate <= dayEnd;
+            }).length;
+
+            return {
+                x: date.getDate(),
+                y: completedTasksCount
+            };
+        });
+
         this.graphChart.data = dailyTotals;
+        this.completedTasksChart.data = dailyCompletedTasks;
     }
 }
 

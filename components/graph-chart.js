@@ -182,11 +182,6 @@ export default class GraphChart extends HTMLElement {
      * @returns {{xTicks: Array, yTicks: Array}} Object containing tick mark data
      */
     createTicks(minMax) {
-        const xTicks = [];
-        const yTicks = [];
-        const numXTicks = 5;
-        const numYTicks = 5;
-
         // Helper function to determine appropriate decimal places
         const getDecimalPlaces = (min, max) => {
             const range = max - min;
@@ -202,37 +197,57 @@ export default class GraphChart extends HTMLElement {
             return 0;
         };
 
-        // Create X-axis ticks
-        for (let i = 0; i <= numXTicks; i++) {
-            const x = minMax.minX + (minMax.maxX - minMax.minX) * (i / numXTicks);
-            const scaledX = this.scalePoint({ x, y: minMax.minY }, minMax).x;
-            const decimalPlaces = getDecimalPlaces(minMax.minX, minMax.maxX);
-            const formattedValue = decimalPlaces === 0 
-                ? Math.round(x)
-                : x.toFixed(decimalPlaces);
+        // Helper function to generate ticks for an axis
+        const generateTicks = (min, max, numTicks, isYAxis = false) => {
+            const ticks = [];
+            const decimalPlaces = getDecimalPlaces(min, max);
             
-            xTicks.push({
-                x: scaledX,
-                y: this._height - this._padding,
-                value: formattedValue
-            });
-        }
+            for (let i = 0; i <= numTicks; i++) {
+                const value = min + (max - min) * (i / numTicks);
+                const formattedValue = decimalPlaces === 0 
+                    ? Math.round(value)
+                    : value.toFixed(decimalPlaces);
+                
+                if (isYAxis) {
+                    const scaledY = this.scalePoint({ x: min, y: value }, minMax).y;
+                    ticks.push({
+                        x: this._padding,
+                        y: scaledY,
+                        value: formattedValue
+                    });
+                } else {
+                    const scaledX = this.scalePoint({ x: value, y: min }, minMax).x;
+                    ticks.push({
+                        x: scaledX,
+                        y: this._height - this._padding,
+                        value: formattedValue
+                    });
+                }
+            }
+            return ticks;
+        };
 
-        // Create Y-axis ticks
-        for (let i = 0; i <= numYTicks; i++) {
-            const y = minMax.minY + (minMax.maxY - minMax.minY) * (i / numYTicks);
-            const scaledY = this.scalePoint({ x: minMax.minX, y }, minMax).y;
-            const decimalPlaces = getDecimalPlaces(minMax.minY, minMax.maxY);
-            const formattedValue = decimalPlaces === 0 
-                ? Math.round(y)
-                : y.toFixed(decimalPlaces);
-            
-            yTicks.push({
-                x: this._padding,
-                y: scaledY,
-                value: formattedValue
-            });
-        }
+        // Helper function to check for duplicates
+        const hasDuplicates = (ticks) => {
+            const values = ticks.map(t => t.value);
+            return values.length !== new Set(values).size;
+        };
+
+        // Generate X-axis ticks with duplicate checking
+        let numXTicks = 5;
+        let xTicks;
+        do {
+            xTicks = generateTicks(minMax.minX, minMax.maxX, numXTicks);
+            numXTicks--;
+        } while (hasDuplicates(xTicks) && numXTicks > 1);
+
+        // Generate Y-axis ticks with duplicate checking
+        let numYTicks = 5;
+        let yTicks;
+        do {
+            yTicks = generateTicks(minMax.minY, minMax.maxY, numYTicks, true);
+            numYTicks--;
+        } while (hasDuplicates(yTicks) && numYTicks > 1);
 
         return { xTicks, yTicks };
     }
