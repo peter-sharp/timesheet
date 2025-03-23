@@ -1,4 +1,5 @@
-importScripts('./version.js');
+const urlParams = new URLSearchParams(self.location.search);
+const APP_VERSION = urlParams.get('version');
 
 const CACHE_NAME = `timesheet-cache-v${APP_VERSION}`;
 
@@ -61,7 +62,6 @@ const assets = [
   "./timesheet.js",
   "./timesheetStore.js",
   "./current-task.js"
-  
 ];
 
 async function install() {

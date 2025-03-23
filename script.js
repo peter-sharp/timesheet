@@ -6,8 +6,6 @@ import  "./hash-router.js";
 import  "./hash-nav.js";
 import  "./current-task.js";
 import './archive/archive-stats.js';
-import { APP_VERSION } from "./version.js";
-
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
 
@@ -21,7 +19,10 @@ import reduce from "./utils/reduce.js";
 import  reduceDuration  from "./utils/reduceDuration.js";
 import { calculateGaps } from "./utils/calculateGaps.js";
 import { hydrate } from "./timesheetStore.js";
+
 // TODO: Move from redux-style state management to Signals.
+
+const APP_VERSION = "0.2.66";
 
 (async () => {
 
