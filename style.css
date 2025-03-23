@@ -1,6 +1,44 @@
 :root {
   --space-1: 0.2rem; 
   --color-success: hsl(140deg, 80%, 40%);
+  --color-background: #123;
+  --color-background-gradient: hsla(220,50%,50%, 0.6);
+  --color-text: #eee;
+  --color-text-muted: rgba(255, 255, 255, 0.7);
+  --color-button-bg: #000;
+  --color-button-hover: rgba(0, 0, 0, 0.6);
+  --color-button-active: rgba(0, 0, 0, 0.5);
+  --color-input-bg: rgba(0, 0, 0, 0.3);
+  --color-table-hover: rgba(255, 125, 30, 0.2);
+  --color-table-focus: coral;
+  --color-footer-bg: rgba(0,0,0, 0.8);
+  --color-popup-bg: #fff;
+  --color-popup-text: #123;
+  --color-popup-text-muted: rgba(0, 10, 20, 0.7);
+  --color-button-subtle-bg: rgba(255,255,255, 0.1);
+  --color-button-subtle-hover-bg: rgba(255,255,255, 0.5);
+  --color-button-subtle-hover-text: rgba(0,0,0, 0.5);
+  --color-pagination-selected: rgba(255,255,255, 0.5);
+  --color-gap: #fff;
+
+  /* Graph Chart Colors */
+  --color-chart-border: rgba(255, 255, 255, 0.2);
+  --color-chart-text: var(--color-text);
+  --color-chart-text-muted: var(--color-text-muted);
+  --color-chart-primary: #4a9eff;
+  --color-chart-primary-hover: #6eb4ff;
+  --color-chart-grid: rgba(255, 255, 255, 0.1);
+  --color-chart-axis: rgba(255, 255, 255, 0.3);
+  --color-chart-point: #4a9eff;
+  --color-chart-point-hover: #6eb4ff;
+  --color-chart-area: rgba(74, 158, 255, 0.1);
+  --color-chart-tooltip-bg: rgba(0, 0, 0, 0.8);
+  --color-chart-tooltip-text: var(--color-text);
+  --color-chart-grid-line: rgba(255, 255, 255, 0.1);
+  --color-chart-axis-label: var(--color-text);
+  --color-chart-axis-line: rgba(255, 255, 255, 0.3);
+  --color-chart-tick: rgba(255, 255, 255, 0.2);
+  --color-chart-tick-label: var(--color-text-muted);
 }
 html {
   font-size: 112.5%;
@@ -15,19 +53,19 @@ html {
 }
 
 body {
-  background-color: var(--theme-color, #123);
-  background: linear-gradient(transparent, hsla(220,50%,50%, 0.6) ), var(--theme-color, #123);
+  background-color: var(--color-background);
+  background: linear-gradient(transparent, var(--color-background-gradient)), var(--color-background);
   background-repeat: no-repeat;
   background-size: 100vw 100%;
-  color: #eee;
+  color: var(--color-text);
   font-family: Arial, Helvetica, sans-serif;
 }
 
 button {
-  background-color: #000;
-  border: solid #000 1px;
+  background-color: var(--color-button-bg);
+  border: solid var(--color-button-bg) 1px;
   border-radius: 0.6em;
-  color: #fff;
+  color: var(--color-text);
   cursor: pointer;
   display: inline-flex;
   gap: 0.6em;
@@ -40,11 +78,11 @@ button {
 
 button:hover,
 button:focus {
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: var(--color-button-hover);
 }
 
 button:active {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-button-active);
   top: 1px;
 }
 
@@ -118,9 +156,9 @@ thead th {
 
 
 input {
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: var(--color-input-bg);
   border: none;
-  color: #fff;
+  color: var(--color-text);
   padding: 0.2em;
   max-width: 100%;
 }
@@ -160,12 +198,11 @@ td {
 }
 
 tr:hover  td {
-  background-color: rgba(255, 125, 30, 0.2);
+  background-color: var(--color-table-hover);
 }
 
 tr:focus-within  td {
-  
-  background-color: coral;
+  background-color: var(--color-table-focus);
 } 
 
 
@@ -211,11 +248,11 @@ summary > :where(h1, h2, h3, h4) {
 }
 
 .app-footer {
-  background-color: rgba(0,0,0, 0.8);
+  background-color: var(--color-footer-bg);
 
 }
 .app-footer a:link {
-  color: #fff;
+  color: var(--color-text);
   text-decoration: none;
 }
 .app-footer a:link.active {
@@ -223,7 +260,7 @@ summary > :where(h1, h2, h3, h4) {
 }
 
 .app-footer a:visited {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-muted);
 }
 
 .popup-menu {
@@ -239,9 +276,9 @@ summary > :where(h1, h2, h3, h4) {
 
 .popup-menu__body {
   bottom: 100%;
-  background-color: #fff;
+  background-color: var(--color-popup-bg);
   border-radius: 1em;
-  color: #123;
+  color: var(--color-popup-text);
   left: -1em;
   padding: 0.6em;
   position: absolute;
@@ -255,30 +292,30 @@ summary > :where(h1, h2, h3, h4) {
   height: 0;
   border-style: solid;
   border-width: 1em 0.6em 0 0.6em;
-  border-color: #fff transparent transparent transparent;
+  border-color: var(--color-popup-bg) transparent transparent transparent;
   position: absolute;
   bottom: -0.4em;
   left: 0.8em;
 }
 
 .popup-menu__body a:link {
-  color: #123;
+  color: var(--color-popup-text);
 }
 
 .popup-menu__body a:visited {
-  color: rgba(0, 10, 20, 0.7);
+  color: var(--color-popup-text-muted);
 }
 button[data-style="subtle"] {
     box-sizing: content-box;
-    color: #fff;
-    background-color: rgba(255,255,255, 0.1);
+    color: var(--color-text);
+    background-color: var(--color-button-subtle-bg);
     border: 0.1em solid transparent;
     transition: background-color 100ms;
 }
 button[data-style="subtle"]:focus,
 button[data-style="subtle"]:hover {
-    background-color: rgba(255,255,255, 0.5);
-    color: rgba(0,0,0, 0.5)
+    background-color: var(--color-button-subtle-hover-bg);
+    color: var(--color-button-subtle-hover-text)
 }
 
 button[data-state="started"] {
@@ -291,7 +328,7 @@ button[data-state="started"] {
 }
 
 .pagination [aria-selected="true"] button {
-    border-color: rgba(255,255,255, 0.5);
+    border-color: var(--color-pagination-selected);
 }
 
 .row:not([hidden]) {
@@ -363,7 +400,7 @@ button[data-state="started"] {
 
 .row-gap td {
   height: min(var(--gap-size, 0), 10em);
-  background-color: var(--gap-color, #fff);
+  background-color: var(--color-gap);
   padding: 0.2em;
 }
 
