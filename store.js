@@ -1,22 +1,39 @@
-
-export default function Store(key, hydrateFn, dehydrateFn, storageTypeSortFn, initialState) {
+export default function Store(adapters) {
     async function read() {
         let data = {};
-        try {
-            const local = JSON.parse(localStorage.getItem(key)) || {};
-            const session = JSON.parse(sessionStorage.getItem(key)) || {};
-            data = {...local, ...session}
-        } catch (e) {
-            console.error(e);
-            data.errors = [e];
+        let errors = [];
+
+        // Read from all adapters and merge the data
+        for (const adapter of adapters) {
+            try {
+                const adapterData = await adapter.read();
+                data = { ...data, ...adapterData };
+            } catch (e) {
+                console.error('Error reading from adapter:', e);
+                errors.push(e);
+            }
         }
-        return hydrateFn({...initialState, ...data});
+
+        if (errors.length) {
+            data.errors = errors;
+        }
+
+        return data;
     }
+
     async function write(data) {
-        const {session, local} = storageTypeSortFn(dehydrateFn(data));
-        localStorage.setItem(key, JSON.stringify(local));
-        sessionStorage.setItem(key, JSON.stringify(session));
+        // Write to all adapters
+        const results = await Promise.allSettled(
+            adapters.map(adapter => adapter.write(data))
+        );
+
+        // Check for any failures
+        const failures = results.filter(result => result.status === 'rejected');
+        if (failures.length > 0) {
+            console.error('Some storage adapters failed to write:', failures);
+        }
     }
+
     return {
         read,
         write

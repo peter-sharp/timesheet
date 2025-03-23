@@ -22,7 +22,7 @@ import { hydrate } from "./timesheetStore.js";
 
 // TODO: Move from redux-style state management to Signals.
 
-const APP_VERSION = "0.2.67";
+const APP_VERSION = "0.3.0";
 
 (async () => {
 
@@ -116,13 +116,12 @@ const APP_VERSION = "0.2.67";
                 state.durationTotalGaps = durationTotalNoGaps - state.durationTotal;
                 return state;
             },
-            function settings(state, ev) {
+            async function settings(state, ev) {
                 switch (ev.type) {
                     case 'import':
                         const data = JSON.parse(ev.data);
                         if(Array.isArray(data)) {
                             const imported = data.map(x => {
-
                                 let start = new Date(x.start); 
                                 let end = new Date(x.end); 
                                 if(isNaN(start)) {
@@ -142,8 +141,7 @@ const APP_VERSION = "0.2.67";
                             });
                             state.archive = {...state.archive, entries: [...state.archive.entries, ...imported]};
                         } else {
-                            state = {...state, ...hydrate(data)};
-                          
+                            state = {...state, ...await hydrate(data)};
                         }
                         break;
                     case "export":
@@ -178,7 +176,9 @@ const APP_VERSION = "0.2.67";
     document.body.addEventListener("updateState", function updateState(ev) {
         model.emit(ev.detail);
     });
-    model.listen(store.write);
+    model.listen(async function(state) {
+        await store.write(state);
+    });
     model.listen(function renderTheme({ settings }) {
         if(settings.color){
             document.body.style.setProperty("--theme-color", settings.color);

@@ -1,32 +1,37 @@
 /**
  * Creates model with given functions and state
- * @param fns reducers to update business logic
+ * @param reducers reducers to update business logic
  * @param initialState initial state of model
  **/
-export function Model(fns, initialState) {
-    let reducers = fns || [];
-    let state = { ...initialState };
-    console.log(initialState, state)
+export function Model(reducers = [], initialState = {}) {
+    let state = initialState;
     const listeners = [];
-    function emit(ev) {
-        state = reducers.reduce((s, fn) => fn(s, ev), state)
-        listeners.forEach(fn => fn({ ...state }));
-    }
 
-    function use(fns, initialState) {
-        reducers = [...reducers, ...fns]
-        state = { ...state, ...initialState };
+    async function emit(ev) {
+        let newState = {...state};
+        for (const reducer of reducers) {
+            newState = await reducer(newState, ev);
+        }
+        state = newState;
+        for (const listener of listeners) {
+            await listener(state);
+        }
     }
 
     function listen(fn) {
         listeners.push(fn);
     }
-    return {
-        get state() {
-            return {...state}
-        },
-        use,
-        emit,
-        listen
+
+    function use(newReducers) {
+        reducers.push(...newReducers);
     }
+
+    return {
+        emit,
+        listen,
+        use,
+        get state() {
+            return state;
+        }
+    };
 }
