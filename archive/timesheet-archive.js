@@ -84,17 +84,18 @@ class TimesheetArchive extends HTMLElement {
         if(!archiveOpen) return;
         const { elArchiveEntries, elArchiveEntriesNav } = this;
 
+        const entries = archive.entries || [];
         const rows = document.createDocumentFragment();
         const offset = archiveBrowserPage * archiveBrowserPageSize;
-        const lastIndex = Math.min(offset + archiveBrowserPageSize, archive.length);
+        const lastIndex = Math.min(offset + archiveBrowserPageSize, entries.length);
         for (let i = offset; i < lastIndex; i += 1) {
-            rows.append(this.renderEntry(archive[i]))
+            rows.append(this.renderEntry(entries[i]))
         } 
 
         elArchiveEntries.innerHTML = "";
         elArchiveEntries.append(rows);
 
-        const pageCount = Math.ceil(archive.length / archiveBrowserPageSize);
+        const pageCount = Math.ceil(entries.length / archiveBrowserPageSize);
         const pages = document.createDocumentFragment();
         for (let i = 0; i < pageCount; i += 1) {
             pages.append(this.renderPageNavItem({ pageNo: i, selectedPage: archiveBrowserPage }))

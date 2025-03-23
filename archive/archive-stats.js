@@ -60,7 +60,7 @@ class ArchiveStats extends HTMLElement {
                 totalNetIncomeLastWeek = 0, 
                 } = state?.stats;
 
-        const { archive = [], archivedTasks = [] } = state;
+        const { archive = { entries: [] }, archivedTasks = [] } = state;
         
         this.querySelector('[name="totalDurationWeek"]').value = round1dp(totalDurationWeek);
         this.querySelector('[name="totalNetIncomeWeek"]').value = formatPrice(totalNetIncomeWeek);
@@ -85,7 +85,7 @@ class ArchiveStats extends HTMLElement {
             const dayEnd = new Date(date);
             dayEnd.setHours(23, 59, 59, 999);
 
-            const dayEntries = archive.filter(entry => {
+            const dayEntries = archive.entries.filter(entry => {
                 const entryStart = new Date(entry.start);
                 return entryStart >= dayStart && entryStart <= dayEnd;
             });

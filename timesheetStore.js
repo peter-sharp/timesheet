@@ -1,11 +1,33 @@
 import  Store  from "./store.js";
+
+const APP_VERSION = "0.2.7";
+
+function migrate(state, fromVersion) {
+    // Handle migrations based on version changes
+    if (!fromVersion || fromVersion < "0.2.7") {
+        // Migrate archive structure for 0.2.7
+        if (Array.isArray(state.archive)) {
+            state = {
+                ...state,
+                archive: {
+                    entries: state.archive
+                }
+            };
+        }
+    }
+    return state;
+}
+
 const store = Store(
     'timesheet',
     hydrate,
     function dehydrate(state) {
         if(state.settings && !state.settings.color) state.settings.color = "#112233";
         if(state.export) state.export = null;
-        return {...state };
+        return {
+            ...state,
+            version: APP_VERSION
+        };
     },
     function storageTypeSort({deleted, deletedTasks, ...local}) {
         return {
@@ -14,10 +36,13 @@ const store = Store(
         }
     }, 
     {
+        version: APP_VERSION,
         newEntry: {},
         entries: [],
         clients: [],
-        archive: [],
+        archive: {
+            entries: []
+        },
         tasks: new Set(),
         settings: {
             color: "#112233",
@@ -29,9 +54,22 @@ const store = Store(
 );
 
 export function hydrate(state) {
+    // Run migrations if version has changed
+    const fromVersion = state.version;
+    if (fromVersion !== APP_VERSION) {
+        state = migrate(state, fromVersion);
+    }
+
+    // Ensure archive structure exists
+    const archive = {
+        entries: Array.isArray(state.archive) ? state.archive : (state.archive?.entries || [])
+    };
+
     return {
         export: null,
         ...state,
+        version: APP_VERSION,
+        archive,
         newEntry: {
             ...state.newEntry,
             start: state.newEntry.start ? new Date(state.newEntry.start) : null,
@@ -42,17 +80,18 @@ export function hydrate(state) {
             start: new Date(entry.start),
             end: new Date(entry.end)
         })),
-        archive: state.archive.map(entry => ({
-            ...entry,
-            start: new Date(entry.start),
-            end: new Date(entry.end)
-        })),
+        archive: {
+            ...archive,
+            entries: archive.entries.map(entry => ({
+                ...entry,
+                start: new Date(entry.start),
+                end: new Date(entry.end)
+            }))
+        },
         tasks: Array.isArray(state.tasks) ? state.tasks : [],
         taskTotals: Array.isArray(state.taskTotals) ? state.taskTotals : [],
         clients: Array.isArray(state.clients) ? state.clients : [],
-        
     };
-   
 }
 
 export default store;

@@ -140,7 +140,7 @@ const APP_VERSION = "0.2.67";
                                     end
                                 }
                             });
-                            state.archive = [...state.archive, ...imported];
+                            state.archive = {...state.archive, entries: [...state.archive.entries, ...imported]};
                         } else {
                             state = {...state, ...hydrate(data)};
                           

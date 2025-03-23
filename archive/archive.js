@@ -18,8 +18,11 @@ export default function archive(el, model) {
         function archiveEntries(state, ev) {
             switch (ev.type) {
                 case 'archive':
-                    state.archive = [...state.entries.map(shallowClone), ...state.archive];
-                    state.archive.sort(function byStartTimeDesc(a,b){
+                    state.archive = {
+                        ...state.archive,
+                        entries: [...state.entries.map(shallowClone), ...state.archive.entries]
+                    };
+                    state.archive.entries.sort(function byStartTimeDesc(a,b){
                         if(a.start > b.start) return -1;
                         if(a.start < b.start) return 1;
                         return 0;
@@ -62,13 +65,16 @@ export default function archive(el, model) {
                     state.archiveBrowserTaskPage = ev.page
                     break;
                 case 'deleteArchiveEntry':
-                    const archive = [];
+                    const archiveEntries = [];
                     state.deleted = state.deleted || [];
-                    for (const x of state.archive) {
+                    for (const x of state.archive.entries) {
                         if(x.id == ev.id) state.deleted.push(x)
-                        else archive.push(x)
+                        else archiveEntries.push(x)
                     }
-                    state.archive = archive
+                    state.archive = {
+                        ...state.archive,
+                        entries: archiveEntries
+                    };
                     break;
             }
             
@@ -87,15 +93,15 @@ export default function archive(el, model) {
                 return x.start.getMonth() == date.getMonth() && x.start.getFullYear() == date.getFullYear()
             }
 
-            const totalDurationWeek = reduce(reduceDuration, 0, filter(isCurrentWeek, state.archive))
+            const totalDurationWeek = reduce(reduceDuration, 0, filter(isCurrentWeek, state.archive.entries))
             const totalNetIncomeWeek = totalDurationWeek * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
 
-            const totalDurationLastWeek = reduce(reduceDuration, 0, filter(isLastWeek, state.archive))
+            const totalDurationLastWeek = reduce(reduceDuration, 0, filter(isLastWeek, state.archive.entries))
             const totalNetIncomeLastWeek = totalDurationLastWeek * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
 
-            const totalDurationMonth = reduce(reduceDuration, 0, filter(apply(isSameMonth, now), state.archive))
+            const totalDurationMonth = reduce(reduceDuration, 0, filter(apply(isSameMonth, now), state.archive.entries))
             const totalNetIncomeMonth = totalDurationMonth * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
-            const totalDurationLastMonth = reduce(reduceDuration, 0, filter(apply(isSameMonth, lastMonth), state.archive))
+            const totalDurationLastMonth = reduce(reduceDuration, 0, filter(apply(isSameMonth, lastMonth), state.archive.entries))
             const totalNetIncomeLastMonth = totalDurationLastMonth * (state.settings.rate || 0) - percentOf(state.settings.tax || 0, state.settings.rate || 0)
             state.stats = {
                 ...state.stats,
