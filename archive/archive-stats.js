@@ -60,7 +60,7 @@ class ArchiveStats extends HTMLElement {
                 totalNetIncomeLastWeek = 0, 
                 } = state?.stats;
 
-        const { archive = { entries: [] }, archivedTasks = [] } = state;
+        const { archive = { entries: [], tasks: [] } } = state;
         
         this.querySelector('[name="totalDurationWeek"]').value = round1dp(totalDurationWeek);
         this.querySelector('[name="totalNetIncomeWeek"]').value = formatPrice(totalNetIncomeWeek);
@@ -109,7 +109,7 @@ class ArchiveStats extends HTMLElement {
             dayEnd.setHours(23, 59, 59, 999);
 
             // Count tasks that were completed on this day
-            const completedTasksCount = archivedTasks.filter(task => {
+            const completedTasksCount = archive.tasks.filter(task => {
                 // Check if task is complete and was completed on this day
                 if (!task.complete) return false;
                 

@@ -6,14 +6,17 @@ function migrate(state, fromVersion) {
     // Handle migrations based on version changes
     if (!fromVersion || fromVersion < "0.2.7") {
         // Migrate archive structure for 0.2.7
-        if (Array.isArray(state.archive)) {
-            state = {
-                ...state,
-                archive: {
-                    entries: state.archive
-                }
-            };
-        }
+        const archive = {
+            entries: Array.isArray(state.archive) ? state.archive : (state.archive?.entries || []),
+            tasks: state.archivedTasks || []
+        };
+        
+        // Remove old archivedTasks property
+        const { archivedTasks, ...restState } = state;
+        state = {
+            ...restState,
+            archive
+        };
     }
     return state;
 }
@@ -41,7 +44,8 @@ const store = Store(
         entries: [],
         clients: [],
         archive: {
-            entries: []
+            entries: [],
+            tasks: []
         },
         tasks: new Set(),
         settings: {
@@ -62,7 +66,8 @@ export function hydrate(state) {
 
     // Ensure archive structure exists
     const archive = {
-        entries: Array.isArray(state.archive) ? state.archive : (state.archive?.entries || [])
+        entries: Array.isArray(state.archive) ? state.archive : (state.archive?.entries || []),
+        tasks: Array.isArray(state.archivedTasks) ? state.archivedTasks : (state.archive?.tasks || [])
     };
 
     return {

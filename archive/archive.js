@@ -28,7 +28,7 @@ export default function archive(el, model) {
                         return 0;
                     });
 
-                    const tasksToArchive = [...state.tasks, ...(state.archivedTasks || [])]
+                    const tasksToArchive = [...state.tasks, ...(state.archive?.tasks || [])]
                   
                     tasksToArchive.sort(function byMostRecentEntryAsc(a,b){
                         if(a.mostRecentEntry < b.mostRecentEntry) return -1;
@@ -49,8 +49,10 @@ export default function archive(el, model) {
                         if(new Date(a.mostRecentEntry) < new Date(b.mostRecentEntry)) return 1;
                         return 0;
                     });
-                    state.archivedTasks = archivedTasks;
-                    console.log('Archived Tasks', state.archivedTasks)
+                    state.archive = {
+                        ...state.archive,
+                        tasks: archivedTasks
+                    };
                     state.tasks = [];
                     state.entries = [];
                     break;

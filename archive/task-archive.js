@@ -67,10 +67,10 @@ class TaskArchive extends HTMLElement {
         this.render({...this.state, archivedTasksSearchTerm: this.archivedTasksSearchTerm});
     }
     
-    render({ archiveOpen, archivedTasks, archivedTasksSearchTerm=null, archiveBrowserTaskPage = 0, archiveBrowserTaskPageSize = 20 }) {
+    render({ archiveOpen, archive = { tasks: [] }, archivedTasksSearchTerm=null, archiveBrowserTaskPage = 0, archiveBrowserTaskPageSize = 20 }) {
         if(!archiveOpen) return;
         const { elArchiveTasksNav } = this;
-        const filteredTasks = archivedTasksSearchTerm ? archivedTasks.filter(this.filterBySearchTerm(archivedTasksSearchTerm)) : archivedTasks;
+        const filteredTasks = archivedTasksSearchTerm ? archive.tasks.filter(this.filterBySearchTerm(archivedTasksSearchTerm)) : archive.tasks;
         const offset = archiveBrowserTaskPage * archiveBrowserTaskPageSize;
         const lastIndex = Math.min(offset + archiveBrowserTaskPageSize, filteredTasks.length);
         const toRender = [];

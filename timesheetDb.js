@@ -87,7 +87,11 @@ TimesheetDB.modules.push(function tasksDb() {
             console.error(e);
         }
 
-        for (let {exid, id, ...task} of data.archivedTasks) {
+        // Handle both old and new archive structures
+        const archivedTasks = Array.isArray(data.archivedTasks) ? data.archivedTasks : 
+                             (data.archive?.tasks || []);
+
+        for (let {exid, id, ...task} of archivedTasks) {
             const request = objectStore.add({exid: exid || Date.now(), id: id || Date.now(), ...task});
             const id = await awaitEvt(request, 'onsuccess', 'onerror');
             console.log(`added`, id);
