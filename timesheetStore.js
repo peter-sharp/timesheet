@@ -1,7 +1,14 @@
 import Store from "./store.js";
 import TimesheetDB from "./timesheetDb.js";
 
-const APP_VERSION = "0.3.0";
+const APP_VERSION = "0.3.1";
+
+//TODO: Fix issue breaking archive migration, when migrating from 0.2.7 to 0.3.1
+//HACK: Create backup of timesheet data in localStorage, if it doesn't exist.
+
+if(!localStorage.getItem('timesheetBackup')) {
+    localStorage.setItem('timesheetBackup', localStorage.getItem('timesheet'));
+}
 
 const INITIAL_STATE = {
     version: APP_VERSION,
@@ -170,11 +177,15 @@ const indexedDBAdapter = {
 
 async function migrate(state, fromVersion) {
     // Handle migrations based on version changes
-    if (!fromVersion || fromVersion < "0.2.7") {
+
+    if(!state.archiveBackup) { 
+        state.archiveBackup = [...state.archive];
+    }
+
+    if (!fromVersion || fromVersion < "0.3.1") {
         // Migrate archive structure for 0.2.7
-        if(Array.isArray(state.archive)) {
-            state.archiveBackup = [...state.archive];
-        }
+      
+        
         const archive = {
             entries: Array.isArray(state.archive) ? state.archive : (state.archive?.entries || []),
             tasks: state.archivedTasks || []
@@ -186,9 +197,7 @@ async function migrate(state, fromVersion) {
             ...restState,
             archive
         };
-    }
 
-    if (fromVersion < "0.2.9") {
         // Migrate archive data to IndexedDB
         try {
             const db = await TimesheetDB();
