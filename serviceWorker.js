@@ -8,6 +8,7 @@ const assets = [
   "./archive/archive.js",
   "./archive/timesheet-archive.js",
   "./archive/task-archive.js",
+  "./archive/archive-stats.js",
   "./sync/sync.js",
   "./sync/tasksyncstatus-list.js",
   "./sync/sync-status.js",
@@ -61,7 +62,9 @@ const assets = [
   "./time-duration.js",
   "./timesheet.js",
   "./timesheetStore.js",
-  "./current-task.js"
+  "./timesheetDb.js",
+  "./current-task.js",
+  "./components/graph-chart.js"
 ];
 
 async function install() {
