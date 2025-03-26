@@ -154,18 +154,27 @@ const indexedDBAdapter = {
         try {
             const db = await TimesheetDB();
             
-            // Write tasks
-            for (const task of state.archive.tasks || []) {
-                await db.addTask(task);
+            // Helper function to handle upsert operations
+            async function upsert(collection, item, addFn, updateFn) {
+                try {
+                    return await addFn(item);
+                } catch (e) {
+                    // If the error is due to a uniqueness constraint violation
+                    if (e.name === 'ConstraintError') {
+                        return await updateFn(item);
+                    }
+                    throw e;
+                }
             }
 
-            // Write entries
+            // Write tasks with upsert
+            for (const task of state.archive.tasks || []) {
+                await upsert('tasks', task, db.addTask.bind(db), db.updateTask.bind(db));
+            }
+
+            // Write entries with upsert
             for (const entry of state.archive.entries || []) {
-                await db.addEntry({
-                    ...entry,
-                    start: new Date(entry.start),
-                    end: new Date(entry.end)
-                });
+                await upsert('entries', entry, db.addEntry.bind(db), db.updateEntry.bind(db));
             }
         } catch (e) {
             console.error('IndexedDB write error:', e);

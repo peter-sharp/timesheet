@@ -85,9 +85,42 @@ TimesheetDB.modules.push(function tasksDb() {
             const archivedTasks = Array.isArray(data.archivedTasks) ? data.archivedTasks : 
                                 (data.archive?.tasks || []);
 
+            // Group tasks by exid to handle duplicates
+            const tasksByExid = new Map();
             for (let {exid, id, ...task} of archivedTasks) {
-                const request = objectStore.add({exid: exid || Date.now(), id: id || Date.now(), ...task});
-                await awaitEvt(request, 'onsuccess', 'onerror');
+                const taskExid = exid || Date.now();
+                if (tasksByExid.has(taskExid)) {
+                    // Merge duplicate tasks, keeping the most recent data
+                    const existingTask = tasksByExid.get(taskExid);
+                    tasksByExid.set(taskExid, {
+                        ...existingTask,
+                        ...task,
+                        // Keep the most recent id
+                        id: Math.max(existingTask.id, id || Date.now())
+                    });
+                } else {
+                    tasksByExid.set(taskExid, {
+                        exid: taskExid,
+                        id: id || Date.now(),
+                        ...task
+                    });
+                }
+            }
+
+            // Add merged tasks to the database
+            for (const task of tasksByExid.values()) {
+                try {
+                    const request = objectStore.add(task);
+                    await awaitEvt(request, 'onsuccess', 'onerror');
+                } catch (e) {
+                    if (e.name === 'ConstraintError') {
+                        // If we still get a constraint error, try to update instead
+                        const request = objectStore.put(task);
+                        await awaitEvt(request, 'onsuccess', 'onerror');
+                    } else {
+                        throw e;
+                    }
+                }
             }
         }
     }
@@ -97,6 +130,14 @@ TimesheetDB.modules.push(function tasksDb() {
             const transaction = db.transaction(["tasks"], "readwrite");
             const objectStore = transaction.objectStore("tasks");
             const request = objectStore.add({exid: exid || Date.now(), id: id || Date.now(), ...data});
+            const taskId = await awaitEvt(request, 'onsuccess', 'onerror');
+            return taskId;
+        }
+    
+        async function updateTask(task) {
+            const transaction = db.transaction(["tasks"], "readwrite");
+            const objectStore = transaction.objectStore("tasks");
+            const request = objectStore.put(task);
             const taskId = await awaitEvt(request, 'onsuccess', 'onerror');
             return taskId;
         }
@@ -117,6 +158,7 @@ TimesheetDB.modules.push(function tasksDb() {
 
         return {
             addTask,
+            updateTask,
             getTask,
             getTasks
         }
@@ -180,6 +222,18 @@ TimesheetDB.modules.push(function entriesDb() {
             return entryId;
         }
     
+        async function updateEntry(entry) {
+            const transaction = db.transaction(["entries"], "readwrite");
+            const objectStore = transaction.objectStore("entries");
+            const request = objectStore.put({
+                ...entry,
+                start: new Date(entry.start),
+                end: new Date(entry.end)
+            });
+            const entryId = await awaitEvt(request, 'onsuccess', 'onerror');
+            return entryId;
+        }
+    
         async function getEntry(id) {
             const transaction = db.transaction(["entries"], "readwrite");
             const objectStore = transaction.objectStore("entries");
@@ -196,6 +250,7 @@ TimesheetDB.modules.push(function entriesDb() {
 
         return {
             addEntry,
+            updateEntry,
             getEntry,
             getEntries
         }
