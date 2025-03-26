@@ -70,6 +70,11 @@ export const localStorageAdapter = {
             },
             taskTotals: Array.isArray(state.taskTotals) ? state.taskTotals : [],
             clients: Array.isArray(state.clients) ? state.clients : [],
+            entries: Array.isArray(state.entries) ? state.entries.map(entry => ({
+                ...entry,
+                start: entry.start ? new Date(entry.start) : null,
+                end: entry.end ? new Date(entry.end) : null
+            })) : []
         };
     },
     async dehydrate(state) {
