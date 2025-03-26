@@ -21,6 +21,7 @@
   --color-button-subtle-hover-text: rgba(0,0,0, 0.5);
   --color-pagination-selected: rgba(255,255,255, 0.5);
   --color-gap: #fff;
+  --color-gap-bg: rgba(255,255,255, 0.1);
 
   /* Graph Chart Colors */
   --color-chart-border: rgba(255, 255, 255, 0.2);
@@ -401,7 +402,8 @@ button[data-state="started"] {
 
 .row-gap td {
   height: min(var(--gap-size, 0), 10em);
-  background-color: var(--color-gap);
+  color:var(--color-gap);
+  background-color: var(--color-gap-bg);
   padding: 0.2em;
 }
 
