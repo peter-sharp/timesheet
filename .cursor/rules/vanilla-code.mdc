@@ -1,0 +1,37 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Enforces vanilla Code without external dependencies
+globs: ["**/*.js", "**/*.css", "**/*.html", "**/*.svg"]
+alwaysApply: true
+---
+
+# Vanilla JavaScript Only
+
+This rule enforces the use of vanilla Code without any external libraries or dependencies.
+
+## Rules
+
+- No external JavaScript libraries or frameworks
+- No npm packages or dependencies
+- No CDN imports
+- No external CSS frameworks
+- Use only built-in JavaScript APIs and browser APIs
+- Use only native HTML5 and CSS3 features
+
+## Allowed
+- Native JavaScript (ES6+)
+- Built-in browser APIs (DOM, Fetch, WebStorage, etc.)
+- Native HTML5 elements and attributes
+- Native CSS3 features
+- Self-contained JavaScript code
+
+## Not Allowed
+- External JavaScript libraries
+- npm packages
+- CDN imports
+- External CSS frameworks
+- Third-party dependencies
