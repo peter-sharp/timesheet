@@ -17,10 +17,10 @@ export default async function TimesheetDB() {
 
 TimesheetDB.modules = [];
 
-function awaitEvt(x, successEvt, failureEvt, cb = (ev) => ev.target ? ev.target.result : null) {
+function awaitEvt(x, successEvt, failureEvt, cb = (ev) => ev.target ? ev.target.result : null, cbError = (ev) => ev.target ? ev.target.error : null) {
     return new Promise((resolve, reject) => {
         x[successEvt] = function(event) { resolve(cb(event))};
-        x[failureEvt] = function(event) { reject(cb(event))};
+        x[failureEvt] = function(event) { reject(cbError(event))};
     });
 }
 

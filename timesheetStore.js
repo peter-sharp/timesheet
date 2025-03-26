@@ -68,12 +68,6 @@ export const localStorageAdapter = {
                 start: state.newEntry.start ? new Date(state.newEntry.start) : null,
                 end: state.newEntry.end ? new Date(state.newEntry.end) : null
             },
-            entries: state.entries.map(entry => ({
-                ...entry,
-                start: new Date(entry.start),
-                end: new Date(entry.end)
-            })),
-            tasks: Array.isArray(state.tasks) ? state.tasks : [],
             taskTotals: Array.isArray(state.taskTotals) ? state.taskTotals : [],
             clients: Array.isArray(state.clients) ? state.clients : [],
         };
@@ -177,10 +171,6 @@ const indexedDBAdapter = {
 
 async function migrate(state, fromVersion) {
     // Handle migrations based on version changes
-
-    if(!state.archiveBackup) { 
-        state.archiveBackup = [...state.archive];
-    }
 
     if (!fromVersion || fromVersion < "0.3.1") {
         // Migrate archive structure for 0.2.7
