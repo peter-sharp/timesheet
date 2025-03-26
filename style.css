@@ -1,8 +1,9 @@
 :root {
   --space-1: 0.2rem; 
   --color-success: hsl(140deg, 80%, 40%);
-  --color-background: #123;
-  --color-background-gradient: hsla(220,50%,50%, 0.6);
+  --color-theme: hsla(220,50%,50%, 0.8);
+  --color-background-gradient: hsla(250,50%,50%, 1);
+  --color-background: var(--color-theme);
   --color-text: #eee;
   --color-text-muted: rgba(255, 255, 255, 0.7);
   --color-button-bg: #000;

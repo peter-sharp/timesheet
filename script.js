@@ -8,6 +8,7 @@ import  "./current-task.js";
 import './archive/archive-stats.js';
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
+import { offsetHue, hexToHsla } from "./utils/colorUtils.js";
 
 import first from "./utils/first.js";
 import last from "./utils/last.js";
@@ -22,7 +23,7 @@ import { hydrate } from "./timesheetStore.js";
 
 // TODO: Move from redux-style state management to Signals.
 
-const APP_VERSION = "0.3.1";
+const APP_VERSION = "0.3.2";
 
 (async () => {
 
@@ -181,7 +182,11 @@ const APP_VERSION = "0.3.1";
     });
     model.listen(function renderTheme({ settings }) {
         if(settings.color){
-            document.body.style.setProperty("--theme-color", settings.color);
+            // Convert hex to HSLA if it's a hex color
+            const themeColor = settings.color.startsWith('#') ? hexToHsla(settings.color, 1) : settings.color;
+            document.documentElement.style.setProperty("--color-theme", themeColor);
+            const backgroundColor = offsetHue(themeColor, 30);
+            document.documentElement.style.setProperty("--color-background-gradient", backgroundColor);
         }
     })
 
