@@ -177,51 +177,121 @@ const indexedDBAdapter = {
 async function migrate(state, fromVersion) {
     // Handle migrations based on version changes
 
-    if (!fromVersion || fromVersion < "0.3.1") {
-        // Migrate archive structure for 0.2.7
-      
-        
-        const archive = {
-            entries: Array.isArray(state.archive) ? state.archive : (state.archive?.entries || []),
-            tasks: state.archivedTasks || []
-        };
-        
-        // Remove old archivedTasks property
-        const { archivedTasks, ...restState } = state;
-        state = {
-            ...restState,
-            archive
-        };
+    if (!fromVersion || fromVersion < "0.3.2") {
+        // Check for backup data in localStorage
+        const backupData = localStorage.getItem('timesheetBackup');
+        if (backupData) {
+            try {
+                const parsedBackup = JSON.parse(backupData);
+                const backupArchive = {
+                    entries: Array.isArray(parsedBackup.archive) ? parsedBackup.archive : (parsedBackup.archive?.entries || []),
+                    tasks: parsedBackup.archivedTasks || []
+                };
 
-        // Migrate archive data to IndexedDB
-        try {
-            const db = await TimesheetDB();
+                // Merge with current archive data
+                const archive = {
+                    entries: [
+                        ...(Array.isArray(state.archive) ? state.archive : (state.archive?.entries || [])),
+                        ...backupArchive.entries
+                    ],
+                    tasks: [
+                        ...(state.archivedTasks || []),
+                        ...backupArchive.tasks
+                    ]
+                };
+
+                // Remove old archivedTasks property
+                const { archivedTasks, ...restState } = state;
+                state = {
+                    ...restState,
+                    archive
+                };
+
+                // Migrate merged archive data to IndexedDB
+                try {
+                    const db = await TimesheetDB();
+                    
+                    // Migrate archived tasks
+                    for (const task of state.archive.tasks || []) {
+                        try {
+                            await db.addTask(task);
+                        } catch (e) {
+                            console.error('Migration to IndexedDB failed:', e);
+                        }
+                    }
+
+                    // Migrate archived entries
+                    for (const entry of state.archive.entries || []) {
+                        try {
+                            await db.addEntry({
+                                ...entry,
+                                start: new Date(entry.start),
+                                end: new Date(entry.end)
+                            });
+                        } catch (e) {
+                            console.error('Migration to IndexedDB failed:', e);
+                        }
+                    }
+
+                    // Clear migrated data from localStorage
+                    const { archive, ...restState } = state;
+                    state = {
+                        ...restState,
+                        archive: {
+                            entries: [],
+                            tasks: []
+                        }
+                    };
+                } catch (e) {
+                    console.error('Migration to IndexedDB failed:', e);
+                }
+            } catch (e) {
+                console.error('Failed to parse backup data:', e);
+            }
+        } else {
+            // Original migration logic for when no backup exists
+            const archive = {
+                entries: Array.isArray(state.archive) ? state.archive : (state.archive?.entries || []),
+                tasks: state.archivedTasks || []
+            };
             
-            // Migrate archived tasks
-            for (const task of state.archive.tasks || []) {
-                await db.addTask(task);
-            }
-
-            // Migrate archived entries
-            for (const entry of state.archive.entries || []) {
-                await db.addEntry({
-                    ...entry,
-                    start: new Date(entry.start),
-                    end: new Date(entry.end)
-                });
-            }
-
-            // Clear migrated data from localStorage
-            const { archive, ...restState } = state;
+            // Remove old archivedTasks property
+            const { archivedTasks, ...restState } = state;
             state = {
                 ...restState,
-                archive: {
-                    entries: [],
-                    tasks: []
-                }
+                archive
             };
-        } catch (e) {
-            console.error('Migration to IndexedDB failed:', e);
+
+            // Migrate archive data to IndexedDB
+            try {
+                const db = await TimesheetDB();
+                
+                // Migrate archived tasks
+                for (const task of state.archive.tasks || []) {
+                    await db.addTask(task);
+                }
+
+                // Migrate archived entries
+                for (const entry of state.archive.entries || []) {
+                    await db.addEntry({
+                        ...entry,
+                        start: new Date(entry.start),
+                        end: new Date(entry.end)
+                    });
+                }
+
+                // Clear migrated data from localStorage
+                const { archive, ...restState } = state;
+                state = {
+                    ...restState,
+                    archive: {
+                        entries: [],
+                        tasks: []
+                    }
+                };
+            } catch (e) {
+                console.error('Migration to IndexedDB failed:', e);
+            }
         }
     }
 
