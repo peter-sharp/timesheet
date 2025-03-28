@@ -49,9 +49,9 @@ export default function tasks(el, model) {
                     break;
                 case "addTask":
                     const [exid = Date.now(), client, description] = extract([/#(\w+)/, /client:(\w+)/], ev.raw);
-
+                    const taskExid = ev.exid || exid || Date.now().toString();
                     // mostRecentEntry to ensure new tasks are at the top
-                    state.tasks = [...state.tasks, { exid: ev.exid || exid, client: ev.client || client, description, id: Date.now(), mostRecentEntry: new Date()}]
+                    state.tasks = [...state.tasks, { exid: taskExid, client: ev.client || client, description, id: Date.now(), mostRecentEntry: new Date()}]
                     // Ensure they are unique
                     // TODO handle clients with other properties than name 
                     state.clients = Array.from(new Set([...state.clients, {name: ev.client}].map(x => x.name))).map(x => ({name: x}))
@@ -116,6 +116,5 @@ export default function tasks(el, model) {
         }
     ]);
 
-    const tasksList = el.querySelector('task-list');
-    model.listen(tasksList.update.bind(tasksList));
+  
 }

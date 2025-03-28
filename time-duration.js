@@ -45,9 +45,8 @@ class TimeDuration extends HTMLElement {
     attributeChangedCallback(name, oldValue, newValue) {
         switch (name) {
           case 'hours':
-            console.log(newValue);
             this.duration = Math.round(hoursToMilliseconds(parseFloat(newValue)));
-            console.log(this.duration);
+
             this.render();
             break;
           case 'duration':

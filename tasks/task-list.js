@@ -210,6 +210,7 @@ class TaskList extends HTMLElement {
   }
 
   update() {
+    console.log("TaskList update called with tasks:", this.#tasks?.value);
     this.renderTasks({
       settings: this.#settings.value,
       tasks: this.#tasks.value,
@@ -224,8 +225,19 @@ class TaskList extends HTMLElement {
 
   renderTasks({ tasks = [], settings = {}, durationTotal = 0 }) {
     const elTotals = this.elTotals;
+    
+    console.log("Original tasks:", tasks);
+    
+    // Log tasks without exid for debugging
+    if (tasks && tasks.length) {
+      const tasksWithoutExid = tasks.filter(x => !x.exid);
+      if (tasksWithoutExid.length) {
+        console.warn("Tasks without exid:", tasksWithoutExid);
+      }
+    }
 
-    let toRender = tasks.filter((x) => x.exid);
+    let toRender = tasks.filter((x) => x && x.exid);
+    console.log("Tasks after exid filter:", toRender);
 
     toRender = toRender.sort(sortByMostRecentEntry);
 
