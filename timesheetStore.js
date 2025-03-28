@@ -1,7 +1,7 @@
 import Store from "./store.js";
 import TimesheetDB from "./timesheetDb.js";
 
-const APP_VERSION = "0.3.1";
+const APP_VERSION = "0.3.7";
 
 //TODO: Fix issue breaking archive migration, when migrating from 0.2.7 to 0.3.1
 //HACK: Create backup of timesheet data in localStorage, if it doesn't exist.
@@ -56,7 +56,7 @@ export const localStorageAdapter = {
         // Run migrations if version has changed
         const fromVersion = state.version;
         if (fromVersion !== APP_VERSION) {
-            state = await migrate(state, fromVersion);
+            state = await migrate(state, fromVersion, APP_VERSION);
         }
 
         return {
@@ -154,39 +154,42 @@ const indexedDBAdapter = {
         try {
             const db = await TimesheetDB();
             
-            // Helper function to handle upsert operations
-            async function upsert(collection, item, addFn, updateFn) {
-                try {
-                    return await addFn(item);
-                } catch (e) {
-                    // If the error is due to a uniqueness constraint violation
-                    if (e.name === 'ConstraintError') {
-                        return await updateFn(item);
-                    }
-                    throw e;
-                }
-            }
-
+         
+            const errors = [];
             // Write tasks with upsert
             for (const task of state.archive.tasks || []) {
-                await upsert('tasks', task, db.addTask.bind(db), db.updateTask.bind(db));
+                try {
+                    await upsert(task, db.addTask.bind(db), db.updateTask.bind(db));
+                } catch (e) {
+                    console.error('IndexedDB write error:', e);
+                    errors.push(e);
+                }
             }
 
             // Write entries with upsert
             for (const entry of state.archive.entries || []) {
-                await upsert('entries', entry, db.addEntry.bind(db), db.updateEntry.bind(db));
+                try {
+                    await upsert(entry, db.addEntry.bind(db), db.updateEntry.bind(db));
+                } catch (e) {
+                    console.error('IndexedDB write error:', e);
+                    errors.push(e);
+                }
+            }
+
+            if (errors.length > 0) {
+                throw new Error('IndexedDB write errors: ' + errors.map(e => e.message).join(', '));
             }
         } catch (e) {
-            console.error('IndexedDB write error:', e);
             throw e;
         }
     }
 };
 
-async function migrate(state, fromVersion) {
+async function migrate(state, fromVersion, toVersion) {
     // Handle migrations based on version changes
 
-    if (!fromVersion || fromVersion < "0.3.2") {
+    if (!fromVersion || fromVersion < toVersion) {
+        console.log('migrating from version', fromVersion, 'to', toVersion);
         // Check for backup data in localStorage
         const backupData = localStorage.getItem('timesheetBackup');
         if (backupData) {
@@ -196,6 +199,8 @@ async function migrate(state, fromVersion) {
                     entries: Array.isArray(parsedBackup.archive) ? parsedBackup.archive : (parsedBackup.archive?.entries || []),
                     tasks: parsedBackup.archivedTasks || []
                 };
+
+                debugger;
 
                 // Merge with current archive data
                 const archive = {
@@ -209,6 +214,8 @@ async function migrate(state, fromVersion) {
                     ]
                 };
 
+                debugger;
+                console.log('archive', archive);
                 // Remove old archivedTasks property
                 const { archivedTasks, ...restState } = state;
                 state = {
@@ -216,6 +223,7 @@ async function migrate(state, fromVersion) {
                     archive
                 };
 
+                debugger;
                 // Migrate merged archive data to IndexedDB
                 try {
                     const db = await TimesheetDB();
@@ -223,7 +231,7 @@ async function migrate(state, fromVersion) {
                     // Migrate archived tasks
                     for (const task of state.archive.tasks || []) {
                         try {
-                            await db.addTask(task);
+                            await upsert(task, db.addTask.bind(db), db.updateTask.bind(db));
                         } catch (e) {
                             console.error('Migration to IndexedDB failed:', e);
                         }
@@ -232,25 +240,19 @@ async function migrate(state, fromVersion) {
                     // Migrate archived entries
                     for (const entry of state.archive.entries || []) {
                         try {
-                            await db.addEntry({
-                                ...entry,
-                                start: new Date(entry.start),
-                                end: new Date(entry.end)
-                            });
+                            await upsert(
+                                {
+                                    ...entry,
+                                    start: new Date(entry.start),
+                                    end: new Date(entry.end)
+                                },
+                                db.addEntry.bind(db),
+                                db.updateEntry.bind(db)
+                            );
                         } catch (e) {
                             console.error('Migration to IndexedDB failed:', e);
                         }
                     }
-
-                    // Clear migrated data from localStorage
-                    const { archive, ...restState } = state;
-                    state = {
-                        ...restState,
-                        archive: {
-                            entries: [],
-                            tasks: []
-                        }
-                    };
                 } catch (e) {
                     console.error('Migration to IndexedDB failed:', e);
                 }
@@ -277,27 +279,21 @@ async function migrate(state, fromVersion) {
                 
                 // Migrate archived tasks
                 for (const task of state.archive.tasks || []) {
-                    await db.addTask(task);
+                    await upsert(task, db.addTask.bind(db), db.updateTask.bind(db));
                 }
 
                 // Migrate archived entries
                 for (const entry of state.archive.entries || []) {
-                    await db.addEntry({
-                        ...entry,
-                        start: new Date(entry.start),
-                        end: new Date(entry.end)
-                    });
+                    await upsert(
+                        {
+                            ...entry,
+                            start: new Date(entry.start),
+                            end: new Date(entry.end)
+                        },
+                        db.addEntry.bind(db),
+                        db.updateEntry.bind(db)
+                    );
                 }
-
-                // Clear migrated data from localStorage
-                const { archive, ...restState } = state;
-                state = {
-                    ...restState,
-                    archive: {
-                        entries: [],
-                        tasks: []
-                    }
-                };
             } catch (e) {
                 console.error('Migration to IndexedDB failed:', e);
             }
@@ -305,6 +301,19 @@ async function migrate(state, fromVersion) {
     }
 
     return state;
+}
+
+   // Helper function to handle upsert operations
+   async function upsert(item, addFn, updateFn) {
+    try {
+        return await addFn(item);
+    } catch (e) {
+        // If the error is due to a uniqueness constraint violation
+        if (e.name === 'ConstraintError') {
+            return await updateFn(item);
+        }
+        throw e;
+    }
 }
 
 // Create store instance with all adapters
