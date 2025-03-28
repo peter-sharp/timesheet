@@ -188,7 +188,7 @@ const indexedDBAdapter = {
 async function migrate(state, fromVersion, toVersion) {
     // Handle migrations based on version changes
 
-    if (!fromVersion || fromVersion < toVersion) {
+    if (!fromVersion || fromVersion < '0.3.7') {
         console.log('migrating from version', fromVersion, 'to', toVersion);
         // Check for backup data in localStorage
         const backupData = localStorage.getItem('timesheetBackup');
