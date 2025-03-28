@@ -101,11 +101,21 @@ template.innerHTML = /*html*/
 
 .checkbox-input:checked + .checkbox span:first-child svg {
   stroke-dashoffset: 0;
+  animation: stroke-animation 0.3s ease-in 0.1s forwards;
 }
 
 @keyframes zoom-in-out {
   50% {
     transform: scale(0.9);
+  }
+}
+
+@keyframes stroke-animation {
+  0% {
+    stroke-dashoffset: 16px;
+  }
+  100% {
+    stroke-dashoffset: 0;
   }
 }
 </style>
@@ -167,12 +177,11 @@ class TaskStatus extends HTMLElement {
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-       if(name == 'checked') this.update({ checked: newValue });
-
+       if(name == 'checked') this.update({ checked: newValue !== null && newValue !== "false" });
     }
 
     set checked(value) {
-        this.update({ checked: value });
+        this.update({ checked: Boolean(value) });
     }
 
     update(state) {
@@ -181,10 +190,14 @@ class TaskStatus extends HTMLElement {
     }
 
     render({ checked, id }) {
-        this.checkBox.checked = checked;
-        this.replacementCheckbox.checked = checked;
-        this.replacementCheckbox.setAttribute("id", id);
-        this.shadowRoot.querySelector("label").setAttribute("for", id);
+        if (this.checkBox) {
+            this.checkBox.checked = checked;
+        }
+        if (this.replacementCheckbox) {
+            this.replacementCheckbox.checked = checked;
+            this.replacementCheckbox.setAttribute("id", id);
+            this.shadowRoot.querySelector("label").setAttribute("for", id);
+        }
     }
 }
 
