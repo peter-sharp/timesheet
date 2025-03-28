@@ -232,6 +232,10 @@ summary > :where(h1, h2, h3, h4) {
   margin-top: var(--gap, 1rem);
 }
 
+.margin-bottom-2 {
+  margin-bottom: 2rem;
+}
+
 .border-top-1,
 .table-footer td {
   border-top: solid 0.05em;

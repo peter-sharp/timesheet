@@ -26,7 +26,7 @@ template.innerHTML = /*html*/ `
 
 const taskForm = document.createElement("template");
 taskForm.innerHTML = /*html*/ `
-<form data-new-task>
+<form data-new-task class="margin-bottom-2">
     <div class="row">
         <div class="input-group row__col-2">
             <label for="newTask">Task</label>
@@ -173,6 +173,12 @@ class TaskList extends HTMLElement {
         elTaskRaw.value = "";
         elExid.value = "";
         elClient.value = "";
+        
+        // Close the details element
+        const detailsElement = ev.target.querySelector('details');
+        if (detailsElement) {
+          detailsElement.open = false;
+        }
       });
     }
     this.addEventListener("change", function toggleTaskComplete(ev) {
