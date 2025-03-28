@@ -180,7 +180,7 @@ const indexedDBAdapter = {
                 throw new Error('IndexedDB write errors: ' + errors.map(e => e.message).join(', '));
             }
         } catch (e) {
-            throw e;
+            console.error('store write error:', e);
         }
     }
 };
