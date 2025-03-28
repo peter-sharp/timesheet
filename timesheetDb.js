@@ -1,3 +1,68 @@
+/**
+ * TimesheetDB - A modular IndexedDB implementation for timesheet management
+ * 
+ * This module implements a modular database architecture where each module is responsible
+ * for managing a specific part of the database. Modules are registered through the
+ * TimesheetDB.modules array and provide both initialization and upgrade functionality.
+ * 
+ * Module Structure:
+ * - Each module is a function that returns an object with init and upgrade methods
+ * - The upgrade method handles database schema changes and data migration
+ * - The init method provides database operations for that module
+ * 
+ * Example Usage:
+ * ```javascript
+ * // Initialize the database
+ * const db = await TimesheetDB();
+ * 
+ * // Tasks module operations
+ * const taskId = await db.addTask({ 
+ *   client: 'Acme Corp',
+ *   project: 'Website Redesign',
+ *   description: 'Update homepage layout'
+ * });
+ * const task = await db.getTask(taskId);
+ * 
+ * // Entries module operations
+ * const entryId = await db.addEntry({
+ *   task: taskId,
+ *   start: new Date(),
+ *   end: new Date(),
+ *   description: 'Initial layout work'
+ * });
+ * 
+ * // Preferences module operations
+ * await db.addPreference({ key: 'theme', value: 'dark' });
+ * const theme = await db.getPreference('theme');
+ * ```
+ * 
+ * Creating a New Module:
+ * ```javascript
+ * TimesheetDB.modules.push(function myModule() {
+ *   async function upgrade(db, version) {
+ *     // Create objectStore and indexes
+ *     if (!db.objectStoreNames.contains("myStore")) {
+ *       const store = db.createObjectStore("myStore", { keyPath: "id" });
+ *       store.createIndex("name", "name", { unique: false });
+ *     }
+ *   }
+ *   
+ *   function init(db) {
+ *     async function addItem(item) {
+ *       const transaction = db.transaction(["myStore"], "readwrite");
+ *       const store = transaction.objectStore("myStore");
+ *       return await awaitEvt(store.add(item), 'onsuccess', 'onerror');
+ *     }
+ * 
+ *     return { addItem }
+ *   }
+ * 
+ *   return { init, upgrade }
+ * });
+ * ```
+ * 
+ * @returns {Promise<Object>} A promise that resolves to an object containing all module operations
+ */
 export default async function TimesheetDB() {
     const dbName = "timesheet";
     const version = 3;
@@ -15,8 +80,18 @@ export default async function TimesheetDB() {
     return modules.reduce((acc, {init}) => ({...acc, ...init(db)}), {})    
 }
 
+/** Array to store registered database modules */
 TimesheetDB.modules = [];
 
+/**
+ * Helper function to promisify IndexedDB events
+ * @param {IDBRequest} x - The IndexedDB request object
+ * @param {string} successEvt - Name of the success event
+ * @param {string} failureEvt - Name of the failure event
+ * @param {Function} cb - Success callback function
+ * @param {Function} cbError - Error callback function
+ * @returns {Promise} A promise that resolves with the event result or rejects with the error
+ */
 function awaitEvt(x, successEvt, failureEvt, cb = (ev) => ev.target ? ev.target.result : null, cbError = (ev) => ev.target ? ev.target.error : null) {
     return new Promise((resolve, reject) => {
         x[successEvt] = function(event) { resolve(cb(event))};
@@ -24,6 +99,11 @@ function awaitEvt(x, successEvt, failureEvt, cb = (ev) => ev.target ? ev.target.
     });
 }
 
+/**
+ * Helper function to create an async iterator for IndexedDB cursors
+ * @param {IDBCursor} cursor - The IndexedDB cursor
+ * @returns {Object} An async iterator object for cursor operations
+ */
 function awaitCursor(cursor) {
     let cur = cursor;
     let push = (x) => {} 
@@ -57,7 +137,21 @@ function awaitCursor(cursor) {
     }
 }
 
+/**
+ * Tasks Module - Manages task-related data in the database
+ * 
+ * This module handles the storage and retrieval of tasks, including:
+ * - Task creation and updates
+ * - Task retrieval by ID or as a list
+ * - Database schema upgrades for tasks
+ * - Migration of task data from localStorage (version 2)
+ */
 TimesheetDB.modules.push(function tasksDb() {
+    /**
+     * Handles database schema upgrades for the tasks module
+     * @param {IDBDatabase} db - The database instance
+     * @param {number} version - The new database version
+     */
     async function upgrade(db, version) {
         // Create an objectStore to hold task information
         if (!db.objectStoreNames.contains("tasks")) {
@@ -125,6 +219,11 @@ TimesheetDB.modules.push(function tasksDb() {
         }
     }
     
+    /**
+     * Initializes the tasks module with database operations
+     * @param {IDBDatabase} db - The database instance
+     * @returns {Object} Object containing task-related database operations
+     */
     function init(db) {
         async function addTask({exid, id, ...data}) {
             const transaction = db.transaction(["tasks"], "readwrite");
@@ -170,7 +269,21 @@ TimesheetDB.modules.push(function tasksDb() {
     }
 });
 
+/**
+ * Entries Module - Manages time entries in the database
+ * 
+ * This module handles the storage and retrieval of time entries, including:
+ * - Entry creation and updates
+ * - Entry retrieval by ID or as a list
+ * - Database schema upgrades for entries
+ * - Migration of entry data from localStorage (version 3)
+ */
 TimesheetDB.modules.push(function entriesDb() {
+    /**
+     * Handles database schema upgrades for the entries module
+     * @param {IDBDatabase} db - The database instance
+     * @param {number} version - The new database version
+     */
     async function upgrade(db, version) {
         // Create an objectStore to hold entry information
         if (!db.objectStoreNames.contains("entries")) {
@@ -209,6 +322,11 @@ TimesheetDB.modules.push(function entriesDb() {
         }
     }
     
+    /**
+     * Initializes the entries module with database operations
+     * @param {IDBDatabase} db - The database instance
+     * @returns {Object} Object containing entry-related database operations
+     */
     function init(db) {
         async function addEntry(entry) {
             const transaction = db.transaction(["entries"], "readwrite");
