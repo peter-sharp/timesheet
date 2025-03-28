@@ -23,7 +23,7 @@ import { hydrate } from "./timesheetStore.js";
 
 // TODO: Move from redux-style state management to Signals.
 
-const APP_VERSION = "0.3.7";
+const APP_VERSION = "0.3.8";
 
 (async () => {
 
@@ -160,7 +160,9 @@ const APP_VERSION = "0.3.7";
         await store.read()
     )
 
-  
+     //TODO: remove this when model replaced by signals
+     const appContext = document.querySelector('app-context');
+     model.listen(appContext.update.bind(appContext));
 
     const timeSheet = document.querySelector('time-sheet');
     model.listen(timeSheet.update.bind(timeSheet));
@@ -193,9 +195,7 @@ const APP_VERSION = "0.3.7";
     // Render the version number in the footer
     document.getElementById('app-version').innerText = APP_VERSION;
 
-    //TODO: remove this when model replaced by signals
-    const appContext = document.querySelector('app-context');
-    model.listen(appContext.update.bind(appContext));
+   
 
     model.emit({ type: 'init' });
 
