@@ -3,7 +3,11 @@ A simple time tracking app
 
 [Demo](https://peter-sharp.github.io/timesheet)
 
+For detailed requirements and implementation tasks, see [REQUIREMENTS.md](./REQUIREMENTS.md)
+
 ## Migration Plan for Archive Section to Vanilla JS Signals and IndexedDB
+
+*Note: The detailed requirements for this migration have been moved to [REQUIREMENTS.md](./REQUIREMENTS.md)*
 
 This document outlines the remaining steps required to complete the migration of the archive section from a centralized state object to using Vanilla JavaScript signals and direct IndexedDB integration.
 
