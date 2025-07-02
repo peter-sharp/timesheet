@@ -1,6 +1,6 @@
 import "./timesheet-archive.js"
 import "./task-archive.js"
-import "../components/graph-chart.js"
+
 import round1dp from "../utils/round1dp.js";
 import formatPrice from "../utils/formatPrice.js";
 import subWeek from "../utils/subWeek.js";
