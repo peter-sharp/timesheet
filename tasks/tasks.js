@@ -33,6 +33,20 @@ export default function tasks(el, model) {
                 case "stopTask":
                     console.log(ev)
                     if(state.newEntry.start) {
+                          // Check if start time needs snapping to previous entry's end time
+                            if (state.entries.length > 0 ) {
+                                const mostRecentEntry = findMostRecentEntryByEndTime(state.entries);
+                                
+                                if (mostRecentEntry && mostRecentEntry.end) {
+                                    // Calculate gap in minutes
+                                    const gapInMinutes = (state.newEntry.start.getTime() - mostRecentEntry.end.getTime()) / (60 * 1000);
+                                    
+                                    // If gap is positive and within threshold, snap the start time
+                                    if (gapInMinutes > 0 && gapInMinutes <= state.settings.timeSnapThreshold) {
+                                        state.newEntry.start = new Date(mostRecentEntry.end);
+                                    }
+                                }
+                            }
                         state.entries = [
                             ...state.entries,
                             {
@@ -116,5 +130,15 @@ export default function tasks(el, model) {
         }
     ]);
 
-  
+    // Helper function to find the most recent entry by end time
+    function findMostRecentEntryByEndTime(entries) {
+        if (!entries || entries.length === 0) return null;
+        
+        return entries.reduce((mostRecent, current) => {
+            if (!mostRecent || !mostRecent.end) return current;
+            if (!current.end) return mostRecent;
+            
+            return current.end > mostRecent.end ? current : mostRecent;
+        }, null);
+    }
 }
