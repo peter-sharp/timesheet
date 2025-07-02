@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Timesheet Archive Tests</title>
+  <style>
+    body { 
+        font-family: Arial, sans-serif; 
+        background-color: #333;
+        color: #fff;
+        margin: 0;  
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+    .test-pass { color: green; }
+    .test-fail { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Timesheet Archive Tests</h1>
+  <button id="run-tests">Run Tests</button>
+  <div id="test-progress" style="margin: 0.5em 0;"></div>
+  <h2>Results: <span id="test-summary"></span></h2>
+  <ul id="test-results"></ul>
+
+  <!-- App context and components for tests -->
+  <app-context></app-context>
+  <timesheet-archive></timesheet-archive>
+  <archive-stats></archive-stats>
+  <task-list features="add"></task-list>
+
+  <script type="module">
+    import '../app-context.js';
+    import '../archive/timesheet-archive.js';
+    import '../archive/archive-stats.js';
+    import '../timesheetDb.js';
+
+    import './test-runner.js';
+    import './archive/timesheet-archive.test.js';
+    import './archive/archive-stats.test.js';
+    import './archive/indexeddb-integration.test.js';
+    import './task-list.test.js';
+
+    console.log('Registered tests:', TestRunner.tests.map(t => t.name));
+
+    // Expose context for tests
+    window.appContext = document.querySelector('app-context');
+    // Update button label with total tests found
+    const runBtn = document.getElementById('run-tests');
+    runBtn.textContent = `Run ${TestRunner.tests.length} Tests`;
+
+    document.getElementById('run-tests').addEventListener('click', () => {
+      TestRunner.runAll();
+    });
+  </script>
+</body>
+</html>

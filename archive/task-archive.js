@@ -1,7 +1,7 @@
 import newtemplateItem from "../utils/newTemplateItem.js";
 import emitEvent from "../utils/emitEvent.js";
 import { ContextRequestEvent } from "../utils/Context.js";
-import { effect } from "../utils/Signal.js";
+import { effect, signal } from "../utils/Signal.js";
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`
@@ -15,9 +15,6 @@ template.innerHTML = /*html*/`
 <ol  id="archive_tasks_page_nav"></ol>
 </nav>`;
 
-const archiveTasksPageNavItem = document.createElement('template');
-archiveTasksPageNavItem.innerHTML = /*html*/`
-        <li aria-selected="true"><button type="button" data-style="subtle"></button></li>`;
 
 const archiveTaskItem = document.createElement('template');
 archiveTaskItem.innerHTML = /*html*/`
@@ -35,15 +32,16 @@ archiveTaskItem.innerHTML = /*html*/`
 </li>`;
 
 class TaskArchive extends HTMLElement {
-    #archive;
-    #archiveOpen;
+    #archiveTasks;
     #archiveBrowserTaskPage;
     #archiveBrowserTaskPageSize;
+    #totalPages;
+    #archivedTasksSearchTerm = signal("");
     #unsubscribe = {};
-    archivedTasksSearchTerm = "";
 
     constructor() {
         super();
+        console.log("TaskArchive component initialized."); // Log initialization
         this.append(template.content.cloneNode(true));
         const el = this;
 
@@ -52,6 +50,7 @@ class TaskArchive extends HTMLElement {
 
         elArchiveTasksNav.addEventListener("click", function updatePage(ev) {
             if (ev.target.nodeName.toLowerCase() == "button") {
+                console.log("Page navigation clicked:", ev.target.innerText); // Log page navigation
                 emitEvent(el, "updateArchiveTaskPage", {
                     page: parseInt(ev.target.innerText, 10)
                 });
@@ -68,17 +67,18 @@ class TaskArchive extends HTMLElement {
             new ContextRequestEvent(
                 "state",
                 (state, unsubscribe) => {
-                    this.#archive = state.archive;
-                    this.#archiveOpen = state.archiveOpen;
+                    console.log("State received:", state); // Log state reception
+                    this.#archiveTasks = state.archiveTasks;
                     this.#archiveBrowserTaskPage = state.archiveBrowserTaskPage;
                     this.#archiveBrowserTaskPageSize = state.archiveBrowserTaskPageSize;
+                    this.#totalPages = state.totalPages; // Retrieve totalPages from context
 
                     this.#unsubscribe.signals = effect(
                         this.update.bind(this),
-                        this.#archive,
-                        this.#archiveOpen,
+                        this.#archiveTasks,
                         this.#archiveBrowserTaskPage,
-                        this.#archiveBrowserTaskPageSize
+                        this.#archiveBrowserTaskPageSize,
+                        this.#totalPages
                     );
 
                     this.#unsubscribe.state = unsubscribe;
@@ -86,60 +86,54 @@ class TaskArchive extends HTMLElement {
                 true
             )
         );
+
+        this.#unsubscribe.searchTermSignal = this.#archivedTasksSearchTerm.effect(() => {
+            console.log("Search term updated:", this.#archivedTasksSearchTerm.value); // Log search term updates
+            emitEvent(this, "updateArchiveTasks", {
+                searchTerm: this.#archivedTasksSearchTerm.value
+            });
+        });
     }
 
     disconnectedCallback() {
+        console.log("TaskArchive component disconnected."); // Log disconnection
         this.#unsubscribe.signals();
         this.#unsubscribe.state();
+        this.#unsubscribe.searchTermSignal();
     }
 
     searchArchive(ev) {
         ev.preventDefault();
-        this.archivedTasksSearchTerm = this.searchForm.elements.term.value;
-        this.update();
+        const searchTerm = this.searchForm.elements.term.value;
+        console.log("Search submitted with term:", searchTerm); // Log search submission
+        this.#archivedTasksSearchTerm.value = searchTerm;
     }
 
     update() {
+        console.log("Update triggered."); // Log update trigger
         this.render({
-            archiveOpen: this.#archiveOpen?.value,
-            archive: this.#archive?.value || { tasks: [] },
+            archiveTasks: this.#archiveTasks?.value || [],
             archiveBrowserTaskPage: this.#archiveBrowserTaskPage?.value || 0,
             archiveBrowserTaskPageSize: this.#archiveBrowserTaskPageSize?.value || 20,
-            archivedTasksSearchTerm: this.archivedTasksSearchTerm
+            totalPages: this.#totalPages?.value || 0
         });
     }
 
-    render({ archiveOpen, archive, archivedTasksSearchTerm = null, archiveBrowserTaskPage = 0, archiveBrowserTaskPageSize = 20 }) {
-        if (!archiveOpen) return;
-        const { elArchiveTasksNav } = this;
-        const filteredTasks = archivedTasksSearchTerm ? archive.tasks.filter(this.filterBySearchTerm(archivedTasksSearchTerm)) : archive.tasks;
-        const offset = archiveBrowserTaskPage * archiveBrowserTaskPageSize;
-        const lastIndex = Math.min(offset + archiveBrowserTaskPageSize, filteredTasks.length);
-        const toRender = [];
-        for (let i = offset; i < lastIndex; i += 1) {
-            toRender.push(filteredTasks[i]);
-        }
-        this.renderTasks(toRender);
+    render({ archiveTasks, archiveBrowserTaskPage = 0, archiveBrowserTaskPageSize = 20, totalPages = 0 }) {
+        console.log("Render called with:", { archiveTasks, archiveBrowserTaskPage, archiveBrowserTaskPageSize, totalPages }); // Log render parameters
+        this.renderTasks(archiveTasks);
 
-        const pageCount = Math.ceil(filteredTasks.length / archiveBrowserTaskPageSize);
         const pages = document.createDocumentFragment();
-        for (let i = 0; i < pageCount; i += 1) {
+        for (let i = 0; i < totalPages; i += 1) {
             pages.append(this.renderPageNavItem({ pageNo: i, selectedPage: archiveBrowserTaskPage }));
         }
 
-        elArchiveTasksNav.innerHTML = "";
-        elArchiveTasksNav.append(pages);
-    }
-
-    filterBySearchTerm(term) {
-        return function Search({ exid, description, client }) {
-            return (exid || '').toString().toLowerCase().includes(term)
-                || (description || '').toLowerCase().includes(term)
-                || (client || '').toLowerCase().includes(term);
-        };
+        this.elArchiveTasksNav.innerHTML = "";
+        this.elArchiveTasksNav.append(pages);
     }
 
     renderTasks(tasks) {
+        console.log("Rendering tasks:", tasks); // Log tasks being rendered
         const tasksList = this.tasksList;
         tasksList.innerHTML = "";
         tasks.forEach(task => {
@@ -156,9 +150,12 @@ class TaskArchive extends HTMLElement {
     }
 
     renderPageNavItem({ pageNo, selectedPage }) {
-        const item = newtemplateItem(archiveTasksPageNavItem);
-        item.setAttribute('aria-selected', pageNo == selectedPage);
-        item.querySelector("button").innerText = pageNo;
+        const item = document.createElement('li');
+        item.setAttribute('aria-selected', pageNo === selectedPage);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.innerText = pageNo;
+        item.append(button);
         return item;
     }
 }

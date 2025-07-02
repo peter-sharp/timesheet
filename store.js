@@ -1,12 +1,12 @@
 export default function Store(adapters) {
-    async function read() {
+    async function read({ archivedTasksSearchTerm = "", archiveBrowserTaskPage = 0, archiveBrowserTaskPageSize = 20 } = {}) {
         let data = {};
         let errors = [];
 
         // Read from all adapters and merge the data
         for (const adapter of adapters) {
             try {
-                const adapterData = await adapter.read();
+                const adapterData = await adapter.read({ archivedTasksSearchTerm, archiveBrowserTaskPage, archiveBrowserTaskPageSize });
                 data = { ...data, ...adapterData };
             } catch (e) {
                 console.error('Error reading from adapter:', e);

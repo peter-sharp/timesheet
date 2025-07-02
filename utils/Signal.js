@@ -37,6 +37,8 @@ export function effect(fn,...signals) {
     };
 }
 
-export default function signal(_) {
+export function signal(_) {
     return new Signal(_);
 }
+
+export default signal

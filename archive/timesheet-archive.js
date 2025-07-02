@@ -3,6 +3,7 @@ import formatDate from "../utils/formatDate.js";
 import format24hour from "../utils/format24Hour.js";
 import calcDuration from "../utils/calcDuration.js";
 import emitEvent from "../utils/emitEvent.js";
+import { effect } from "../utils/Signal.js";
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`
@@ -73,6 +74,21 @@ class TimesheetArchive extends HTMLElement {
 
         this.elArchiveEntries = elArchiveEntries;
         this.elArchiveEntriesNav = elArchiveEntriesNav;
+
+        // Subscribe to context signals for automatic rendering
+        const ctx = document.querySelector('app-context');
+        this._unsubscribe = effect(() => {
+            this.render({
+                archiveOpen: true,
+                archive: { entries: ctx.archiveEntries.value },
+                archiveBrowserPage: ctx.archiveBrowserTaskPage.value,
+                archiveBrowserPageSize: ctx.archiveBrowserTaskPageSize.value
+            });
+        }, ctx.archiveEntries, ctx.archiveBrowserTaskPage, ctx.archiveBrowserTaskPageSize);
+    }
+
+    disconnectedCallback() {
+        if (this._unsubscribe) this._unsubscribe();
     }
 
     update(state) {

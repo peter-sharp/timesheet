@@ -23,7 +23,7 @@ import { hydrate } from "./timesheetStore.js";
 
 // TODO: Move from redux-style state management to Signals.
 
-const APP_VERSION = "0.3.8";
+const APP_VERSION = "0.3.9";
 
 (async () => {
 
@@ -158,7 +158,9 @@ const APP_VERSION = "0.3.8";
             },
         ],
         await store.read()
-    )
+    );
+
+    console.log("Initial state loaded:", model.state); // Log the initial state
 
      //TODO: remove this when model replaced by signals
      const appContext = document.querySelector('app-context');

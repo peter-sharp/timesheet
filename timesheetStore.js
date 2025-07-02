@@ -1,5 +1,6 @@
 import Store from "./store.js";
 import TimesheetDB from "./timesheetDb.js";
+import { signal } from "../utils/Signal.js";
 
 const APP_VERSION = "0.3.7";
 
@@ -33,7 +34,8 @@ export const localStorageAdapter = {
     async read() {
         try {
             const data = JSON.parse(localStorage.getItem('timesheet')) || {};
-            return await this.hydrate({...INITIAL_STATE, ...data});
+
+            return await this.hydrate({ ...INITIAL_STATE, ...data });
         } catch (e) {
             console.error('LocalStorage read error:', e);
             return {};
@@ -82,7 +84,7 @@ export const localStorageAdapter = {
         if(state.export) state.export = null;
         return {
             ...state,
-            version: APP_VERSION
+                        version: APP_VERSION
         };
     }
 };
@@ -117,20 +119,17 @@ const sessionStorageAdapter = {
     }
 };
 
+export const totalPagesSignal = signal(0); // Signal for total pages
+
 // Create IndexedDB adapter
 const indexedDBAdapter = {
-    async read() {
+    async read({ archivedTasksSearchTerm = "", archiveBrowserTaskPage = 0, archiveBrowserTaskPageSize = 20 } = {}) {
         try {
             const db = await TimesheetDB();
             const archive = {
                 entries: [],
                 tasks: []
             };
-
-            // Load tasks
-            for await (const task of db.getTasks()) {
-                archive.tasks.push(task);
-            }
 
             // Load entries
             for await (const entry of db.getEntries()) {
@@ -140,6 +139,24 @@ const indexedDBAdapter = {
                     end: new Date(entry.end)
                 });
             }
+
+            // Load tasks with filtering and pagination
+            const allTasks = [];
+            for await (const task of db.getTasks()) {
+                if (
+                    (!archivedTasksSearchTerm || task.description?.toLowerCase().includes(archivedTasksSearchTerm.toLowerCase()) ||
+                        task.client?.toLowerCase().includes(archivedTasksSearchTerm.toLowerCase()) ||
+                        task.exid?.toString().toLowerCase().includes(archivedTasksSearchTerm.toLowerCase()))
+                ) {
+                    allTasks.push(task);
+                }
+            }
+
+            const totalTasks = allTasks.length;
+            totalPagesSignal.value = Math.ceil(totalTasks / archiveBrowserTaskPageSize); // Update total pages signal
+
+            const offset = archiveBrowserTaskPage * archiveBrowserTaskPageSize;
+            archive.tasks = allTasks.slice(offset, offset + archiveBrowserTaskPageSize);
 
             return { archive };
         } catch (e) {
@@ -154,7 +171,6 @@ const indexedDBAdapter = {
         try {
             const db = await TimesheetDB();
             
-         
             const errors = [];
             // Write tasks with upsert
             for (const task of state.archive.tasks || []) {
@@ -303,8 +319,8 @@ async function migrate(state, fromVersion, toVersion) {
     return state;
 }
 
-   // Helper function to handle upsert operations
-   async function upsert(item, addFn, updateFn) {
+// Helper function to handle upsert operations
+async function upsert(item, addFn, updateFn) {
     try {
         return await addFn(item);
     } catch (e) {

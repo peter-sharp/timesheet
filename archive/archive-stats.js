@@ -1,5 +1,8 @@
 import round1dp from "../utils/round1dp.js";
 import formatPrice from "../utils/formatPrice.js";
+import { effect } from "../utils/Signal.js";
+import "../components/graph-chart.js"
+import { ContextRequestEvent } from "../utils/Context.js";
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`
@@ -25,6 +28,7 @@ template.innerHTML = /*html*/`
             padding="40"
             x-label="Day of Month"
             y-label="Hours"
+            class="daily-hours-chart"
         ></graph-chart>
     </div>
     <div>
@@ -41,15 +45,63 @@ template.innerHTML = /*html*/`
 </div>`
 
 class ArchiveStats extends HTMLElement {
+    #archiveEntries;
+    #archiveTasks;
+    #stats;
+    #unsubscribe = {
+        signals: null,
+        state: null
+    };
     constructor() {
         super();
         this.append(template.content.cloneNode(true));
-        this.graphChart = this.querySelector('graph-chart');
-        this.completedTasksChart = this.querySelector('.completed-tasks-chart');
+        
+
+   
+            this.dispatchEvent(
+              new ContextRequestEvent(
+                "state",
+                (state, unsubscribe) => {
+                  this.#archiveEntries = state.archiveEntries;
+                  this.#archiveTasks = state.archiveTasks;
+                  this.#stats = state.stats;
+        
+                  this.#unsubscribe.signals = effect(
+                    this.update.bind(this),
+                    this.#archiveEntries,
+                    this.#archiveTasks,
+                    this.#stats
+                  );
+        
+                  this.#unsubscribe.state = unsubscribe;
+                },
+                true
+              )
+            );
+  
+        
     }
 
-    update(state) {
-        this.render(state);
+    disconnectedCallback() {
+        if (this.#unsubscribe.signals) {
+            this.#unsubscribe.signals();
+            this.#unsubscribe.signals = null;
+        }
+        if (this.#unsubscribe.state) {
+            this.#unsubscribe.state();
+            this.#unsubscribe.state = null;
+        }
+    }
+
+    update() {
+        console.log("ArchiveStats update called");
+        this.render({
+            stats: this.#stats?.value || {},
+            archive: {
+                entries:  this.#archiveEntries?.value || [],
+                tasks: this.#archiveTasks?.value || []
+            }
+        });
     }
 
     render(state) {
@@ -61,7 +113,7 @@ class ArchiveStats extends HTMLElement {
                 } = state?.stats;
 
         const { archive = { entries: [], tasks: [] } } = state;
-        
+        console.log("Rendering ArchiveStats with state:", state);
         this.querySelector('[name="totalDurationWeek"]').value = round1dp(totalDurationWeek);
         this.querySelector('[name="totalNetIncomeWeek"]').value = formatPrice(totalNetIncomeWeek);
         this.querySelector('[name="totalDurationLastWeek"]').value = round1dp(totalDurationLastWeek);
@@ -113,11 +165,8 @@ class ArchiveStats extends HTMLElement {
                 // Check if task is complete and was completed on this day
                 if (!task.complete) return false;
                 
-                // Look through task history to find when it was completed
-                const completedEntry = task.history?.find(h => h.complete);
-                if (!completedEntry) return false;
 
-                const completedDate = new Date(completedEntry.mostRecentEntry);
+                const completedDate = new Date(task.mostRecentEntry);
                 return completedDate >= dayStart && completedDate <= dayEnd;
             }).length;
 
@@ -126,7 +175,15 @@ class ArchiveStats extends HTMLElement {
                 y: completedTasksCount
             };
         });
-
+        console.log("Daily Totals:", dailyTotals);
+        console.log("Daily Completed Tasks:", dailyCompletedTasks);
+        this.graphChart = this.querySelector('.daily-hours-chart');
+        this.completedTasksChart = this.querySelector('.completed-tasks-chart');
+        if (!this.graphChart || !this.completedTasksChart) {
+            console.error("Graph charts not found in ArchiveStats");
+            return;
+        }
+        console.log(this.graphChart, this.completedTasksChart);
         this.graphChart.data = dailyTotals;
         this.completedTasksChart.data = dailyCompletedTasks;
     }
