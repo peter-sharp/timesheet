@@ -1,6 +1,6 @@
 import Store from "./store.js";
 import TimesheetDB from "./timesheetDb.js";
-import { signal } from "../utils/Signal.js";
+import { signal } from "./utils/Signal.js";
 
 const APP_VERSION = "0.3.7";
 
