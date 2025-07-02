@@ -208,6 +208,14 @@ tr:focus-within  td {
 } 
 
 
+.context-reveal .context-reveal__input{
+  background-color: transparent;
+}
+
+.context-reveal:where(:hover,:focus-within, :target, [data-state="active"]) .context-reveal__input{
+  background-color: var(--color-input-bg);
+}
+
 
 summary > :where(h1, h2, h3, h4) {
   display: inline-block;
@@ -395,6 +403,8 @@ button[data-state="started"] {
   outline: 1px solid hsla(0,0%,100%, 0.3);
   outline-offset: 0.4em;
 }
+
+
 
 .context-reveal:where(:hover,:focus-within, :target, [data-state="active"]) .context-reveal__item {
   opacity: 1;

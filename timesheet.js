@@ -25,12 +25,12 @@ template.innerHTML = /*html*/`<form class="wrapper__inner overflow-x-scroll" id=
             <th>Actions</th>
         </tr>
     </thead>
-    <tbody id="time_entries">
-        <tr data-new="entry">
-            <td><input type="text" name="task" list="prevTasks"></td>
-            <td><input type="text" name="annotation"></td>
-            <td><input type="time" name="time_start"></td>
-            <td><input type="time" name="time_end"></td>
+    <tbody id="time_entries" >
+        <tr data-new="entry" >
+            <td><input type="text" name="task"   list="prevTasks"></td>
+            <td><input type="text" name="annotation"  ></td>
+            <td><input type="time" name="time_start"  ></td>
+            <td><input type="time" name="time_end"  ></td>
             <td><time-duration class="pulseOpacity"></time-duration></td>
             <td></td>
         </tr>
@@ -50,10 +50,10 @@ template.innerHTML = /*html*/`<form class="wrapper__inner overflow-x-scroll" id=
 const entryRow = document.createElement('template');
 entryRow.innerHTML = /*html*/`
 <tr class="context-reveal time-entry">
-    <td><input type="text" name="task" list="prevTasks"></td>
-    <td><input type="text" name="annotation"></td>
-    <td><input type="time" name="time_start"></td>
-    <td><input type="time" name="time_end"></td>
+    <td><input type="text" name="task" class="context-reveal__input" list="prevTasks"></td>
+    <td><input type="text" name="annotation" class="context-reveal__input"></td>
+    <td><input type="time" name="time_start" class="context-reveal__input"></td>
+    <td><input type="time" name="time_end" class="context-reveal__input"></td>
     <td><time-duration></time-duration></td>
     <td class="context-reveal__item"><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button></td>
 </tr>`
