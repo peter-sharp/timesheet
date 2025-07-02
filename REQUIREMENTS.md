@@ -55,9 +55,9 @@ We've started moving the archive section from using a central state object to a 
 
 We want to add a feature that automatically snaps time entries together when they're close to each other:
 
-- [ ] **High priority**: When adding a new time entry, if it starts within 6 minutes after the previous entry ended, automatically set its start time to match the previous entry's end time
-- [ ] **Medium priority**: Add a setting to adjust this time-snapping interval (default: 6 minutes)
-- [ ] **Medium priority**: Make the time-snapping settings persist between sessions
+- [x] **High priority**: When adding a new time entry, if it starts within 6 minutes after the previous entry ended, automatically set its start time to match the previous entry's end time
+- [x] **Medium priority**: Add a setting to adjust this time-snapping interval (default: 6 minutes)
+- [x] **Medium priority**: Make the time-snapping settings persist between sessions
 - [ ] **Low priority**: Add a visual indicator when time-snapping has been applied
 
 ## 🧪 Testing

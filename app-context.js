@@ -7,6 +7,7 @@ customElements.define('app-context', class extends HTMLElement {
     newEntry = signal({})
     entries = signal([])
     tasks = signal([])
+    timeSnapThreshold = signal(6) // Default: 6 minutes for time-snapping feature
     clients = signal([])
     durationTotal = signal(0)
     durationTotalGaps = signal(0)
@@ -23,6 +24,7 @@ customElements.define('app-context', class extends HTMLElement {
         newEntry: this.newEntry,
         entries: this.entries,
         tasks: this.tasks,
+        timeSnapThreshold: this.timeSnapThreshold,
         clients: this.clients,
         durationTotal: this.durationTotal,
         durationTotalGaps: this.durationTotalGaps,
@@ -43,7 +45,7 @@ customElements.define('app-context', class extends HTMLElement {
         this.style.display = 'contents';
     }
 
-    update({newEntry, entries, tasks, clients, settings, durationTotal, durationTotalGaps, currentTask, archive, archiveOpen, stats, archiveBrowserTaskPage, archiveBrowserTaskPageSize, totalPages}) {
+    update({newEntry, entries, tasks, clients, settings, durationTotal, durationTotalGaps, currentTask, archive, archiveOpen, stats, archiveBrowserTaskPage, archiveBrowserTaskPageSize, totalPages, timeSnapThreshold}) {
         this.settings.value = {...settings}
         this.newEntry.value = {...newEntry}
         this.entries.value = [...entries]
@@ -59,5 +61,9 @@ customElements.define('app-context', class extends HTMLElement {
         this.archiveBrowserTaskPageSize.value = archiveBrowserTaskPageSize
         this.stats.value = stats || {};
         this.totalPages.value = totalPages // Update totalPages value
+        // Update timeSnapThreshold if provided, otherwise keep current value
+        if (timeSnapThreshold !== undefined) {
+            this.timeSnapThreshold.value = timeSnapThreshold;
+        }
     }
 });

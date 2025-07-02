@@ -12,6 +12,18 @@ import { offsetHue, hexToHsla } from "./utils/colorUtils.js";
 
 import first from "./utils/first.js";
 import last from "./utils/last.js";
+
+// Helper function to find the most recent entry by end time
+function findMostRecentEntryByEndTime(entries) {
+    if (!entries || entries.length === 0) return null;
+    
+    return entries.reduce((mostRecent, current) => {
+        if (!mostRecent || !mostRecent.end) return current;
+        if (!current.end) return mostRecent;
+        
+        return current.end > mostRecent.end ? current : mostRecent;
+    }, null);
+}
 import store from "./timesheetStore.js";
 import archive from "./archive/archive.js";
 import  tasks from "./tasks/tasks.js";
@@ -36,6 +48,11 @@ const APP_VERSION = "0.3.9";
             console.error(e);
         }
     }
+
+    // Initialize default settings
+    const defaultSettings = {
+        timeSnapThreshold: 6 // Default to 6 minutes for time-snapping
+    };
 
     const model = Model([
             function newEntry(state, ev) {
@@ -70,6 +87,21 @@ const APP_VERSION = "0.3.9";
                             state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x);
                            
                         } else {
+                            // Check if start time needs snapping to previous entry's end time
+                            if (state.entries.length > 0 && change.start) {
+                                const mostRecentEntry = findMostRecentEntryByEndTime(state.entries);
+                                
+                                if (mostRecentEntry && mostRecentEntry.end) {
+                                    // Calculate gap in minutes
+                                    const gapInMinutes = (change.start.getTime() - mostRecentEntry.end.getTime()) / (60 * 1000);
+                                    
+                                    // If gap is positive and within threshold, snap the start time
+                                    if (gapInMinutes > 0 && gapInMinutes <= state.settings.timeSnapThreshold) {
+                                        change.start = new Date(mostRecentEntry.end);
+                                    }
+                                }
+                            }
+                            
                             // adding new entry
                             state.entries = [
                                 ...state.entries,
@@ -161,6 +193,9 @@ const APP_VERSION = "0.3.9";
     );
 
     console.log("Initial state loaded:", model.state); // Log the initial state
+    
+    // Ensure default settings are present
+    model.state.settings = { ...defaultSettings, ...model.state.settings };
 
      //TODO: remove this when model replaced by signals
      const appContext = document.querySelector('app-context');
@@ -281,13 +316,3 @@ function importTimewtime(x) {
     const [_, y,m,d,h,mm,s] = x.match(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/)
     return new Date(y, m - 1, d, h, mm, s);
 }
-
-
-
-
-
-
-
-
-
-
