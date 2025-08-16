@@ -4,7 +4,10 @@ const currentTaskTemplate = document.createElement("template");
 currentTaskTemplate.innerHTML = /*html*/ `<output name="taskEXID"></output> <time-duration></time-duration>`;
 class CurrentTask extends HTMLElement {
     #newEntry;
-    #unsubscribeNewEntry;
+    #tasksIndex = {};
+    #tasks;
+    
+    #unsubscribe = {};
     #loop;
 
     constructor() {
@@ -12,12 +15,13 @@ class CurrentTask extends HTMLElement {
         this.appendChild(currentTaskTemplate.content.cloneNode(true));
     }
 
-    #unsubscribe;
 
     connectedCallback() {
         this.dispatchEvent(new ContextRequestEvent('state', (state, unsubscribe) => {
             this.#newEntry = state.newEntry;
-            this.#unsubscribeNewEntry = this.#newEntry.effect(this.update.bind(this))
+            this.#tasks = state.tasks;
+            this.#unsubscribe.newEntry = this.#newEntry.effect(this.update.bind(this));
+            this.#unsubscribe.tasks = this.#tasks.effect(this.indexTasks.bind(this));
             this.update();
             this.#unsubscribe = unsubscribe;
         }, true));
@@ -29,8 +33,21 @@ class CurrentTask extends HTMLElement {
 
     disconnectedCallback() {
         this.#unsubscribe?.();
-        this.#unsubscribeNewEntry?.();
+        this.#unsubscribe.newEntry?.();
+        this.#unsubscribe.tasks?.();
         if(this.#loop) clearTimeout(this.#loop.timeout);
+    }
+
+    getTaskById(exid) {
+        return this.#tasksIndex[exid] || null;
+    }
+
+    indexTasks() {
+        this.#tasksIndex = {};
+        for (const task of this.#tasks.value) {
+            this.#tasksIndex[task.exid] = task;
+        }
+        console.log("Indexed tasks", this.#tasksIndex);
     }
 
     update() {
@@ -40,7 +57,8 @@ class CurrentTask extends HTMLElement {
 
     render(newEntry) {
         const taskEXID = this.querySelector('[name="taskEXID"]');
-        taskEXID.value = newEntry.task || '';
+        const task = this.getTaskById(newEntry.task);
+        taskEXID.value = `${task ? `${task.description || task.exid} (${task.exid})` : newEntry.task}`;
         const duration = this.querySelector('time-duration');
         duration.hidden = newEntry.start == undefined;
         if (!duration.hidden) {

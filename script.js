@@ -35,7 +35,7 @@ import { hydrate } from "./timesheetStore.js";
 
 // TODO: Move from redux-style state management to Signals.
 
-const APP_VERSION = "1.2.2";
+const APP_VERSION = "1.2.3";
 
 (async () => {
 
@@ -249,7 +249,8 @@ function renderTabTitle({ newEntry = {}, currentTask = {} }) {
     const title = "Timesheet";
     let info = []
 
-    if(newEntry.task) info.push(newEntry.task);
+    if(currentTask?.exid == newEntry.task) info.push(`${currentTask.description} (${currentTask.exid})`);
+    else if(newEntry.task) info.push(newEntry.task);
 
     if(newEntry.start) {
         info.push(formatDurationToStandard({ 

@@ -76,6 +76,7 @@ taskRow.innerHTML = /*html*/ `
 class TaskList extends HTMLElement {
   #clients;
   #tasks;
+  #tasksIndex = {};
   #settings;
   #currentTask;
   #newEntry;
@@ -114,6 +115,11 @@ class TaskList extends HTMLElement {
             this.#durationTotal
           );
 
+          this.#unsubscribe.tasksIndex = effect(
+            this.indexTasks.bind(this),
+            this.#tasks
+          );
+
           this.#unsubscribe.state = unsubscribe;
         },
         true
@@ -139,8 +145,14 @@ class TaskList extends HTMLElement {
         const { exid } = activeTaskEl.closest("[data-exid]")?.dataset || {};
         Notification.requestPermission().then(function (permission) {
           if (permission === "granted") {
-            // Permission was granted, create a notification
-            new Notification(`Time's up for task ${exid}`);
+            // Permission was granted, create a 
+            const task = that.getTaskById(exid);
+            new Notification(`Time's up for task ${task?.description || exid} (${exid})`, {
+              body: `You have been working on this task for more than ${formatDurationDecimal(
+                focusInterval || 0
+              )} hours.`, 
+              icon: "favicon.ico",
+            });
           } else {
             // Permission was denied or not granted
             console.log("Permission not granted");
@@ -207,6 +219,7 @@ class TaskList extends HTMLElement {
   diconnectedCallback() {
     this.#unsubscribe.signals();
     this.#unsubscribe.state();
+    this.#unsubscribe.tasksIndex();
   }
 
   update() {
@@ -221,6 +234,18 @@ class TaskList extends HTMLElement {
       this.querySelector("#prev-clients"),
       this.#clients?.value || []
     );
+  }
+
+  getTaskById(exid) {
+    return this.#tasksIndex[exid] || null;
+  }
+
+  indexTasks() {
+    this.#tasksIndex = {};
+    for (const task of this.#tasks.value) {
+      this.#tasksIndex[task.exid] = task;
+    }
+    console.log("Indexed tasks", this.#tasksIndex);
   }
 
   renderTasks({ tasks = [], settings = {}, durationTotal = 0 }) {

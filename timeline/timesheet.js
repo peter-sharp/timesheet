@@ -100,6 +100,7 @@ class Timesheet extends HTMLElement {
     #newEntry;
     #entries;
     #tasks;
+    #tasksIndex = {};
     #durationTotal;
     #durationTotalGaps;
     #unsubscribe = {};
@@ -133,6 +134,11 @@ class Timesheet extends HTMLElement {
                 this.#durationTotal,
                 this.#durationTotalGaps
             );
+            this.#unsubscribe.indexTasks = effect(
+                this.indexTasks.bind(this),
+                this.#tasks
+            );
+
             this.#unsubscribe.state = unsubscribe;
         }, true));
 
@@ -194,6 +200,7 @@ class Timesheet extends HTMLElement {
     diconnectedCallback() {
         this.#unsubscribe.signals()
         this.#unsubscribe.state()
+        this.#unsubscribe.indexTasks();
     }
 
     update() {
@@ -207,6 +214,19 @@ class Timesheet extends HTMLElement {
         });
  
     }
+
+    getTaskById(exid) {
+        return this.#tasksIndex[exid] || null;
+    }
+
+    indexTasks() {
+        this.#tasksIndex = {};
+        for (const task of this.#tasks.value) {
+            this.#tasksIndex[task.exid] = task;
+        }
+        console.log("Indexed tasks", this.#tasksIndex);
+    }
+
 
     render(state) {
         const el = this;
@@ -252,7 +272,8 @@ class Timesheet extends HTMLElement {
         // Update section title with task name
         const titleElement = section.querySelector('.entry-title > span[data-title]');
         if (titleElement && entry.task) {
-            titleElement.textContent = entry.task;
+            const task = this.getTaskById(entry.task);
+            titleElement.textContent = task ? `${task.description || task.exid} (${task.exid})` : entry.task;
         }
         
         // Calculate duration and set section size
