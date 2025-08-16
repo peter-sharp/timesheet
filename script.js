@@ -226,6 +226,7 @@ const APP_VERSION = "1.2.2";
             document.documentElement.style.setProperty("--color-theme", themeColor);
             const backgroundColor = offsetHue(themeColor, 30);
             document.documentElement.style.setProperty("--color-background-gradient", backgroundColor);
+            document.querySelector('meta[name="theme-color"]').setAttribute("content", themeColor);
         }
     })
 
