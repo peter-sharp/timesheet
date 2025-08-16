@@ -2,7 +2,7 @@ import Store from "./store.js";
 import TimesheetDB from "./timesheetDb.js";
 import { signal } from "./utils/Signal.js";
 
-const APP_VERSION = "0.3.7";
+const APP_VERSION = "1.2.0"; // Update this version when making changes
 
 //TODO: Fix issue breaking archive migration, when migrating from 0.2.7 to 0.3.1
 //HACK: Create backup of timesheet data in localStorage, if it doesn't exist.

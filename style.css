@@ -379,6 +379,8 @@ button[data-state="started"] {
   "complete content time actions";
   grid-template-columns: 3rem 1fr min-content min-content;
   gap: var(--space-5);
+  padding: var(--space-1);
+  border-radius: 0.6rem;
 }
 .task-item__complete {
   grid-area: complete;
@@ -591,6 +593,9 @@ button[data-state="started"] {
     position: absolute;
     white-space: nowrap; 
     width: 1px;
+}
+.hidden {
+  display: none;
 }
 
 .overflow-x-scroll {
