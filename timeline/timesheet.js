@@ -1,16 +1,15 @@
-import getNetIncome from "./utils/getNetIncome.js";
-import {ContextRequestEvent} from './utils/Context.js';
-import {effect} from './utils/Signal.js';
-import { allInputsEntered, noInputsEntered, allInputsEnteredExcept } from "./utils/inputsEntered.js"
-import timeToDate from "./utils/timeToDate.js";
-import timeLoop from "./utils/timeLoop.js";
-import calcDuration from "./utils/calcDuration.js";
-import round1dp from "./utils/round1dp.js";
-import formatPrice from "./utils/formatPrice.js";
-import format24hour from "./utils/format24Hour.js";
-import emitEvent from "./utils/emitEvent.js";
-import shallowClone from "./utils/shallowClone.js";
-
+import getNetIncome from "../utils/getNetIncome.js";
+import {ContextRequestEvent} from '../utils/Context.js';
+import {effect} from '../utils/Signal.js';
+import { allInputsEntered, noInputsEntered, allInputsEnteredExcept } from "../utils/inputsEntered.js"
+import timeToDate from "../utils/timeToDate.js";
+import timeLoop from "../utils/timeLoop.js";
+import calcDuration from "../utils/calcDuration.js";
+import round1dp from "../utils/round1dp.js";
+import formatPrice from "../utils/formatPrice.js";
+import format24hour from "../utils/format24Hour.js";
+import emitEvent from "../utils/emitEvent.js";
+import shallowClone from "../utils/shallowClone.js";
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`<form class="wrapper__inner overflow-x-scroll" id=timesheet>
