@@ -13,41 +13,44 @@ import shallowClone from "../utils/shallowClone.js";
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=timesheet>
-<div id="time_entries" class="timeline-container">
-    <section data-new="entry" class="time-entry-section">
-        <h3 class="entry-title"><time-duration class="pulseOpacity"></time-duration><span>New Entry</span></h3>
-        <form class="entry-form">
-            <div class="input-group">
-                <label for="newEnd">Time End: </label>
-                <input id="newEnd" type="time" name="time_end">
+    <div class="padding-inline-start-5">
+        <section data-new="entry" class="new-entry-section">
+            <h3 class="entry-title"><time-duration class="pulseOpacity"></time-duration><span>New Entry</span></h3>
+            <form class="entry-form">
+                <div class="input-group">
+                    <label for="newEnd">Time End: </label>
+                    <input id="newEnd" type="time" name="time_end">
+                </div>
+                <div class="input-group">
+                    <label for="newTask">Task: </label>
+                    <input id="newTask" type="text" name="task" list="prevTasks">
+                </div>
+                <div class="input-group">
+                    <label for="newStart">Time Start: </label>
+                    <input id="newStart" type="time" name="time_start">
+                </div>
+                
+                <div class="input-group">
+                    <label for="newAnnotation">Annotation: </label>
+                    <input id="newAnnotation" type="text" name="annotation">
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <div id="time_entries" class="padding-inline-start-5 timeline-container">
+        <!-- Timeline entries will be inserted here -->
+    </div>
+    <div class="padding-inline-start-5">
+        <footer class="timeline-footer">
+            <div class="gaps-info">
+                <abbr title="Gaps between entries">Gaps</abbr> <time-duration data-durationTotalGaps></time-duration>
             </div>
-            <div class="input-group">
-                <label for="newTask">Task: </label>
-                <input id="newTask" type="text" name="task" list="prevTasks">
+            <div class="totals-info">
+                <output name="durationTotal"></output> <output class="opacity50" name="durationNetIncome"></output>
             </div>
-             <div class="input-group">
-                <label for="newStart">Time Start: </label>
-                <input id="newStart" type="time" name="time_start">
-            </div>
-            
-            <div class="input-group">
-                <label for="newAnnotation">Annotation: </label>
-                <input id="newAnnotation" type="text" name="annotation">
-            </div>
-           
-          
-          
-        </form>
-    </section>
-    <section class="timeline-footer">
-        <div class="gaps-info">
-            <abbr title="Gaps between entries">Gaps</abbr> <time-duration data-durationTotalGaps></time-duration>
-        </div>
-        <div class="totals-info">
-            <output name="durationTotal"></output> <output class="opacity50" name="durationNetIncome"></output>
-        </div>
-    </section>
-</div>
+        </footer>
+    </div>
 
 <datalist id="prevTasks"></datalist>
 <!-- TODO add hidden button to save data -->
@@ -207,14 +210,12 @@ class Timesheet extends HTMLElement {
 
     render(state) {
         const el = this;
-        const newEntry = this.entriesList.querySelector('[data-new="entry"]');
+        const newEntry = el.querySelector('[data-new="entry"]');
         this.renderEntry(newEntry, state.newEntry);
         
-        const footer = this.entriesList.querySelector('.timeline-footer')
-        
-  
+        // Clear only the timeline container content
         for (const x of [...this.entriesList.childNodes]) {
-            if (![newEntry,footer].includes(x)) x.remove();
+            x.remove();
         }
         const entries = state.entries.map(shallowClone);
        
@@ -226,18 +227,11 @@ class Timesheet extends HTMLElement {
                
             }
 
-        
+
             section = this.renderEntryGap(this.renderEntry(section, entry), entry);
-            if(newEntry) {
-                newEntry.after(section);
-            } else {
-                this.entriesList.append(section)
-            }
-             
-           
-           
-          
+            this.entriesList.append(section);
         }
+        
         this.renderTaskdatalist(state.tasks)
         //TODO make sure in scope of timesheet
         const elDurationTotal = el.querySelector('[name="durationTotal"]');
@@ -324,7 +318,7 @@ class Timesheet extends HTMLElement {
 
     renderNewEntryDuration({ newEntry }) {
         if(!newEntry || !newEntry.start) return;
-        const newTask = this.entriesList.querySelector('[data-new="entry"]');
+        const newTask = this.querySelector('[data-new="entry"]');
         
         const {start} = newEntry
     
