@@ -12,56 +12,78 @@ import emitEvent from "../utils/emitEvent.js";
 import shallowClone from "../utils/shallowClone.js";
 
 const template = document.createElement('template');
-template.innerHTML = /*html*/`<form class="wrapper__inner overflow-x-scroll" id=timesheet>
-<table>
-    <thead>
-        <tr>
-            <th>Task</th>
-            <th>Annotation</th>
-            <th>Time Start</th>
-            <th>Time End</th>
-            <th>Duration</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody id="time_entries" >
-        <tr data-new="entry" >
-            <td><input type="text" name="task"   list="prevTasks"></td>
-            <td><input type="text" name="annotation"  ></td>
-            <td><input type="time" name="time_start"  ></td>
-            <td><input type="time" name="time_end"  ></td>
-            <td><time-duration class="pulseOpacity"></time-duration></td>
-            <td></td>
-        </tr>
-        <tr class="table-footer">
-            <td colspan="4"><abbr title="Gaps between entries">Gaps</abbr> <time-duration data-durationTotalGaps></time-duration></td>
-            <td><output name="durationTotal"></output> <output class="opacity50" name="durationNetIncome"></output></td>
-            <td></td>
-        </tr>
-    </tbody>
-</table>
+template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=timesheet>
+<div id="time_entries" class="timeline-container">
+    <section data-new="entry" class="time-entry-section">
+        <h3 class="entry-title"><span>New Entry</span><time-duration class="pulseOpacity"></time-duration></h3>
+        <form class="entry-form">
+            <div class="input-group">
+                <label for="newTask">Task: </label>
+                <input id="newTask" type="text" name="task" list="prevTasks">
+            </div>
+            <div class="input-group">
+                <label for="newAnnotation">Annotation: </label>
+                <input id="newAnnotation" type="text" name="annotation">
+            </div>
+            <div class="input-group">
+                <label for="newStart">Time Start: </label>
+                <input id="newStart" type="time" name="time_start">
+            </div>
+            <div class="input-group">
+                <label for="newEnd">Time End: </label>
+                <input id="newEnd" type="time" name="time_end">
+            </div>
+          
+        </form>
+    </section>
+    <section class="timeline-footer">
+        <div class="gaps-info">
+            <abbr title="Gaps between entries">Gaps</abbr> <time-duration data-durationTotalGaps></time-duration>
+        </div>
+        <div class="totals-info">
+            <output name="durationTotal"></output> <output class="opacity50" name="durationNetIncome"></output>
+        </div>
+    </section>
+</div>
 
 <datalist id="prevTasks"></datalist>
 <!-- TODO add hidden button to save data -->
 
-</form>`
+</div>`
 
 const entryRow = document.createElement('template');
 entryRow.innerHTML = /*html*/`
-<tr class="context-reveal time-entry">
-    <td><input type="text" name="task" class="context-reveal__input" list="prevTasks"></td>
-    <td><input type="text" name="annotation" class="context-reveal__input"></td>
-    <td><input type="time" name="time_start" class="context-reveal__input"></td>
-    <td><input type="time" name="time_end" class="context-reveal__input"></td>
-    <td><time-duration></time-duration></td>
-    <td class="context-reveal__item"><button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button></td>
-</tr>`
+<section class="context-reveal time-entry time-entry-section time-entry-section--bg">
+    <h3 class="entry-title"><span data-title></span><time-duration></time-duration></h3>
+    <form class="entry-form">
+        <div class="input-group">
+            <label for="entryTask">Task: </label>
+            <input id="entryTask" type="text" name="task" class="context-reveal__input" list="prevTasks">
+        </div>
+        <div class="input-group">
+            <label for="entryAnnotation">Annotation: </label>
+            <input id="entryAnnotation" type="text" name="annotation" class="context-reveal__input">
+        </div>
+        <div class="input-group">
+            <label for="entryStart">Time Start: </label>
+            <input id="entryStart" type="time" name="time_start" class="context-reveal__input">
+        </div>
+        <div class="input-group">
+            <label for="entryEnd">Time End: </label>
+            <input id="entryEnd" type="time" name="time_end" class="context-reveal__input">
+        </div>
+       
+        <div class="entry-actions context-reveal__item">
+            <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button>
+        </div>
+    </form>
+</section>`
 
 const entryRowGap = document.createElement('template');
 entryRowGap.innerHTML = /*html*/`
-<tr class="context-reveal time-entry row-gap">
-    <td colspan="6"><time-duration data-gap></time-duration></td>
-</tr>`
+<section class="gap-section">
+    <p class="gap-text">gap <time-duration data-gap></time-duration></p>
+</section>`
 
 const MILLISECONDS_PER_HOUR = 3600000
 class Timesheet extends HTMLElement {
@@ -109,26 +131,26 @@ class Timesheet extends HTMLElement {
         el.addEventListener('focusout', function handleNewTimeEntry(ev) {
             if (ev.target.nodeName == 'INPUT') {
                 const input = ev.target;
-                const row = input.closest('tr');
+                const section = input.closest('section');
 
-                console.log({ allInputsEnteredExcept: allInputsEnteredExcept(['time_end'], row), index: row.rowIndex})
-                if (allInputsEntered(row)) {
+                console.log({ allInputsEnteredExcept: allInputsEnteredExcept(['time_end'], section), section: section})
+                if (allInputsEntered(section)) {
                     emitEvent(el, 'changedEntry', {
-                        id: parseInt(row.dataset.id, 10),
-                        task: row.querySelector('[name="task"]').value,
-                        annotation: row.querySelector('[name="annotation"]').value,
-                        start: timeToDate(row.querySelector('[name="time_start"]').value),
-                        end: timeToDate(row.querySelector('[name="time_end"]').value)
+                        id: parseInt(section.dataset.id, 10),
+                        task: section.querySelector('[name="task"]').value,
+                        annotation: section.querySelector('[name="annotation"]').value,
+                        start: timeToDate(section.querySelector('[name="time_start"]').value),
+                        end: timeToDate(section.querySelector('[name="time_end"]').value)
                     })
-                }  else if(row.dataset.new && noInputsEntered(row)) {
+                }  else if(section.dataset.new && noInputsEntered(section)) {
                     emitEvent(el, 'clearNewEntry', {task: that.task});
-                } else if(row.dataset.new) {
-                    that.task = row.querySelector('[name="task"]').value;
-                    const annotation = row.querySelector('[name="annotation"]').value;
-                    const start = row.querySelector('[name="time_start"]').value;
-                    const end = row.querySelector('[name="time_end"]').value;
+                } else if(section.dataset.new) {
+                    that.task = section.querySelector('[name="task"]').value;
+                    const annotation = section.querySelector('[name="annotation"]').value;
+                    const start = section.querySelector('[name="time_start"]').value;
+                    const end = section.querySelector('[name="time_end"]').value;
                     emitEvent(el, 'newEntry', {
-                        id: parseInt(row.dataset.id, 10),
+                        id: parseInt(section.dataset.id, 10),
                         task: that.task,
                         annotation,
                         start: start ? timeToDate(start) : null,
@@ -183,7 +205,7 @@ class Timesheet extends HTMLElement {
         const newEntry = this.entriesList.querySelector('[data-new="entry"]');
         this.renderEntry(newEntry, state.newEntry);
         
-        const footer = this.entriesList.querySelector('.table-footer')
+        const footer = this.entriesList.querySelector('.timeline-footer')
         
   
         for (const x of [...this.entriesList.childNodes]) {
@@ -192,19 +214,19 @@ class Timesheet extends HTMLElement {
         const entries = state.entries.map(shallowClone);
        
         for (const entry of entries) {
-            let row = this.entriesList.querySelector(`[data-id="${entry.id}"]`);
-            if (!row) {
-                row = this.newTimeentryRow();
-                row.dataset.id = entry.id
+            let section = this.entriesList.querySelector(`[data-id="${entry.id}"]`);
+            if (!section) {
+                section = this.newTimeentrySection();
+                section.dataset.id = entry.id
                
             }
 
         
-            row = this.renderEntryGap(this.renderEntry(row, entry), entry);
+            section = this.renderEntryGap(this.renderEntry(section, entry), entry);
             if(newEntry) {
-                newEntry.after(row);
+                newEntry.after(section);
             } else {
-                this.entriesList.append(row)
+                this.entriesList.append(section)
             }
              
            
@@ -220,36 +242,68 @@ class Timesheet extends HTMLElement {
         elDurationTotalGaps.setAttribute("duration", round1dp(state.durationTotalGaps * MILLISECONDS_PER_HOUR));
     }
 
-    renderEntry(row, entry) {
-       
-        row.querySelector('[name="task"]').value = entry.task || '';
-        row.querySelector('[name="annotation"]').value = entry.annotation || '';
-        row.querySelector('[name="time_start"]').value = entry.start ? format24hour(entry.start) : '';
-        row.querySelector('[name="time_end"]').value = entry.end ? format24hour(entry.end) : '';
-        if(entry.start && entry.end) {
-            row.querySelector('time-duration').setAttribute('end', entry.end);
-            row.querySelector('time-duration').setAttribute('start', entry.start);
-        } else {
-            row.querySelector('time-duration').setAttribute('duration', 0);
-        }
-    
-        return row
-    }
+    renderEntry(section, entry) {
 
-    renderEntryGap(row, entry) {
-        const rowGroup = document.createDocumentFragment();
+        this.renderEntryInput(section.querySelector('[name="task"]'), entry.id, entry.task);
+        this.renderEntryInput(section.querySelector('[name="annotation"]'), entry.id, entry.annotation);
+        this.renderEntryInput(section.querySelector('[name="time_start"]'), entry.id, entry.start ? format24hour(entry.start) : '');
+        this.renderEntryInput(section.querySelector('[name="time_end"]'), entry.id, entry.end ? format24hour(entry.end) : '');
        
         
-        rowGroup.appendChild(row);
+        // Update section title with task name
+        const titleElement = section.querySelector('.entry-title > span[data-title]');
+        if (titleElement && entry.task) {
+            titleElement.textContent = entry.task;
+        }
+        
+        // Calculate duration and set section size
+        let duration = 0;
+        const timeDurationElement = section.querySelector('time-duration');
+        if(entry.start && entry.end) {
+            timeDurationElement.setAttribute('end', entry.end);
+            timeDurationElement.setAttribute('start', entry.start);
+            duration = calcDuration(entry.start, entry.end);
+        } else {
+            timeDurationElement.setAttribute('duration', 0);
+        }
+        
+        // Set section height based on duration (2em per hour, minimum 4em)
+        const hours = duration / MILLISECONDS_PER_HOUR;
+        const sectionHeight = Math.max(hours * 2, 4);
+        section.style.setProperty('--section-height', `${sectionHeight}em`);
+    
+        return section
+    }
+
+    renderEntryInput(input, id, value ) {
+        if (!input) return;
+        const label = input.labels[0] || input.previousElementSibling.matches('label') ? input.previousElementSibling : null;
+        if(label) {
+            label.setAttribute('for', label.getAttribute('for')?.replace('entry', id));
+            input.id = input.id.replace('entry', id);
+            console.log(input.id, label.getAttribute('for'), id);
+        }
+       
+        input.value = value || '';
+        
+        return input;
+
+    }
+
+    renderEntryGap(section, entry) {
+        const sectionGroup = document.createDocumentFragment();
+       
+        
+        sectionGroup.appendChild(section);
 
         if(entry.gap && entry.gap > 0.05 ) {
-            const gapRow = entryRowGap.content.cloneNode(true).querySelector('tr');
-            gapRow.querySelector('time-duration').setAttribute('duration', entry.gap * MILLISECONDS_PER_HOUR);
-            gapRow.style.setProperty("--gap-color", "rgba(255, 255, 255, 0.2)" );
-            gapRow.style.setProperty("--gap-size",  `${entry.gap + 1}em` );
-            rowGroup.appendChild(gapRow);
+            const gapSection = entryRowGap.content.cloneNode(true).querySelector('section');
+            gapSection.querySelector('time-duration').setAttribute('duration', entry.gap * MILLISECONDS_PER_HOUR);
+            gapSection.style.setProperty("--gap-color", "rgba(255, 255, 255, 0.2)" );
+            gapSection.style.setProperty("--gap-size",  `${entry.gap + 1}em` );
+            sectionGroup.appendChild(gapSection);
         }
-        return rowGroup
+        return sectionGroup
     }
 
 
@@ -283,8 +337,8 @@ class Timesheet extends HTMLElement {
     }
 
 
-    newTimeentryRow() {
-        return entryRow.content.cloneNode(true).querySelector('tr')
+    newTimeentrySection() {
+        return entryRow.content.cloneNode(true).querySelector('section')
     }
 
 }

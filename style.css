@@ -170,6 +170,10 @@ textarea {
   display: block;
 }
 
+input[type="time"] {
+  max-width: 8em;
+} 
+
 
 label > input {
   display: inline-block;
@@ -419,6 +423,112 @@ button[data-state="started"] {
   color:var(--color-gap);
   background-color: var(--color-gap-bg);
   padding: 0.2em;
+}
+
+/* Timeline Section Styles */
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.time-entry-section {
+  border-radius: 0.5rem;
+  border: solid 1px var(--color-input-bg);
+  padding: 1rem;
+  min-height: var(--section-height, 4em);
+  transition: background-color 300ms ease-in-out;
+}
+
+.time-entry-section--bg {
+  background-color: var(--color-input-bg);
+}
+
+.time-entry-section:hover {
+  background-color: var(--color-table-hover);
+}
+
+.time-entry-section:focus-within {
+  background-color: var(--color-table-focus);
+}
+
+.entry-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  color: var(--color-text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.entry-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  height: calc(100% - 2rem);
+  align-items: start;
+}
+
+.entry-form .input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.entry-form .input-group label {
+  font-size: 0.8rem;
+  margin-bottom: 0.2rem;
+  color: var(--color-text-muted);
+}
+
+.entry-form .duration-display {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.entry-form .entry-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.gap-section {
+  background-color: var(--color-gap-bg);
+  border-radius: 0.3rem;
+  padding: 0.5rem;
+  text-align: center;
+  min-height: var(--gap-size, 1em);
+  height: var(--gap-size, 1em);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gap-text {
+  margin: 0;
+  color: var(--color-gap);
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.timeline-footer {
+  background-color: var(--color-footer-bg);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.gaps-info, .totals-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .pulseOpacity {
