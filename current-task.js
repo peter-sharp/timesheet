@@ -58,7 +58,7 @@ class CurrentTask extends HTMLElement {
     render(newEntry) {
         const taskEXID = this.querySelector('[name="taskEXID"]');
         const task = this.getTaskById(newEntry.task);
-        taskEXID.value = `${task ? `${task.description || task.exid} (${task.exid})` : newEntry.task}`;
+        taskEXID.value = `${task ? `${task.description || task.exid} (${task.exid})` : newEntry.task || ''}`;
         const duration = this.querySelector('time-duration');
         duration.hidden = newEntry.start == undefined;
         if (!duration.hidden) {
