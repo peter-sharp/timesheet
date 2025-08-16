@@ -229,7 +229,7 @@ class Timesheet extends HTMLElement {
 
 
             section = this.renderEntryGap(this.renderEntry(section, entry), entry);
-            this.entriesList.append(section);
+            this.entriesList.prepend(section);
         }
         
         this.renderTaskdatalist(state.tasks)
