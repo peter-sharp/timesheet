@@ -35,7 +35,7 @@ import { hydrate } from "./timesheetStore.js";
 
 // TODO: Move from redux-style state management to Signals.
 
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.2.2";
 
 (async () => {
 

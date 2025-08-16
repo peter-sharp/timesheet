@@ -4,8 +4,8 @@
   "description": "A progressive web app for tracking time entries and managing tasks",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#111",
-  "theme_color": "#111",
+  "background_color": "#111111",
+  "theme_color": "#111111",
   "orientation": "portrait-primary",
   "scope": "./",
   "icons": [
