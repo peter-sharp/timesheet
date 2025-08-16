@@ -210,7 +210,9 @@ tr:hover  td {
 tr:focus-within  td {
   background-color: var(--color-table-focus);
 } 
-
+.context-reveal {
+  border: solid 1px transparent;
+}
 
 .context-reveal .context-reveal__input{
   background-color: transparent;
@@ -404,8 +406,8 @@ button[data-state="started"] {
 }
 
 .context-reveal:where(:hover,:focus-within, :target, [data-state="active"]) {
-  outline: 1px solid hsla(0,0%,100%, 0.3);
-  outline-offset: 0.4em;
+  border-color: hsla(0,0%,100%, 0.3);
+
 }
 
 
@@ -430,19 +432,18 @@ button[data-state="started"] {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  border-inline-start: solid 2px var(--color-text-muted);
+  padding-inline-start: 1rem;
 }
 
 .time-entry-section {
   border-radius: 0.5rem;
-  border: solid 1px var(--color-input-bg);
   padding: 1rem;
   min-height: var(--section-height, 4em);
   transition: background-color 300ms ease-in-out;
 }
 
-.time-entry-section--bg {
-  background-color: var(--color-input-bg);
-}
+
 
 .time-entry-section:hover {
   background-color: var(--color-table-hover);
@@ -460,6 +461,25 @@ button[data-state="started"] {
   justify-content: space-between;
   align-items: center;
 }
+
+.entry-title--time-line {
+  border-block-end: 1px solid var(--color-text-muted);
+  position: relative;
+}
+
+.entry-title--time-line:before {
+    content: " ";
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    background: var(--color-text-muted);
+    position: absolute;
+    left: -2.3rem;
+    bottom: -0.3rem;
+    transform: rotate(45deg);
+}
+
+
 
 .entry-form {
   display: grid;
@@ -499,13 +519,11 @@ button[data-state="started"] {
 .gap-section {
   background-color: var(--color-gap-bg);
   border-radius: 0.3rem;
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   text-align: center;
   min-height: var(--gap-size, 1em);
   height: var(--gap-size, 1em);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
 }
 
 .gap-text {
@@ -513,6 +531,8 @@ button[data-state="started"] {
   color: var(--color-gap);
   font-style: italic;
   opacity: 0.8;
+  display: flex;
+  justify-content: space-between;
 }
 
 .timeline-footer {

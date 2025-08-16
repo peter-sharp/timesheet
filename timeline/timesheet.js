@@ -15,24 +15,27 @@ const template = document.createElement('template');
 template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=timesheet>
 <div id="time_entries" class="timeline-container">
     <section data-new="entry" class="time-entry-section">
-        <h3 class="entry-title"><span>New Entry</span><time-duration class="pulseOpacity"></time-duration></h3>
+        <h3 class="entry-title"><time-duration class="pulseOpacity"></time-duration><span>New Entry</span></h3>
         <form class="entry-form">
-            <div class="input-group">
-                <label for="newTask">Task: </label>
-                <input id="newTask" type="text" name="task" list="prevTasks">
-            </div>
-            <div class="input-group">
-                <label for="newAnnotation">Annotation: </label>
-                <input id="newAnnotation" type="text" name="annotation">
-            </div>
-            <div class="input-group">
-                <label for="newStart">Time Start: </label>
-                <input id="newStart" type="time" name="time_start">
-            </div>
             <div class="input-group">
                 <label for="newEnd">Time End: </label>
                 <input id="newEnd" type="time" name="time_end">
             </div>
+            <div class="input-group">
+                <label for="newTask">Task: </label>
+                <input id="newTask" type="text" name="task" list="prevTasks">
+            </div>
+             <div class="input-group">
+                <label for="newStart">Time Start: </label>
+                <input id="newStart" type="time" name="time_start">
+            </div>
+            
+            <div class="input-group">
+                <label for="newAnnotation">Annotation: </label>
+                <input id="newAnnotation" type="text" name="annotation">
+            </div>
+           
+          
           
         </form>
     </section>
@@ -53,25 +56,27 @@ template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=t
 
 const entryRow = document.createElement('template');
 entryRow.innerHTML = /*html*/`
-<section class="context-reveal time-entry time-entry-section time-entry-section--bg">
-    <h3 class="entry-title"><span data-title></span><time-duration></time-duration></h3>
+<section class="context-reveal time-entry time-entry-section">
+    <h3 class="entry-title entry-title--time-line"><time-duration></time-duration><span data-title></span></h3>
     <form class="entry-form">
+         <div class="input-group">
+            <label for="entryEnd">Time End: </label>
+            <input id="entryEnd" type="time" name="time_end" class="context-reveal__input">
+        </div>
         <div class="input-group">
             <label for="entryTask">Task: </label>
             <input id="entryTask" type="text" name="task" class="context-reveal__input" list="prevTasks">
-        </div>
-        <div class="input-group">
-            <label for="entryAnnotation">Annotation: </label>
-            <input id="entryAnnotation" type="text" name="annotation" class="context-reveal__input">
         </div>
         <div class="input-group">
             <label for="entryStart">Time Start: </label>
             <input id="entryStart" type="time" name="time_start" class="context-reveal__input">
         </div>
         <div class="input-group">
-            <label for="entryEnd">Time End: </label>
-            <input id="entryEnd" type="time" name="time_end" class="context-reveal__input">
+            <label for="entryAnnotation">Annotation: </label>
+            <input id="entryAnnotation" type="text" name="annotation" class="context-reveal__input">
         </div>
+        
+       
        
         <div class="entry-actions context-reveal__item">
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button>
@@ -82,7 +87,7 @@ entryRow.innerHTML = /*html*/`
 const entryRowGap = document.createElement('template');
 entryRowGap.innerHTML = /*html*/`
 <section class="gap-section">
-    <p class="gap-text">gap <time-duration data-gap></time-duration></p>
+    <p class="gap-text"><time-duration data-gap></time-duration><span>gap</span></p>
 </section>`
 
 const MILLISECONDS_PER_HOUR = 3600000
