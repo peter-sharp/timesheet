@@ -249,14 +249,14 @@ function renderTabTitle({ newEntry = {}, currentTask = {} }) {
     const title = "Timesheet";
     let info = []
 
-    if(currentTask?.exid === newEntry.task && newEntry.task) info.push(`${currentTask.description} (${currentTask.exid})`);
-    else if(newEntry.task) info.push(newEntry.task);
-
     if(newEntry.start) {
         info.push(formatDurationToStandard({ 
             duration: calcDuration({ start: newEntry.start, end: new Date() }, 'milliseconds') + hoursToMilliseconds(currentTask?.total || 0)
         }));
     }
+    
+    if(currentTask?.exid === newEntry.task && newEntry.task) info.push(`${currentTask.description} (${currentTask.exid})`);
+    else if(newEntry.task) info.push(newEntry.task);
 
     document.title = info.length ? `${info.join(' ')} | ${title}` : title;
 }
