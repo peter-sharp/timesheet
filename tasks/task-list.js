@@ -178,12 +178,13 @@ class TaskList extends HTMLElement {
         const elExid = ev.target.elements.exid;
         const elClient = ev.target.elements.client;
         const lines = elTaskRaw.value.split("\n").map(l => l.trim()).filter(Boolean);
-        for (const line of lines) {
-          emitEvent(that, "addTask", {
-            raw: line,
-            exid: lines.length === 1 ? elExid.value : "",
-            client: lines.length === 1 ? elClient.value : "",
-          });
+        const tasks = lines.map((line, i) => ({
+          raw: line,
+          exid: lines.length === 1 ? elExid.value : "",
+          client: lines.length === 1 ? elClient.value : "",
+        }));
+        if (tasks.length > 0) {
+          emitEvent(that, "addTasks", { tasks });
         }
         elTaskRaw.value = "";
         elExid.value = "";
