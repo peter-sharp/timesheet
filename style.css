@@ -165,7 +165,8 @@ thead th {
 }
 
 
-input {
+input,
+textarea {
   background-color: var(--color-input-bg);
   border: none;
   color: var(--color-text);
@@ -191,8 +192,15 @@ label > input {
   max-width: 5em;
 }
 
-.input-group > input {
+.input-group > input,
+.input-group > textarea {
   width: 100%;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 1.6em;
+  field-sizing: content;
 }
 
 th + th,
