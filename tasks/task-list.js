@@ -30,7 +30,7 @@ taskForm.innerHTML = /*html*/ `
     <div class="row">
         <div class="input-group row__col-2">
             <label for="newTask">Task</label>
-            <input id="newTask" type="text" name="taskRaw">
+            <textarea id="newTask" name="taskRaw" rows="1" style="resize:vertical;field-sizing:content"></textarea>
         </div>
         <button type="submit">Add</button>
     </div>
@@ -177,15 +177,18 @@ class TaskList extends HTMLElement {
         const elTaskRaw = ev.target.elements.taskRaw;
         const elExid = ev.target.elements.exid;
         const elClient = ev.target.elements.client;
-        emitEvent(that, "addTask", {
-          raw: elTaskRaw.value,
-          exid: elExid.value,
-          client: elClient.value,
-        });
+        const lines = elTaskRaw.value.split("\n").map(l => l.trim()).filter(Boolean);
+        for (const line of lines) {
+          emitEvent(that, "addTask", {
+            raw: line,
+            exid: lines.length === 1 ? elExid.value : "",
+            client: lines.length === 1 ? elClient.value : "",
+          });
+        }
         elTaskRaw.value = "";
         elExid.value = "";
         elClient.value = "";
-        
+
         // Close the details element
         const detailsElement = ev.target.querySelector('details');
         if (detailsElement) {
