@@ -67,8 +67,27 @@ export default function tasks(el, model) {
                     // mostRecentEntry to ensure new tasks are at the top
                     state.tasks = [...state.tasks, { exid: taskExid, client: ev.client || client, description, id: Date.now(), mostRecentEntry: new Date()}]
                     // Ensure they are unique
-                    // TODO handle clients with other properties than name 
+                    // TODO handle clients with other properties than name
                     state.clients = Array.from(new Set([...state.clients, {name: ev.client}].map(x => x.name))).map(x => ({name: x}))
+                    break;
+                case "addTasks":
+                    const newTasks = [];
+                    const newClients = [];
+                    for (const task of ev.tasks) {
+                        const [parsedExid = Date.now(), parsedClient, parsedDesc] = extract([/#(\w+)/, /client:(\w+)/], task.raw);
+                        const finalExid = task.exid || parsedExid || Date.now().toString();
+                        const finalClient = task.client || parsedClient;
+                        newTasks.push({
+                            exid: finalExid,
+                            client: finalClient,
+                            description: parsedDesc,
+                            id: Date.now() + newTasks.length,
+                            mostRecentEntry: new Date()
+                        });
+                        if (finalClient) newClients.push({ name: finalClient });
+                    }
+                    state.tasks = [...state.tasks, ...newTasks];
+                    state.clients = Array.from(new Set([...state.clients, ...newClients].map(x => x.name))).map(x => ({name: x}));
                     break;
                 case "taskSyncChanged":
                     state.tasks = state.tasks.map(x => x.exid == ev.exid ? {...x, synced: ev.synced} : x);
