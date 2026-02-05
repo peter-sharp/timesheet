@@ -30,7 +30,7 @@ taskForm.innerHTML = /*html*/ `
     <div class="row">
         <div class="input-group row__col-2">
             <label for="newTask">Task</label>
-            <textarea id="newTask" name="taskRaw" rows="1" style="resize:vertical;field-sizing:content"></textarea>
+            <textarea id="newTask" name="taskRaw" rows="1"></textarea>
         </div>
         <button type="submit">Add</button>
     </div>
