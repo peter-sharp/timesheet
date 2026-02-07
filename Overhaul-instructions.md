@@ -154,6 +154,33 @@ We will do this in phases.
   - [ ] script.js - Update initialization to load from IndexedDB instead of localStorage for tasks/entries
 - [ ] Remove all archive-related storage logic (move to unused-code)
 
+##### 2.1 Soft Deletes
+All delete operations should be soft by default to allow for data recovery and undo functionality.
+
+- [ ] Add `deleted` boolean field to tasks schema
+  - [ ] timesheetDb.js - Add deleted field to task records
+  - [ ] timesheetDb.js - Add index on deleted field for efficient filtering
+- [ ] Add `deleted` boolean field to entries schema
+  - [ ] timesheetDb.js - Add deleted field to entry records
+  - [ ] timesheetDb.js - Add index on deleted field for efficient filtering
+- [ ] Update delete operations to set `deleted: true` instead of removing records
+  - [ ] timesheetDb.js - Modify deleteTask to set deleted flag
+  - [ ] timesheetDb.js - Modify deleteEntry to set deleted flag
+- [ ] Update query methods to exclude deleted records by default
+  - [ ] timesheetDb.js - getTasks should filter out deleted: true
+  - [ ] timesheetDb.js - getEntries should filter out deleted: true
+  - [ ] timesheetDb.js - getTasksModifiedToday should filter out deleted: true
+  - [ ] timesheetDb.js - getEntriesModifiedToday should filter out deleted: true
+- [ ] Add methods to query deleted records (for potential restore feature)
+  - [ ] timesheetDb.js - getDeletedTasks method
+  - [ ] timesheetDb.js - getDeletedEntries method
+- [ ] Add restore methods
+  - [ ] timesheetDb.js - restoreTask(exid) - sets deleted: false
+  - [ ] timesheetDb.js - restoreEntry(id) - sets deleted: false
+- [ ] Add permanent delete methods (for cleanup)
+  - [ ] timesheetDb.js - permanentlyDeleteTask(exid)
+  - [ ] timesheetDb.js - permanentlyDeleteEntry(id)
+
 ##### 3. State Management Restructure
 - [x] Audit current state management usage
 - [ ] Ensure UI state (view preferences, filters, etc.) uses localStorage only
