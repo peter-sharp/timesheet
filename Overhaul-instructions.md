@@ -8,8 +8,82 @@ the vision is broken up into the following goals in order of priority:
  - Focus on what needs to get done today
  - Visualize time and progress from the time entry level up to task and project level
  - Every task can be a project
- - Vanilla JS/CSS 
-  
+ - Vanilla JS/CSS
+
+## Architecture Principles
+
+Based on [Functional-Light JavaScript](https://github.com/getify/Functional-Light-JS) by Kyle Simpson. These principles guide all code in this project.
+
+### 1. Code as Communication
+Code is primarily for humans to read, not computers to execute. Developers spend ~70% of maintenance time reading code, so **readability through familiar patterns** is paramount. Use recognizable FP patterns (`map`, `filter`, `reduce`) over custom loops.
+
+### 2. Declarative Over Imperative
+Describe **what** the outcome should be, not **how** to achieve it. This reduces implementation details cluttering comprehension.
+
+```javascript
+// Imperative (avoid)
+let total = 0;
+for (let i = 0; i < entries.length; i++) {
+  total += entries[i].duration;
+}
+
+// Declarative (prefer)
+const total = entries.reduce((sum, e) => sum + e.duration, 0);
+```
+
+### 3. Pure Functions
+Functions should have:
+- **Explicit inputs** - all dependencies passed as parameters
+- **Predictable outputs** - same inputs always produce same outputs
+- **No side effects** - don't modify external state
+
+```javascript
+// Impure (avoid)
+function updateTask() {
+  currentTask.modified = new Date(); // mutates external state
+}
+
+// Pure (prefer)
+function updateTask(task) {
+  return { ...task, modified: new Date() };
+}
+```
+
+### 4. Immutability (Copy-Instead-of-Mutate)
+Never mutate values. Create new values with changes applied:
+
+```javascript
+// Mutation (avoid)
+tasks.push(newTask);
+task.status = 'done';
+
+// Immutable (prefer)
+const updatedTasks = [...tasks, newTask];
+const updatedTask = { ...task, status: 'done' };
+```
+
+### 5. Minimize Side Effects
+Side effects (I/O, DOM updates, storage) cannot be eliminated but should be:
+- **Isolated** - concentrated in specific locations, not scattered
+- **Explicit** - obvious where they occur
+- **Idempotent** - calling multiple times produces same result as once
+
+### 6. Composition Over Complexity
+Build complex operations from simple, reusable functions:
+
+```javascript
+// Composed pipeline
+const todaysTasks = pipe(
+  filterByDate(today),
+  sortByPriority,
+  formatForDisplay
+)(tasks);
+```
+
+### 7. Pragmatic Balance
+Apply FP where it genuinely improves code. Not every situation demands FP sophistication. **YAGNI** - don't add complexity that doesn't serve readability or maintainability.
+
+---
 
 ## Phases
 We will do this in phases.
