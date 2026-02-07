@@ -5,7 +5,6 @@ import "./time-duration.js";
 import  "./hash-router.js";
 import  "./hash-nav.js";
 import  "./current-task.js";
-import './archive/archive-stats.js';
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
 import { offsetHue, hexToHsla } from "./utils/colorUtils.js";
@@ -25,9 +24,7 @@ function findMostRecentEntryByEndTime(entries) {
     }, null);
 }
 import store from "./timesheetStore.js";
-import archive from "./archive/archive.js";
 import  tasks from "./tasks/tasks.js";
-import sync from "./sync/sync.js";
 import reduce from "./utils/reduce.js";
 import  reduceDuration  from "./utils/reduceDuration.js";
 import { calculateGaps } from "./utils/calculateGaps.js";
@@ -206,12 +203,6 @@ const APP_VERSION = "1.2.4";
 
   
     tasks(document.getElementById('tasks'), model);
-    sync(document.getElementById('sync'), model);
-    archive(document.getElementById('archive'), model);
-    settings(document.getElementById('settings'), model);
-   
-    const archiveStats = document.querySelector('archive-stats');
-    model.listen(archiveStats.update.bind(archiveStats));
 
     document.body.addEventListener("updateState", function updateState(ev) {
         model.emit(ev.detail);
@@ -229,11 +220,6 @@ const APP_VERSION = "1.2.4";
             document.querySelector('meta[name="theme-color"]').setAttribute("content", themeColor);
         }
     })
-
-    // Render the version number in the footer
-    document.getElementById('app-version').innerText = APP_VERSION;
-
-   
 
     model.emit({ type: 'init' });
 
@@ -259,59 +245,6 @@ function renderTabTitle({ newEntry = {}, currentTask = {} }) {
     else if(newEntry.task) info.push(newEntry.task);
 
     document.title = info.length ? `${info.join(' ')} | ${title}` : title;
-}
-
-function settings(el, model) {
-    const elImport = el.querySelector('#import');
-    elImport.addEventListener('submit', function importData(ev) {
-        ev.preventDefault();
-        model.emit({
-            type: 'import',
-            data: elImport.elements.data.value
-        })
-        elImport.elements.data.value = ""
-    });
-
-    const elExport = el.querySelector('#export');
-    elExport.addEventListener('submit', function importData(ev) {
-        ev.preventDefault();
-        model.emit({
-            type: 'export'
-        })
-    });
-
-    const elSettings = el.querySelector('#settings');
-    elSettings.addEventListener('submit', function importData(ev) {
-        ev.preventDefault();
-        
-        model.emit({
-            type: 'updateSettings',
-            data: getFormData(elSettings)
-        })
-    });
-
-    model.listen(function render(state) {
-        setFormData(elSettings, state.settings);
-        if(state.export) setFormData(elExport, { data: state.export })
-    })
-}
-
-function getFormData(form) {
-    let data = {}
-    for(let element of form.elements) {
-        if(!(element instanceof HTMLButtonElement)) {
-            data[element.name] = element.value;
-        }
-    }
-    return data;
-}
-
-function setFormData(form, data) {
-    for(let element of form.elements) {
-        if(!(element instanceof HTMLButtonElement)) {
-            element.value = data[element.name] === undefined ? '' : data[element.name];
-        }
-    }
 }
 
 function importTimewtime(x) {

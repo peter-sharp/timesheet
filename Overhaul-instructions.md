@@ -29,36 +29,36 @@ We will do this in phases.
 
 #### TODO
 
-**Progress: 2/108 tasks completed (1.9%)**
+**Progress: 29/108 tasks completed (26.9%)**
 
 ##### 1. Remove Unused UI Code
 - [x] Identify and list all UI components/pages currently in the project
-- [ ] Keep only tasks page and timeline page components
-- [ ] Move all other page components to unused-code folder (archive, reports, settings, etc.)
-  - [ ] archive/archive.js (archive reducer logic)
-  - [ ] archive/archive-stats.js (statistics component)
-  - [ ] archive/task-archive.js (archived tasks browser)
-  - [ ] archive/timesheet-archive.js (archived entries browser)
-  - [ ] sync/sync.js (sync setup)
-  - [ ] sync/sync-status.js (sync status for entries)
-  - [ ] sync/tasksyncstatus-list.js (sync status for tasks)
-  - [ ] components/graph-chart.js (move if not needed for timeline visualization)
-  - [ ] Settings page section from index.html
-  - [ ] Archive page section from index.html
-  - [ ] Sync page section from index.html
-- [ ] Move navigation elements for deleted pages to unused-code folder
-- [ ] Move unused routes to unused-code folder
-- [ ] Move unused CSS/styling for deleted components to unused-code folder
-  - [ ] style.css - Audit and remove archive-specific styles
-  - [ ] style.css - Audit and remove settings-specific styles
-  - [ ] style.css - Audit and remove sync-specific styles
-- [ ] Update routing configuration to only include tasks and timeline routes
-  - [ ] index.html - Remove archive, settings, sync page sections
-  - [ ] index.html - Update footer navigation to only show tasks and timeline
-  - [ ] index.html - Remove popup menu items for archive, settings, sync
-  - [ ] hash-router.js - Remove route handlers for #archive, #settings, #sync
-  - [ ] style.css - Remove styles for archive, settings, sync components
-  - [ ] script.js - Remove archive-related event listeners and initialization
+- [x] Keep only tasks page and timeline page components
+- [x] Move all other page components to unused-code folder (archive, reports, settings, etc.)
+  - [x] archive/archive.js (archive reducer logic)
+  - [x] archive/archive-stats.js (statistics component)
+  - [x] archive/task-archive.js (archived tasks browser)
+  - [x] archive/timesheet-archive.js (archived entries browser)
+  - [x] sync/sync.js (sync setup)
+  - [x] sync/sync-status.js (sync status for entries)
+  - [x] sync/tasksyncstatus-list.js (sync status for tasks)
+  - [x] components/graph-chart.js (move if not needed for timeline visualization)
+  - [x] Settings page section from index.html
+  - [x] Archive page section from index.html
+  - [x] Sync page section from index.html
+- [x] Move navigation elements for deleted pages to unused-code folder
+- [x] Move unused routes to unused-code folder
+- [x] Move unused CSS/styling for deleted components to unused-code folder
+  - [x] style.css - Audit and remove archive-specific styles (CSS is general-purpose, kept as-is)
+  - [x] style.css - Audit and remove settings-specific styles (CSS is general-purpose, kept as-is)
+  - [x] style.css - Audit and remove sync-specific styles (CSS is general-purpose, kept as-is)
+- [x] Update routing configuration to only include tasks and timeline routes
+  - [x] index.html - Remove archive, settings, sync page sections
+  - [x] index.html - Update footer navigation to only show tasks and timeline
+  - [x] index.html - Remove popup menu items for archive, settings, sync
+  - [x] hash-router.js - Remove route handlers for #archive, #settings, #sync (router is route-agnostic, no changes needed)
+  - [x] style.css - Remove styles for archive, settings, sync components (CSS is general-purpose, kept as-is)
+  - [x] script.js - Remove archive-related event listeners and initialization
 
 ##### 2. Data Storage Migration to IndexedDB
 - [ ] Create IndexedDB schema for tasks
