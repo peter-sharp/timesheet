@@ -1,98 +1,70 @@
 import Store from "./store.js";
 import TimesheetDB from "./timesheetDb.js";
-import { signal } from "./utils/Signal.js";
 
-const APP_VERSION = "1.2.4"; // Update this version when making changes
-
-//TODO: Fix issue breaking archive migration, when migrating from 0.2.7 to 0.3.1
-//HACK: Create backup of timesheet data in localStorage, if it doesn't exist.
-
-if(!localStorage.getItem('timesheetBackup')) {
-    localStorage.setItem('timesheetBackup', localStorage.getItem('timesheet'));
-}
+const APP_VERSION = "1.3.0"; // Bumped for IndexedDB migration
 
 const INITIAL_STATE = {
     version: APP_VERSION,
     newEntry: {},
     entries: [],
+    tasks: [],
     clients: [],
-    archive: {
-        entries: [],
-        tasks: []
-    },
-    tasks: new Set(),
+    currentTask: {},
     settings: {
         color: "#112233",
         focusInterval: 0.4,
-        export: null
-    },
-    stats: {},
+        timeSnapThreshold: 6
+    }
 };
 
-// Create localStorage adapter with exported hydrate function
+// localStorage adapter - UI state only (settings, newEntry, currentTask, clients)
 export const localStorageAdapter = {
     async read() {
         try {
             const data = JSON.parse(localStorage.getItem('timesheet')) || {};
-
-            return await this.hydrate({ ...INITIAL_STATE, ...data });
+            return this.hydrate({ ...INITIAL_STATE, ...data });
         } catch (e) {
             console.error('LocalStorage read error:', e);
-            return {};
+            return { ...INITIAL_STATE };
         }
     },
+
     async write(state) {
         try {
-            const dehydratedData = await this.dehydrate(state);
-            const { deleted, deletedTasks, export: exportData, ...localData } = dehydratedData;
+            // Only store UI state in localStorage
+            const { entries, tasks, deleted, deletedTasks, export: exportData, ...uiState } = state;
             localStorage.setItem('timesheet', JSON.stringify({
-                ...localData,
-                version: APP_VERSION
+                version: APP_VERSION,
+                newEntry: uiState.newEntry || {},
+                currentTask: uiState.currentTask || {},
+                clients: uiState.clients || [],
+                settings: uiState.settings || INITIAL_STATE.settings
             }));
         } catch (e) {
             console.error('LocalStorage write error:', e);
-            throw e;
         }
     },
-    async hydrate(state) {
-        // Run migrations if version has changed
-        const fromVersion = state.version;
-        if (fromVersion !== APP_VERSION) {
-            state = await migrate(state, fromVersion, APP_VERSION);
-        }
 
+    hydrate(state) {
         return {
-            export: null,
+            ...INITIAL_STATE,
             ...state,
             version: APP_VERSION,
             newEntry: {
                 ...state.newEntry,
-                start: state.newEntry.start ? new Date(state.newEntry.start) : null,
-                end: state.newEntry.end ? new Date(state.newEntry.end) : null
+                start: state.newEntry?.start ? new Date(state.newEntry.start) : null,
+                end: state.newEntry?.end ? new Date(state.newEntry.end) : null
             },
-            taskTotals: Array.isArray(state.taskTotals) ? state.taskTotals : [],
             clients: Array.isArray(state.clients) ? state.clients : [],
-            entries: Array.isArray(state.entries) ? state.entries.map(entry => ({
-                ...entry,
-                start: entry.start ? new Date(entry.start) : null,
-                end: entry.end ? new Date(entry.end) : null
-            })) : []
-        };
-    },
-    async dehydrate(state) {
-        if(state.settings && !state.settings.color) state.settings.color = "#112233";
-        if(state.export) state.export = null;
-        return {
-            ...state,
-                        version: APP_VERSION
+            settings: { ...INITIAL_STATE.settings, ...state.settings }
         };
     }
 };
 
-// Export hydrate function directly from localStorage adapter
-export const hydrate = localStorageAdapter.hydrate.bind(localStorageAdapter);
+// Export hydrate function for use in script.js
+export const hydrate = (data) => localStorageAdapter.hydrate(data);
 
-// Create sessionStorage adapter
+// sessionStorage adapter - deletions tracking only
 const sessionStorageAdapter = {
     async read() {
         try {
@@ -103,9 +75,10 @@ const sessionStorageAdapter = {
             };
         } catch (e) {
             console.error('SessionStorage read error:', e);
-            return {};
+            return { deleted: [], deletedTasks: [] };
         }
     },
+
     async write(state) {
         try {
             sessionStorage.setItem('timesheet', JSON.stringify({
@@ -114,217 +87,80 @@ const sessionStorageAdapter = {
             }));
         } catch (e) {
             console.error('SessionStorage write error:', e);
-            throw e;
         }
     }
 };
 
-export const totalPagesSignal = signal(0); // Signal for total pages
-
-// Create IndexedDB adapter
+// IndexedDB adapter - tasks and entries
 const indexedDBAdapter = {
-    async read({ archivedTasksSearchTerm = "", archiveBrowserTaskPage = 0, archiveBrowserTaskPageSize = 20 } = {}) {
+    async read() {
         try {
             const db = await TimesheetDB();
-            const archive = {
-                entries: [],
-                tasks: []
-            };
 
-            // Load entries
+            // Load all entries
+            const entries = [];
             for await (const entry of db.getEntries()) {
-                archive.entries.push({
+                entries.push({
                     ...entry,
                     start: new Date(entry.start),
-                    end: new Date(entry.end)
+                    end: new Date(entry.end),
+                    lastModified: entry.lastModified ? new Date(entry.lastModified) : new Date()
                 });
             }
 
-            // Load tasks with filtering and pagination
-            const allTasks = [];
+            // Load all tasks
+            const tasks = [];
             for await (const task of db.getTasks()) {
-                if (
-                    (!archivedTasksSearchTerm || task.description?.toLowerCase().includes(archivedTasksSearchTerm.toLowerCase()) ||
-                        task.client?.toLowerCase().includes(archivedTasksSearchTerm.toLowerCase()) ||
-                        task.exid?.toString().toLowerCase().includes(archivedTasksSearchTerm.toLowerCase()))
-                ) {
-                    allTasks.push(task);
-                }
+                tasks.push({
+                    ...task,
+                    lastModified: task.lastModified ? new Date(task.lastModified) : new Date()
+                });
             }
 
-            const totalTasks = allTasks.length;
-            totalPagesSignal.value = Math.ceil(totalTasks / archiveBrowserTaskPageSize); // Update total pages signal
-
-            const offset = archiveBrowserTaskPage * archiveBrowserTaskPageSize;
-            archive.tasks = allTasks.slice(offset, offset + archiveBrowserTaskPageSize);
-
-            return { archive };
+            return { entries, tasks };
         } catch (e) {
             console.error('IndexedDB read error:', e);
-            return {};
+            return { entries: [], tasks: [] };
         }
     },
-    async write(state) {
-        // Only write archive data to IndexedDB
-        if (!state.archive) return;
 
+    async write(state) {
         try {
             const db = await TimesheetDB();
-            
-            const errors = [];
-            // Write tasks with upsert
-            for (const task of state.archive.tasks || []) {
-                try {
-                    await upsert(task, db.addTask.bind(db), db.updateTask.bind(db));
-                } catch (e) {
-                    console.error('IndexedDB write error:', e);
-                    errors.push(e);
+
+            // Write tasks
+            for (const task of state.tasks || []) {
+                await upsert(task, db.addTask.bind(db), db.updateTask.bind(db));
+            }
+
+            // Write entries
+            for (const entry of state.entries || []) {
+                await upsert(entry, db.addEntry.bind(db), db.updateEntry.bind(db));
+            }
+
+            // Handle deletions
+            for (const entry of state.deleted || []) {
+                if (entry.id) {
+                    await db.deleteEntry(entry.id);
                 }
             }
 
-            // Write entries with upsert
-            for (const entry of state.archive.entries || []) {
-                try {
-                    await upsert(entry, db.addEntry.bind(db), db.updateEntry.bind(db));
-                } catch (e) {
-                    console.error('IndexedDB write error:', e);
-                    errors.push(e);
+            for (const task of state.deletedTasks || []) {
+                if (task.exid) {
+                    await db.deleteTask(task.exid);
                 }
-            }
-
-            if (errors.length > 0) {
-                throw new Error('IndexedDB write errors: ' + errors.map(e => e.message).join(', '));
             }
         } catch (e) {
-            console.error('store write error:', e);
+            console.error('IndexedDB write error:', e);
         }
     }
 };
-
-async function migrate(state, fromVersion, toVersion) {
-    // Handle migrations based on version changes
-
-    if (!fromVersion || fromVersion < '0.3.7') {
-        console.log('migrating from version', fromVersion, 'to', toVersion);
-        // Check for backup data in localStorage
-        const backupData = localStorage.getItem('timesheetBackup');
-        if (backupData) {
-            try {
-                const parsedBackup = JSON.parse(backupData);
-                const backupArchive = {
-                    entries: Array.isArray(parsedBackup.archive) ? parsedBackup.archive : (parsedBackup.archive?.entries || []),
-                    tasks: parsedBackup.archivedTasks || []
-                };
-
-                debugger;
-
-                // Merge with current archive data
-                const archive = {
-                    entries: [
-                        ...(Array.isArray(state.archive) ? state.archive : (state.archive?.entries || [])),
-                        ...backupArchive.entries
-                    ],
-                    tasks: [
-                        ...(state.archivedTasks || []),
-                        ...backupArchive.tasks
-                    ]
-                };
-
-                debugger;
-                console.log('archive', archive);
-                // Remove old archivedTasks property
-                const { archivedTasks, ...restState } = state;
-                state = {
-                    ...restState,
-                    archive
-                };
-
-                debugger;
-                // Migrate merged archive data to IndexedDB
-                try {
-                    const db = await TimesheetDB();
-                    
-                    // Migrate archived tasks
-                    for (const task of state.archive.tasks || []) {
-                        try {
-                            await upsert(task, db.addTask.bind(db), db.updateTask.bind(db));
-                        } catch (e) {
-                            console.error('Migration to IndexedDB failed:', e);
-                        }
-                    }
-
-                    // Migrate archived entries
-                    for (const entry of state.archive.entries || []) {
-                        try {
-                            await upsert(
-                                {
-                                    ...entry,
-                                    start: new Date(entry.start),
-                                    end: new Date(entry.end)
-                                },
-                                db.addEntry.bind(db),
-                                db.updateEntry.bind(db)
-                            );
-                        } catch (e) {
-                            console.error('Migration to IndexedDB failed:', e);
-                        }
-                    }
-                } catch (e) {
-                    console.error('Migration to IndexedDB failed:', e);
-                }
-            } catch (e) {
-                console.error('Failed to parse backup data:', e);
-            }
-        } else {
-            // Original migration logic for when no backup exists
-            const archive = {
-                entries: Array.isArray(state.archive) ? state.archive : (state.archive?.entries || []),
-                tasks: state.archivedTasks || []
-            };
-            
-            // Remove old archivedTasks property
-            const { archivedTasks, ...restState } = state;
-            state = {
-                ...restState,
-                archive
-            };
-
-            // Migrate archive data to IndexedDB
-            try {
-                const db = await TimesheetDB();
-                
-                // Migrate archived tasks
-                for (const task of state.archive.tasks || []) {
-                    await upsert(task, db.addTask.bind(db), db.updateTask.bind(db));
-                }
-
-                // Migrate archived entries
-                for (const entry of state.archive.entries || []) {
-                    await upsert(
-                        {
-                            ...entry,
-                            start: new Date(entry.start),
-                            end: new Date(entry.end)
-                        },
-                        db.addEntry.bind(db),
-                        db.updateEntry.bind(db)
-                    );
-                }
-            } catch (e) {
-                console.error('Migration to IndexedDB failed:', e);
-            }
-        }
-    }
-
-    return state;
-}
 
 // Helper function to handle upsert operations
 async function upsert(item, addFn, updateFn) {
     try {
         return await addFn(item);
     } catch (e) {
-        // If the error is due to a uniqueness constraint violation
         if (e.name === 'ConstraintError') {
             return await updateFn(item);
         }

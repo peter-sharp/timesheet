@@ -65,7 +65,7 @@
  */
 export default async function TimesheetDB() {
     const dbName = "timesheet";
-    const version = 3;
+    const version = 4;
     const request = indexedDB.open(dbName, version);
     const modules = TimesheetDB.modules.map(fn => fn());
     request.onupgradeneeded = (event) => {
@@ -156,11 +156,25 @@ TimesheetDB.modules.push(function tasksDb() {
         // Create an objectStore to hold task information
         if (!db.objectStoreNames.contains("tasks")) {
             const taskStore = db.createObjectStore("tasks", { autoIncrement: true });
-            
+
             // Create indexes
             taskStore.createIndex("exid", "exid", { unique: true });
             taskStore.createIndex("client", "client", { unique: false });
             taskStore.createIndex("project", "project", { unique: false });
+            taskStore.createIndex("lastModified", "lastModified", { unique: false });
+        }
+
+        // Add lastModified index if upgrading from version < 4
+        if (version >= 4 && db.objectStoreNames.contains("tasks")) {
+            try {
+                const transaction = db.transaction(["tasks"], "readwrite");
+                const store = transaction.objectStore("tasks");
+                if (!store.indexNames.contains("lastModified")) {
+                    store.createIndex("lastModified", "lastModified", { unique: false });
+                }
+            } catch (e) {
+                console.log("lastModified index may already exist on tasks");
+            }
         }
 
         if (version >= 2) {
@@ -228,21 +242,29 @@ TimesheetDB.modules.push(function tasksDb() {
         async function addTask({exid, id, ...data}) {
             const transaction = db.transaction(["tasks"], "readwrite");
             const objectStore = transaction.objectStore("tasks");
-            const request = objectStore.add({exid: exid || Date.now(), id: id || Date.now(), ...data});
+            const request = objectStore.add({
+                exid: exid || Date.now(),
+                id: id || Date.now(),
+                ...data,
+                lastModified: new Date()
+            });
             const taskId = await awaitEvt(request, 'onsuccess', 'onerror');
             return taskId;
         }
-    
+
         async function updateTask(task) {
             const transaction = db.transaction(["tasks"], "readwrite");
             const objectStore = transaction.objectStore("tasks");
-            const request = objectStore.put(task);
+            const request = objectStore.put({
+                ...task,
+                lastModified: new Date()
+            });
             const taskId = await awaitEvt(request, 'onsuccess', 'onerror');
             return taskId;
         }
-    
+
         async function getTask(id) {
-            const transaction = db.transaction(["tasks"], "readwrite");
+            const transaction = db.transaction(["tasks"], "readonly");
             const objectStore = transaction.objectStore("tasks");
             const request = objectStore.get(id);
             const task = await awaitEvt(request, 'onsuccess', 'onerror');
@@ -250,16 +272,62 @@ TimesheetDB.modules.push(function tasksDb() {
         }
     
         async function* getTasks() {
-            const transaction = db.transaction(["tasks"], "readwrite");
+            const transaction = db.transaction(["tasks"], "readonly");
             const objectStore = transaction.objectStore("tasks");
             yield* awaitCursor(objectStore.openCursor());
+        }
+
+        async function deleteTask(exid) {
+            const transaction = db.transaction(["tasks"], "readwrite");
+            const objectStore = transaction.objectStore("tasks");
+            const index = objectStore.index("exid");
+            const request = index.getKey(exid);
+            const key = await awaitEvt(request, 'onsuccess', 'onerror');
+            if (key !== undefined) {
+                const deleteRequest = objectStore.delete(key);
+                await awaitEvt(deleteRequest, 'onsuccess', 'onerror');
+            }
+            return key;
+        }
+
+        async function* getTasksModifiedToday() {
+            const transaction = db.transaction(["tasks"], "readonly");
+            const objectStore = transaction.objectStore("tasks");
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const range = IDBKeyRange.bound(today, tomorrow, false, true);
+
+            if (objectStore.indexNames.contains("lastModified")) {
+                const index = objectStore.index("lastModified");
+                yield* awaitCursor(index.openCursor(range));
+            } else {
+                // Fallback: filter in memory if index doesn't exist
+                for await (const task of awaitCursor(objectStore.openCursor())) {
+                    if (task.lastModified && task.lastModified >= today && task.lastModified < tomorrow) {
+                        yield task;
+                    }
+                }
+            }
+        }
+
+        async function getAllTasks() {
+            const tasks = [];
+            for await (const task of getTasks()) {
+                tasks.push(task);
+            }
+            return tasks;
         }
 
         return {
             addTask,
             updateTask,
             getTask,
-            getTasks
+            getTasks,
+            deleteTask,
+            getTasksModifiedToday,
+            getAllTasks
         }
     }
 
@@ -288,11 +356,25 @@ TimesheetDB.modules.push(function entriesDb() {
         // Create an objectStore to hold entry information
         if (!db.objectStoreNames.contains("entries")) {
             const entryStore = db.createObjectStore("entries", { autoIncrement: true });
-            
+
             // Create indexes
             entryStore.createIndex("id", "id", { unique: true });
             entryStore.createIndex("task", "task", { unique: false });
             entryStore.createIndex("start", "start", { unique: false });
+            entryStore.createIndex("lastModified", "lastModified", { unique: false });
+        }
+
+        // Add lastModified index if upgrading from version < 4
+        if (version >= 4 && db.objectStoreNames.contains("entries")) {
+            try {
+                const transaction = db.transaction(["entries"], "readwrite");
+                const store = transaction.objectStore("entries");
+                if (!store.indexNames.contains("lastModified")) {
+                    store.createIndex("lastModified", "lastModified", { unique: false });
+                }
+            } catch (e) {
+                console.log("lastModified index may already exist on entries");
+            }
         }
 
         if (version >= 3) {
@@ -333,44 +415,93 @@ TimesheetDB.modules.push(function entriesDb() {
             const objectStore = transaction.objectStore("entries");
             const request = objectStore.add({
                 ...entry,
+                id: entry.id || Date.now(),
                 start: new Date(entry.start),
-                end: new Date(entry.end)
+                end: new Date(entry.end),
+                lastModified: new Date()
             });
             const entryId = await awaitEvt(request, 'onsuccess', 'onerror');
             return entryId;
         }
-    
+
         async function updateEntry(entry) {
             const transaction = db.transaction(["entries"], "readwrite");
             const objectStore = transaction.objectStore("entries");
             const request = objectStore.put({
                 ...entry,
                 start: new Date(entry.start),
-                end: new Date(entry.end)
+                end: new Date(entry.end),
+                lastModified: new Date()
             });
             const entryId = await awaitEvt(request, 'onsuccess', 'onerror');
             return entryId;
         }
-    
+
         async function getEntry(id) {
-            const transaction = db.transaction(["entries"], "readwrite");
+            const transaction = db.transaction(["entries"], "readonly");
             const objectStore = transaction.objectStore("entries");
             const request = objectStore.get(id);
             const entry = await awaitEvt(request, 'onsuccess', 'onerror');
             return entry;
         }
-    
+
         async function* getEntries() {
-            const transaction = db.transaction(["entries"], "readwrite");
+            const transaction = db.transaction(["entries"], "readonly");
             const objectStore = transaction.objectStore("entries");
             yield* awaitCursor(objectStore.openCursor());
+        }
+
+        async function deleteEntry(id) {
+            const transaction = db.transaction(["entries"], "readwrite");
+            const objectStore = transaction.objectStore("entries");
+            const index = objectStore.index("id");
+            const request = index.getKey(id);
+            const key = await awaitEvt(request, 'onsuccess', 'onerror');
+            if (key !== undefined) {
+                const deleteRequest = objectStore.delete(key);
+                await awaitEvt(deleteRequest, 'onsuccess', 'onerror');
+            }
+            return key;
+        }
+
+        async function* getEntriesModifiedToday() {
+            const transaction = db.transaction(["entries"], "readonly");
+            const objectStore = transaction.objectStore("entries");
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const range = IDBKeyRange.bound(today, tomorrow, false, true);
+
+            if (objectStore.indexNames.contains("lastModified")) {
+                const index = objectStore.index("lastModified");
+                yield* awaitCursor(index.openCursor(range));
+            } else {
+                // Fallback: filter in memory if index doesn't exist
+                for await (const entry of awaitCursor(objectStore.openCursor())) {
+                    if (entry.lastModified && entry.lastModified >= today && entry.lastModified < tomorrow) {
+                        yield entry;
+                    }
+                }
+            }
+        }
+
+        async function getAllEntries() {
+            const entries = [];
+            for await (const entry of getEntries()) {
+                entries.push(entry);
+            }
+            return entries;
         }
 
         return {
             addEntry,
             updateEntry,
             getEntry,
-            getEntries
+            getEntries,
+            deleteEntry,
+            getEntriesModifiedToday,
+            getAllEntries
         }
     }
 

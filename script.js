@@ -32,7 +32,7 @@ import { hydrate } from "./timesheetStore.js";
 
 // TODO: Move from redux-style state management to Signals.
 
-const APP_VERSION = "1.2.4";
+const APP_VERSION = "1.3.0";
 
 (async () => {
 
@@ -80,31 +80,32 @@ const APP_VERSION = "1.2.4";
                     case "changedEntry":
                         console.log({id, type, change})
                         if (id) {
-                            // updating existing entry
-                            state.entries = state.entries.map(x => x.id == id ? {...x, ...change } : x);
+                            // updating existing entry with lastModified timestamp
+                            state.entries = state.entries.map(x => x.id == id ? {...x, ...change, lastModified: new Date() } : x);
                            
                         } else {
                             // Check if start time needs snapping to previous entry's end time
                             if (state.entries.length > 0 && change.start) {
                                 const mostRecentEntry = findMostRecentEntryByEndTime(state.entries);
-                                
+
                                 if (mostRecentEntry && mostRecentEntry.end) {
                                     // Calculate gap in minutes
                                     const gapInMinutes = (change.start.getTime() - mostRecentEntry.end.getTime()) / (60 * 1000);
-                                    
+
                                     // If gap is positive and within threshold, snap the start time
                                     if (gapInMinutes > 0 && gapInMinutes <= state.settings.timeSnapThreshold) {
                                         change.start = new Date(mostRecentEntry.end);
                                     }
                                 }
                             }
-                            
-                            // adding new entry
+
+                            // adding new entry with lastModified timestamp
                             state.entries = [
                                 ...state.entries,
                                 {
                                     id: Date.now(),
-                                    ...change
+                                    ...change,
+                                    lastModified: new Date()
                                 }
                             ];
                             state.newEntry = {};
@@ -152,8 +153,8 @@ const APP_VERSION = "1.2.4";
                         const data = JSON.parse(ev.data);
                         if(Array.isArray(data)) {
                             const imported = data.map(x => {
-                                let start = new Date(x.start); 
-                                let end = new Date(x.end); 
+                                let start = new Date(x.start);
+                                let end = new Date(x.end);
                                 if(isNaN(start)) {
                                     start = importTimewtime(x.start)
                                 }
@@ -162,16 +163,17 @@ const APP_VERSION = "1.2.4";
                                 }
                                 return {
                                     ...x,
-                                    id: x.id.toString() + Date.now().toString(),
-                                    task: x.task || x.tags.join('_'),
-                                    annotation: x.annotation || x.tags ? x.tags.join(' ') : 'Imported '+ new Date(),
+                                    id: x.id ? x.id.toString() + Date.now().toString() : Date.now(),
+                                    task: x.task || (x.tags ? x.tags.join('_') : 'imported'),
+                                    annotation: x.annotation || (x.tags ? x.tags.join(' ') : 'Imported '+ new Date()),
                                     start,
-                                    end
+                                    end,
+                                    lastModified: new Date()
                                 }
                             });
-                            state.archive = {...state.archive, entries: [...state.archive.entries, ...imported]};
+                            state.entries = [...state.entries, ...imported];
                         } else {
-                            state = {...state, ...await hydrate(data)};
+                            state = {...state, ...hydrate(data)};
                         }
                         break;
                     case "export":

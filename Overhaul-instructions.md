@@ -103,7 +103,7 @@ We will do this in phases.
 
 #### TODO
 
-**Progress: 29/108 tasks completed (26.9%)**
+**Progress: 48/128 tasks completed (37.5%)**
 
 ##### 1. Remove Unused UI Code
 - [x] Identify and list all UI components/pages currently in the project
@@ -135,24 +135,25 @@ We will do this in phases.
   - [x] script.js - Remove archive-related event listeners and initialization
 
 ##### 2. Data Storage Migration to IndexedDB
-- [ ] Create IndexedDB schema for tasks
-  - [ ] timesheetDb.js - Create tasks object store schema
-  - [ ] timesheetDb.js - Add indexes for lastModified field on tasks store
-  - [ ] timesheetDb.js - Implement CRUD methods for tasks (add, update, delete, get, getAll)
-- [ ] Create IndexedDB schema for time entries
-  - [ ] timesheetDb.js - Create entries object store schema
-  - [ ] timesheetDb.js - Add indexes for lastModified field on entries store
-  - [ ] timesheetDb.js - Implement CRUD methods for entries (add, update, delete, get, getAll)
-- [ ] Implement IndexedDB service/utility for CRUD operations on tasks
-- [ ] Implement IndexedDB service/utility for CRUD operations on time entries
-  - [ ] timesheetDb.js - Implement query method for "last modified today" filter
-- [ ] Remove archive-related database schemas and code (move to unused-code)
-  - [ ] timesheetStore.js - Remove archive object stores and related code (move to unused-code)
-- [ ] Migrate any existing data initialization to IndexedDB
-  - [ ] timesheetStore.js - Update to use IndexedDB for tasks and entries
-  - [ ] store.js - Ensure adapter pattern supports IndexedDB operations
-  - [ ] script.js - Update initialization to load from IndexedDB instead of localStorage for tasks/entries
-- [ ] Remove all archive-related storage logic (move to unused-code)
+- [x] Create IndexedDB schema for tasks
+  - [x] timesheetDb.js - Create tasks object store schema
+  - [x] timesheetDb.js - Add indexes for lastModified field on tasks store
+  - [x] timesheetDb.js - Implement CRUD methods for tasks (add, update, delete, get, getAll)
+- [x] Create IndexedDB schema for time entries
+  - [x] timesheetDb.js - Create entries object store schema
+  - [x] timesheetDb.js - Add indexes for lastModified field on entries store
+  - [x] timesheetDb.js - Implement CRUD methods for entries (add, update, delete, get, getAll)
+- [x] Implement IndexedDB service/utility for CRUD operations on tasks
+- [x] Implement IndexedDB service/utility for CRUD operations on time entries
+  - [x] timesheetDb.js - Implement query method for "last modified today" filter
+- [x] Remove archive-related database schemas and code (move to unused-code)
+  - [x] timesheetStore.js - Remove archive object stores and related code
+- [x] Migrate any existing data initialization to IndexedDB
+  - [x] timesheetStore.js - Update to use IndexedDB for tasks and entries
+  - [x] store.js - Adapter pattern already supports IndexedDB operations
+  - [x] script.js - Updated to load from IndexedDB via store.read()
+- [x] Remove all archive-related storage logic
+  - [x] app-context.js - Removed archive signals (archiveTasks, archiveEntries, archiveOpen, etc.)
 
 ##### 2.1 Soft Deletes
 All delete operations should be soft by default to allow for data recovery and undo functionality.
