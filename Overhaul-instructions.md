@@ -103,7 +103,7 @@ We will do this in phases.
 
 #### TODO
 
-**Progress: 68/128 tasks completed (53.1%)**
+**Progress: 86/131 tasks completed (65.6%)**
 
 ##### 1. Remove Unused UI Code
 - [x] Identify and list all UI components/pages currently in the project
@@ -184,22 +184,25 @@ All delete operations should be soft by default to allow for data recovery and u
 
 ##### 3. State Management Restructure
 - [x] Audit current state management usage
-- [ ] Ensure UI state (view preferences, filters, etc.) uses localStorage only
-- [ ] Implement deletions tracking in sessionStorage
-  - [ ] sessionStorage adapter - Implement/verify deletions tracking (deleted, deletedTasks arrays)
-- [ ] Refactor all state management to use Context utility exclusively
-- [ ] Refactor all state management to use Signal utility exclusively
-  - [ ] model.js - Move entire Model/reducer pattern to unused-code folder
-  - [ ] script.js - Remove Model.emit() calls and event listeners
-  - [ ] script.js - Refactor to use app-context signals exclusively
-  - [ ] app-context.js - Ensure all necessary signals are defined (tasks, entries, currentTask, settings, etc.)
-  - [ ] app-context.js - Remove any references to archive signals (archiveTasks, archiveEntries, archiveOpen, etc.)
-  - [ ] tasks/task-list.js - Update to dispatch events to app-context instead of Model
-  - [ ] timeline/timesheet.js - Update to dispatch events to app-context instead of Model
-  - [ ] current-task.js - Ensure it subscribes to currentTask signal from context
-  - [ ] All components - Replace Model.listen() with signal.effect() or signal.addEventListener('change')
-- [ ] Move any other state management patterns to unused-code (Redux, MobX, etc. if present)
-- [ ] Test state persistence and reactivity
+- [x] Ensure UI state (view preferences, filters, etc.) uses localStorage only
+  - [x] timesheetStore.js - localStorage adapter stores only UI state (settings, newEntry, currentTask, clients)
+- [x] Implement deletions tracking in sessionStorage
+  - [x] sessionStorage adapter - Implement/verify deletions tracking (deleted, deletedTasks arrays)
+- [x] Refactor all state management to use Context utility exclusively
+- [x] Refactor all state management to use Signal utility exclusively
+  - [x] model.js - Move entire Model/reducer pattern to unused-code folder
+  - [x] tasks/tasks.js - Move reducer logic to unused-code folder (integrated into app-context.js)
+  - [x] script.js - Remove Model.emit() calls and event listeners
+  - [x] script.js - Refactor to use app-context signals exclusively
+  - [x] app-context.js - Ensure all necessary signals are defined (tasks, entries, currentTask, settings, etc.)
+  - [x] app-context.js - Add event handlers for all state changes (handleNewEntry, handleStartTask, etc.)
+  - [x] app-context.js - Remove any references to archive signals (archiveTasks, archiveEntries, archiveOpen, etc.)
+  - [x] tasks/task-list.js - Already dispatches events via emitEvent which app-context handles
+  - [x] timeline/timesheet.js - Already dispatches events via emitEvent which app-context handles
+  - [x] current-task.js - Already subscribes to currentTask signal from context
+  - [x] All components - Already use signal.effect() for reactivity
+- [x] Move any other state management patterns to unused-code (model.js, tasks/tasks.js moved)
+- [x] Test state persistence and reactivity
 
 ##### 4. Filter to Today's Data
 - [ ] Add "last modified today" filter to task list query
@@ -211,8 +214,8 @@ All delete operations should be soft by default to allow for data recovery and u
 - [ ] Update task list UI to only display today's tasks
 - [ ] Update timeline UI to only display today's time entries
 - [ ] Ensure "last modified" timestamp is properly maintained on all updates
-  - [ ] tasks/tasks.js - Set lastModified timestamp on task create/update
-  - [ ] timeline/timesheet.js - Set lastModified timestamp on entry create/update
+  - [ ] app-context.js - Set lastModified timestamp on task create/update
+  - [ ] app-context.js - Set lastModified timestamp on entry create/update
   - [ ] app-context.js - Ensure signals trigger updates when lastModified changes
 
 ##### 5. Update Totals Calculation
