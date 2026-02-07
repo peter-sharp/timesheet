@@ -204,7 +204,36 @@ All delete operations should be soft by default to allow for data recovery and u
 - [x] Move any other state management patterns to unused-code (model.js, tasks/tasks.js moved)
 - [x] Test state persistence and reactivity
 
-##### 4. Filter to Today's Data
+##### 4. System Tests (Node.js)
+Automated system tests using Node.js to verify end-to-end functionality. These tests allow Claude to run, check results, and fix bugs iteratively.
+
+- [ ] Set up Node.js test infrastructure
+  - [ ] Install test runner (e.g. Playwright or Puppeteer for browser-based testing)
+  - [ ] Create test directory structure and configuration
+  - [ ] Add npm test script for running system tests
+- [ ] Task CRUD tests
+  - [ ] Test creating a new task via the UI
+  - [ ] Test editing an existing task
+  - [ ] Test soft-deleting a task
+  - [ ] Test that deleted tasks don't appear in the task list
+- [ ] Time entry CRUD tests
+  - [ ] Test creating a new time entry
+  - [ ] Test editing an existing time entry
+  - [ ] Test soft-deleting a time entry
+  - [ ] Test that deleted entries don't appear in the timeline
+- [ ] State management tests
+  - [ ] Test that signals update the UI reactively
+  - [ ] Test that UI state persists in localStorage across page reloads
+  - [ ] Test that data persists in IndexedDB across page reloads
+- [ ] Navigation and routing tests
+  - [ ] Test navigating between tasks and timeline pages
+  - [ ] Test that only tasks and timeline routes are accessible
+- [ ] Today's data filter tests
+  - [ ] Test that only today's tasks appear in the task list
+  - [ ] Test that only today's entries appear in the timeline
+  - [ ] Test that totals reflect only today's data
+
+##### 5. Filter to Today's Data
 - [ ] Add "last modified today" filter to task list query
   - [ ] tasks/task-list.js - Add filter logic to query only tasks with lastModified = today
   - [ ] timesheetDb.js - Use lastModified index for efficient filtering
@@ -218,7 +247,7 @@ All delete operations should be soft by default to allow for data recovery and u
   - [ ] app-context.js - Set lastModified timestamp on entry create/update
   - [ ] app-context.js - Ensure signals trigger updates when lastModified changes
 
-##### 5. Update Totals Calculation
+##### 6. Update Totals Calculation
 - [ ] Modify totals calculation to only include today's data
   - [ ] app-context.js - Update durationTotal signal to calculate from today's entries only
   - [ ] app-context.js - Update durationTotalGaps signal to calculate from today's entries only
@@ -232,7 +261,7 @@ All delete operations should be soft by default to allow for data recovery and u
   - [ ] index.html - Add "Today's Total" label or similar to totals display
 - [ ] Test totals accuracy with various scenarios
 
-##### 6. Task Description Datalist
+##### 7. Task Description Datalist
 - [ ] Create datalist element for task description input field
   - [ ] timeline/timesheet.js - Add `<datalist>` element to task description input
   - [ ] timeline/timesheet.js - Link datalist to input via list attribute
