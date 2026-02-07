@@ -65,7 +65,7 @@
  */
 export default async function TimesheetDB() {
     const dbName = "timesheet";
-    const version = 4;
+    const version = 5;
     const request = indexedDB.open(dbName, version);
     const modules = TimesheetDB.modules.map(fn => fn());
     request.onupgradeneeded = (event) => {
@@ -162,19 +162,7 @@ TimesheetDB.modules.push(function tasksDb() {
             taskStore.createIndex("client", "client", { unique: false });
             taskStore.createIndex("project", "project", { unique: false });
             taskStore.createIndex("lastModified", "lastModified", { unique: false });
-        }
-
-        // Add lastModified index if upgrading from version < 4
-        if (version >= 4 && db.objectStoreNames.contains("tasks")) {
-            try {
-                const transaction = db.transaction(["tasks"], "readwrite");
-                const store = transaction.objectStore("tasks");
-                if (!store.indexNames.contains("lastModified")) {
-                    store.createIndex("lastModified", "lastModified", { unique: false });
-                }
-            } catch (e) {
-                console.log("lastModified index may already exist on tasks");
-            }
+            taskStore.createIndex("deleted", "deleted", { unique: false });
         }
 
         if (version >= 2) {
@@ -246,6 +234,7 @@ TimesheetDB.modules.push(function tasksDb() {
                 exid: exid || Date.now(),
                 id: id || Date.now(),
                 ...data,
+                deleted: false,
                 lastModified: new Date()
             });
             const taskId = await awaitEvt(request, 'onsuccess', 'onerror');
@@ -270,14 +259,67 @@ TimesheetDB.modules.push(function tasksDb() {
             const task = await awaitEvt(request, 'onsuccess', 'onerror');
             return task;
         }
-    
+
+        // Returns only non-deleted tasks
         async function* getTasks() {
             const transaction = db.transaction(["tasks"], "readonly");
             const objectStore = transaction.objectStore("tasks");
-            yield* awaitCursor(objectStore.openCursor());
+            for await (const task of awaitCursor(objectStore.openCursor())) {
+                if (!task.deleted) {
+                    yield task;
+                }
+            }
         }
 
+        // Soft delete - sets deleted: true instead of removing
         async function deleteTask(exid) {
+            const transaction = db.transaction(["tasks"], "readwrite");
+            const objectStore = transaction.objectStore("tasks");
+            const index = objectStore.index("exid");
+            const request = index.get(exid);
+            const task = await awaitEvt(request, 'onsuccess', 'onerror');
+            if (task) {
+                const updateRequest = objectStore.put({
+                    ...task,
+                    deleted: true,
+                    lastModified: new Date()
+                });
+                await awaitEvt(updateRequest, 'onsuccess', 'onerror');
+            }
+            return task;
+        }
+
+        // Returns only deleted tasks (for restore functionality)
+        async function* getDeletedTasks() {
+            const transaction = db.transaction(["tasks"], "readonly");
+            const objectStore = transaction.objectStore("tasks");
+            for await (const task of awaitCursor(objectStore.openCursor())) {
+                if (task.deleted) {
+                    yield task;
+                }
+            }
+        }
+
+        // Restore a soft-deleted task
+        async function restoreTask(exid) {
+            const transaction = db.transaction(["tasks"], "readwrite");
+            const objectStore = transaction.objectStore("tasks");
+            const index = objectStore.index("exid");
+            const request = index.get(exid);
+            const task = await awaitEvt(request, 'onsuccess', 'onerror');
+            if (task) {
+                const updateRequest = objectStore.put({
+                    ...task,
+                    deleted: false,
+                    lastModified: new Date()
+                });
+                await awaitEvt(updateRequest, 'onsuccess', 'onerror');
+            }
+            return task;
+        }
+
+        // Permanently delete a task (for cleanup)
+        async function permanentlyDeleteTask(exid) {
             const transaction = db.transaction(["tasks"], "readwrite");
             const objectStore = transaction.objectStore("tasks");
             const index = objectStore.index("exid");
@@ -290,6 +332,7 @@ TimesheetDB.modules.push(function tasksDb() {
             return key;
         }
 
+        // Returns only non-deleted tasks modified today
         async function* getTasksModifiedToday() {
             const transaction = db.transaction(["tasks"], "readonly");
             const objectStore = transaction.objectStore("tasks");
@@ -297,21 +340,18 @@ TimesheetDB.modules.push(function tasksDb() {
             today.setHours(0, 0, 0, 0);
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
-            const range = IDBKeyRange.bound(today, tomorrow, false, true);
 
-            if (objectStore.indexNames.contains("lastModified")) {
-                const index = objectStore.index("lastModified");
-                yield* awaitCursor(index.openCursor(range));
-            } else {
-                // Fallback: filter in memory if index doesn't exist
-                for await (const task of awaitCursor(objectStore.openCursor())) {
-                    if (task.lastModified && task.lastModified >= today && task.lastModified < tomorrow) {
-                        yield task;
-                    }
+            for await (const task of awaitCursor(objectStore.openCursor())) {
+                if (!task.deleted &&
+                    task.lastModified &&
+                    task.lastModified >= today &&
+                    task.lastModified < tomorrow) {
+                    yield task;
                 }
             }
         }
 
+        // Returns all non-deleted tasks as array
         async function getAllTasks() {
             const tasks = [];
             for await (const task of getTasks()) {
@@ -326,6 +366,9 @@ TimesheetDB.modules.push(function tasksDb() {
             getTask,
             getTasks,
             deleteTask,
+            getDeletedTasks,
+            restoreTask,
+            permanentlyDeleteTask,
             getTasksModifiedToday,
             getAllTasks
         }
@@ -362,19 +405,7 @@ TimesheetDB.modules.push(function entriesDb() {
             entryStore.createIndex("task", "task", { unique: false });
             entryStore.createIndex("start", "start", { unique: false });
             entryStore.createIndex("lastModified", "lastModified", { unique: false });
-        }
-
-        // Add lastModified index if upgrading from version < 4
-        if (version >= 4 && db.objectStoreNames.contains("entries")) {
-            try {
-                const transaction = db.transaction(["entries"], "readwrite");
-                const store = transaction.objectStore("entries");
-                if (!store.indexNames.contains("lastModified")) {
-                    store.createIndex("lastModified", "lastModified", { unique: false });
-                }
-            } catch (e) {
-                console.log("lastModified index may already exist on entries");
-            }
+            entryStore.createIndex("deleted", "deleted", { unique: false });
         }
 
         if (version >= 3) {
@@ -418,6 +449,7 @@ TimesheetDB.modules.push(function entriesDb() {
                 id: entry.id || Date.now(),
                 start: new Date(entry.start),
                 end: new Date(entry.end),
+                deleted: false,
                 lastModified: new Date()
             });
             const entryId = await awaitEvt(request, 'onsuccess', 'onerror');
@@ -445,13 +477,66 @@ TimesheetDB.modules.push(function entriesDb() {
             return entry;
         }
 
+        // Returns only non-deleted entries
         async function* getEntries() {
             const transaction = db.transaction(["entries"], "readonly");
             const objectStore = transaction.objectStore("entries");
-            yield* awaitCursor(objectStore.openCursor());
+            for await (const entry of awaitCursor(objectStore.openCursor())) {
+                if (!entry.deleted) {
+                    yield entry;
+                }
+            }
         }
 
+        // Soft delete - sets deleted: true instead of removing
         async function deleteEntry(id) {
+            const transaction = db.transaction(["entries"], "readwrite");
+            const objectStore = transaction.objectStore("entries");
+            const index = objectStore.index("id");
+            const request = index.get(id);
+            const entry = await awaitEvt(request, 'onsuccess', 'onerror');
+            if (entry) {
+                const updateRequest = objectStore.put({
+                    ...entry,
+                    deleted: true,
+                    lastModified: new Date()
+                });
+                await awaitEvt(updateRequest, 'onsuccess', 'onerror');
+            }
+            return entry;
+        }
+
+        // Returns only deleted entries (for restore functionality)
+        async function* getDeletedEntries() {
+            const transaction = db.transaction(["entries"], "readonly");
+            const objectStore = transaction.objectStore("entries");
+            for await (const entry of awaitCursor(objectStore.openCursor())) {
+                if (entry.deleted) {
+                    yield entry;
+                }
+            }
+        }
+
+        // Restore a soft-deleted entry
+        async function restoreEntry(id) {
+            const transaction = db.transaction(["entries"], "readwrite");
+            const objectStore = transaction.objectStore("entries");
+            const index = objectStore.index("id");
+            const request = index.get(id);
+            const entry = await awaitEvt(request, 'onsuccess', 'onerror');
+            if (entry) {
+                const updateRequest = objectStore.put({
+                    ...entry,
+                    deleted: false,
+                    lastModified: new Date()
+                });
+                await awaitEvt(updateRequest, 'onsuccess', 'onerror');
+            }
+            return entry;
+        }
+
+        // Permanently delete an entry (for cleanup)
+        async function permanentlyDeleteEntry(id) {
             const transaction = db.transaction(["entries"], "readwrite");
             const objectStore = transaction.objectStore("entries");
             const index = objectStore.index("id");
@@ -464,6 +549,7 @@ TimesheetDB.modules.push(function entriesDb() {
             return key;
         }
 
+        // Returns only non-deleted entries modified today
         async function* getEntriesModifiedToday() {
             const transaction = db.transaction(["entries"], "readonly");
             const objectStore = transaction.objectStore("entries");
@@ -471,21 +557,18 @@ TimesheetDB.modules.push(function entriesDb() {
             today.setHours(0, 0, 0, 0);
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
-            const range = IDBKeyRange.bound(today, tomorrow, false, true);
 
-            if (objectStore.indexNames.contains("lastModified")) {
-                const index = objectStore.index("lastModified");
-                yield* awaitCursor(index.openCursor(range));
-            } else {
-                // Fallback: filter in memory if index doesn't exist
-                for await (const entry of awaitCursor(objectStore.openCursor())) {
-                    if (entry.lastModified && entry.lastModified >= today && entry.lastModified < tomorrow) {
-                        yield entry;
-                    }
+            for await (const entry of awaitCursor(objectStore.openCursor())) {
+                if (!entry.deleted &&
+                    entry.lastModified &&
+                    entry.lastModified >= today &&
+                    entry.lastModified < tomorrow) {
+                    yield entry;
                 }
             }
         }
 
+        // Returns all non-deleted entries as array
         async function getAllEntries() {
             const entries = [];
             for await (const entry of getEntries()) {
@@ -500,6 +583,9 @@ TimesheetDB.modules.push(function entriesDb() {
             getEntry,
             getEntries,
             deleteEntry,
+            getDeletedEntries,
+            restoreEntry,
+            permanentlyDeleteEntry,
             getEntriesModifiedToday,
             getAllEntries
         }

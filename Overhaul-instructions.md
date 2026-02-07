@@ -103,7 +103,7 @@ We will do this in phases.
 
 #### TODO
 
-**Progress: 48/128 tasks completed (37.5%)**
+**Progress: 68/128 tasks completed (53.1%)**
 
 ##### 1. Remove Unused UI Code
 - [x] Identify and list all UI components/pages currently in the project
@@ -158,29 +158,29 @@ We will do this in phases.
 ##### 2.1 Soft Deletes
 All delete operations should be soft by default to allow for data recovery and undo functionality.
 
-- [ ] Add `deleted` boolean field to tasks schema
-  - [ ] timesheetDb.js - Add deleted field to task records
-  - [ ] timesheetDb.js - Add index on deleted field for efficient filtering
-- [ ] Add `deleted` boolean field to entries schema
-  - [ ] timesheetDb.js - Add deleted field to entry records
-  - [ ] timesheetDb.js - Add index on deleted field for efficient filtering
-- [ ] Update delete operations to set `deleted: true` instead of removing records
-  - [ ] timesheetDb.js - Modify deleteTask to set deleted flag
-  - [ ] timesheetDb.js - Modify deleteEntry to set deleted flag
-- [ ] Update query methods to exclude deleted records by default
-  - [ ] timesheetDb.js - getTasks should filter out deleted: true
-  - [ ] timesheetDb.js - getEntries should filter out deleted: true
-  - [ ] timesheetDb.js - getTasksModifiedToday should filter out deleted: true
-  - [ ] timesheetDb.js - getEntriesModifiedToday should filter out deleted: true
-- [ ] Add methods to query deleted records (for potential restore feature)
-  - [ ] timesheetDb.js - getDeletedTasks method
-  - [ ] timesheetDb.js - getDeletedEntries method
-- [ ] Add restore methods
-  - [ ] timesheetDb.js - restoreTask(exid) - sets deleted: false
-  - [ ] timesheetDb.js - restoreEntry(id) - sets deleted: false
-- [ ] Add permanent delete methods (for cleanup)
-  - [ ] timesheetDb.js - permanentlyDeleteTask(exid)
-  - [ ] timesheetDb.js - permanentlyDeleteEntry(id)
+- [x] Add `deleted` boolean field to tasks schema
+  - [x] timesheetDb.js - Add deleted field to task records
+  - [x] timesheetDb.js - Add index on deleted field for efficient filtering
+- [x] Add `deleted` boolean field to entries schema
+  - [x] timesheetDb.js - Add deleted field to entry records
+  - [x] timesheetDb.js - Add index on deleted field for efficient filtering
+- [x] Update delete operations to set `deleted: true` instead of removing records
+  - [x] timesheetDb.js - Modify deleteTask to set deleted flag
+  - [x] timesheetDb.js - Modify deleteEntry to set deleted flag
+- [x] Update query methods to exclude deleted records by default
+  - [x] timesheetDb.js - getTasks should filter out deleted: true
+  - [x] timesheetDb.js - getEntries should filter out deleted: true
+  - [x] timesheetDb.js - getTasksModifiedToday should filter out deleted: true
+  - [x] timesheetDb.js - getEntriesModifiedToday should filter out deleted: true
+- [x] Add methods to query deleted records (for potential restore feature)
+  - [x] timesheetDb.js - getDeletedTasks method
+  - [x] timesheetDb.js - getDeletedEntries method
+- [x] Add restore methods
+  - [x] timesheetDb.js - restoreTask(exid) - sets deleted: false
+  - [x] timesheetDb.js - restoreEntry(id) - sets deleted: false
+- [x] Add permanent delete methods (for cleanup)
+  - [x] timesheetDb.js - permanentlyDeleteTask(exid)
+  - [x] timesheetDb.js - permanentlyDeleteEntry(id)
 
 ##### 3. State Management Restructure
 - [x] Audit current state management usage
