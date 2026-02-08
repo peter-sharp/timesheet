@@ -257,20 +257,21 @@ Automated system tests using Node.js to verify end-to-end functionality. These t
 - [x] Add midnight rollover check via requestIdleCallback in app-context.js
 
 ##### 6. Update Totals Calculation
-- [ ] Create e2e tests that cover the today-filter total calculation use-case
-  - [ ] Test that totals reflect only today's data
-- [ ] Modify totals calculation to only include today's data
-  - [ ] app-context.js - Update durationTotal signal to calculate from today's entries only
-  - [ ] app-context.js - Update durationTotalGaps signal to calculate from today's entries only
-  - [ ] utils/calcDuration.js - Ensure duration calculation filters for today
-  - [ ] utils/calculateGaps.js - Ensure gap calculation filters for today
-- [ ] Update task-level totals for today only
-  - [ ] tasks/task-list.js - Calculate task durations from today's entries only
-- [ ] Update time entry totals for today only
-  - [ ] timeline/timesheet.js - Display totals for today's entries only
-- [ ] Update UI to clearly indicate totals are for "today"
-  - [ ] index.html - Add "Today's Total" label or similar to totals display
-- [ ] Test totals accuracy with various scenarios
+- [x] Create e2e tests that cover the today-filter total calculation use-case
+  - [x] Test that totals reflect only today's data (e2e/totals.spec.js)
+- [x] Modify totals calculation to only include today's data
+  - [x] app-context.js - durationTotal signal already calculates from today's entries only (Phase 5 filter)
+  - [x] app-context.js - durationTotalGaps signal already calculates from today's entries only
+  - [x] utils/calcDuration.js - Duration calculation works on today-filtered entries
+  - [x] utils/calculateGaps.js - Gap calculation works on today-filtered entries
+- [x] Update task-level totals for today only
+  - [x] app-context.js - Fixed: added recalculateTaskTotals() call in initialize() so task totals load on startup
+  - [x] tasks/task-list.js - Task durations calculated from today's entries only
+- [x] Update time entry totals for today only
+  - [x] timeline/timesheet.js - Totals display from today's entries only
+- [x] Update UI to clearly indicate totals are for "today"
+  - [x] Not needed - totals inherently show today's data since Phase 5 filters everything to today
+- [x] Test totals accuracy with various scenarios (3 tests: timeline total, task-level total, gaps)
 
 ##### 7. Task Description Datalist
 - [ ] Create e2e tests that cover the Task Description Datalist use-case

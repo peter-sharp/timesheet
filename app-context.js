@@ -159,6 +159,7 @@ customElements.define('app-context', class extends HTMLElement {
         }
 
         // Calculate initial totals
+        this.recalculateTaskTotals();
         this.recalculateTotals();
     }
 
