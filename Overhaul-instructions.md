@@ -235,11 +235,13 @@ Automated system tests using Node.js to verify end-to-end functionality. These t
   - [x] Test that only tasks and timeline routes are accessible
   - [x] Test no archive/settings/sync routes exist
 - [x] Today's data filter tests (e2e/today-filter.spec.js - placeholders for Phase 5)
-  - [ ] Test that only today's tasks appear in the task list
-  - [ ] Test that only today's entries appear in the timeline
-  - [ ] Test that totals reflect only today's data
+
 
 ##### 5. Filter to Today's Data
+- [ ] Create e2e tests that cover the today-filter use-case
+  - [ ] Test that only today's tasks appear in the task list
+  - [ ] Test that only today's entries appear in the timeline
+
 - [ ] Add "last modified today" filter to task list query
   - [ ] tasks/task-list.js - Add filter logic to query only tasks with lastModified = today
   - [ ] timesheetDb.js - Use lastModified index for efficient filtering
@@ -254,6 +256,8 @@ Automated system tests using Node.js to verify end-to-end functionality. These t
   - [ ] app-context.js - Ensure signals trigger updates when lastModified changes
 
 ##### 6. Update Totals Calculation
+- [ ] Create e2e tests that cover the today-filter total calculation use-case
+  - [ ] Test that totals reflect only today's data
 - [ ] Modify totals calculation to only include today's data
   - [ ] app-context.js - Update durationTotal signal to calculate from today's entries only
   - [ ] app-context.js - Update durationTotalGaps signal to calculate from today's entries only
@@ -268,14 +272,16 @@ Automated system tests using Node.js to verify end-to-end functionality. These t
 - [ ] Test totals accuracy with various scenarios
 
 ##### 7. Task Description Datalist
+- [ ] Create e2e tests that cover the Task Description Datalist use-case
+- [ ] timesheetDb.js - Add indexes for project field on tasks store
 - [ ] Create datalist element for task description input field
   - [ ] timeline/timesheet.js - Add `<datalist>` element to task description input
   - [ ] timeline/timesheet.js - Link datalist to input via list attribute
 - [ ] Populate datalist with existing tasks from IndexedDB
   - [ ] timeline/timesheet.js - Query all tasks from IndexedDB on component load
   - [ ] timeline/timesheet.js - Subscribe to tasks signal to update datalist when tasks change
-- [ ] Format datalist options in todo.txt format (#tasknumber description client:aclient)
-  - [ ] timeline/timesheet.js - Format each task as `#${taskNumber} ${description} client:${client}`
+- [ ] Format datalist options in todo.txt format (#tasknumber description +some_project client:aclient)
+  - [ ] timeline/timesheet.js - Format each task as `#${taskNumber} ${description} +${project} client:${client}`
   - [ ] Verify todo.txt format parsing in tasks/tasks.js
 - [ ] Ensure datalist updates when new tasks are added
   - [ ] timeline/timesheet.js - Add effect listener to tasks signal to refresh datalist
