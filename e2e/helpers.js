@@ -92,4 +92,40 @@ async function getEntryItems(page) {
   });
 }
 
-module.exports = { clearAllData, loadApp, addTask, getTaskItems, addEntry, getEntryItems };
+/**
+ * Seed IndexedDB directly with tasks and entries that have controlled lastModified dates.
+ * Must be called after loadApp (so the DB schema exists).
+ * @param {import('@playwright/test').Page} page
+ * @param {{ tasks?: Array, entries?: Array }} data
+ */
+async function seedIndexedDB(page, { tasks = [], entries = [] }) {
+  await page.evaluate(async ({ tasks, entries }) => {
+    const request = indexedDB.open('timesheet', 5);
+    const db = await new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    const tx = db.transaction(['tasks', 'entries'], 'readwrite');
+
+    for (const task of tasks) {
+      if (task.lastModified) task.lastModified = new Date(task.lastModified);
+      tx.objectStore('tasks').add(task);
+    }
+    for (const entry of entries) {
+      if (entry.lastModified) entry.lastModified = new Date(entry.lastModified);
+      if (entry.start) entry.start = new Date(entry.start);
+      if (entry.end) entry.end = new Date(entry.end);
+      tx.objectStore('entries').add(entry);
+    }
+
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+
+    db.close();
+  }, { tasks, entries });
+}
+
+module.exports = { clearAllData, loadApp, addTask, getTaskItems, addEntry, getEntryItems, seedIndexedDB };

@@ -97,9 +97,9 @@ const indexedDBAdapter = {
         try {
             const db = await TimesheetDB();
 
-            // Load all entries
+            // Load only today's entries
             const entries = [];
-            for await (const entry of db.getEntries()) {
+            for await (const entry of db.getEntriesModifiedToday()) {
                 entries.push({
                     ...entry,
                     start: new Date(entry.start),
@@ -108,9 +108,9 @@ const indexedDBAdapter = {
                 });
             }
 
-            // Load all tasks
+            // Load only today's tasks
             const tasks = [];
-            for await (const task of db.getTasks()) {
+            for await (const task of db.getTasksModifiedToday()) {
                 tasks.push({
                     ...task,
                     lastModified: task.lastModified ? new Date(task.lastModified) : new Date()

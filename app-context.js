@@ -114,6 +114,31 @@ customElements.define('app-context', class extends HTMLElement {
 
         // Listen for state update events from child components
         this.addEventListener('updateState', this.handleStateEvent.bind(this));
+
+        // Start midnight rollover check
+        this._currentDate = new Date().toDateString();
+        this._scheduleRolloverCheck();
+    }
+
+    // Check if the date has rolled over (app left open past midnight)
+    _scheduleRolloverCheck() {
+        requestIdleCallback(() => {
+            const now = new Date().toDateString();
+            if (now !== this._currentDate) {
+                this._currentDate = now;
+                this._reloadTodayData();
+            }
+            // Re-schedule (checks roughly every idle period)
+            this._scheduleRolloverCheck();
+        }, { timeout: 60000 });
+    }
+
+    async _reloadTodayData() {
+        const freshState = await store.read();
+        this.entries.value = [...freshState.entries];
+        this.tasks.value = [...freshState.tasks];
+        this.recalculateTaskTotals();
+        this.recalculateTotals();
     }
 
     // Initialize state from storage
@@ -192,7 +217,7 @@ customElements.define('app-context', class extends HTMLElement {
         const currentTask = this.tasks.value.find(x => x.exid === task);
 
         if (!currentTask) {
-            const newTask = { exid: task, id: Date.now(), mostRecentEntry: new Date(), total: 0 };
+            const newTask = { exid: task, id: Date.now(), mostRecentEntry: new Date(), total: 0, lastModified: new Date() };
             this.tasks.value = [...this.tasks.value, newTask];
             this.currentTask.value = newTask;
         } else {
@@ -201,7 +226,8 @@ customElements.define('app-context', class extends HTMLElement {
 
         this.tasks.value = this.tasks.value.map(x => ({
             ...x,
-            timingState: x.exid === task ? "start" : "stop"
+            timingState: x.exid === task ? "start" : "stop",
+            lastModified: new Date()
         }));
     }
 
@@ -243,7 +269,7 @@ customElements.define('app-context', class extends HTMLElement {
 
             this.newEntry.value = {};
             this.tasks.value = this.tasks.value.map(x =>
-                x.exid === task ? { ...x, timingState: "stop" } : x
+                x.exid === task ? { ...x, timingState: "stop", lastModified: new Date() } : x
             );
         }
 
@@ -253,7 +279,7 @@ customElements.define('app-context', class extends HTMLElement {
 
         // Ensure task exists
         if (!this.tasks.value.find(t => t.exid === task)) {
-            this.tasks.value = [...this.tasks.value, { exid: task }];
+            this.tasks.value = [...this.tasks.value, { exid: task, lastModified: new Date() }];
         }
 
         this.entries.value = entries;
@@ -292,7 +318,8 @@ customElements.define('app-context', class extends HTMLElement {
         this.currentTask.value = this.tasks.value.find(x => x.exid === exid) || {};
         this.tasks.value = this.tasks.value.map(x => ({
             ...x,
-            timingState: x.exid === exid ? "start" : "stop"
+            timingState: x.exid === exid ? "start" : "stop",
+            lastModified: new Date()
         }));
     }
 
@@ -328,7 +355,8 @@ customElements.define('app-context', class extends HTMLElement {
         this.currentTask.value = {};
         this.tasks.value = this.tasks.value.map(x => ({
             ...x,
-            timingState: x.exid === exid ? "stop" : x.timingState
+            timingState: x.exid === exid ? "stop" : x.timingState,
+            lastModified: new Date()
         }));
 
         this.recalculateTaskTotals();

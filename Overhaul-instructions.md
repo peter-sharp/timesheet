@@ -238,22 +238,23 @@ Automated system tests using Node.js to verify end-to-end functionality. These t
 
 
 ##### 5. Filter to Today's Data
-- [ ] Create e2e tests that cover the today-filter use-case
-  - [ ] Test that only today's tasks appear in the task list
-  - [ ] Test that only today's entries appear in the timeline
+- [x] Create e2e tests that cover the today-filter use-case
+  - [x] Test that only today's tasks appear in the task list
+  - [x] Test that only today's entries appear in the timeline
 
-- [ ] Add "last modified today" filter to task list query
-  - [ ] tasks/task-list.js - Add filter logic to query only tasks with lastModified = today
-  - [ ] timesheetDb.js - Use lastModified index for efficient filtering
-- [ ] Add "last modified today" filter to time entries query
-  - [ ] timeline/timesheet.js - Add filter logic to query only entries with lastModified = today
-  - [ ] timesheetDb.js - Use lastModified index for efficient filtering
-- [ ] Update task list UI to only display today's tasks
-- [ ] Update timeline UI to only display today's time entries
-- [ ] Ensure "last modified" timestamp is properly maintained on all updates
-  - [ ] app-context.js - Set lastModified timestamp on task create/update
-  - [ ] app-context.js - Set lastModified timestamp on entry create/update
-  - [ ] app-context.js - Ensure signals trigger updates when lastModified changes
+- [x] Add "last modified today" filter to task list query
+  - [x] timesheetStore.js - indexedDBAdapter.read() uses getTasksModifiedToday()
+  - [x] timesheetDb.js - Use lastModified index for efficient filtering
+- [x] Add "last modified today" filter to time entries query
+  - [x] timesheetStore.js - indexedDBAdapter.read() uses getEntriesModifiedToday()
+  - [x] timesheetDb.js - Use lastModified index for efficient filtering
+- [x] Update task list UI to only display today's tasks
+- [x] Update timeline UI to only display today's time entries
+- [x] Ensure "last modified" timestamp is properly maintained on all updates
+  - [x] app-context.js - Set lastModified timestamp on task create/update
+  - [x] app-context.js - Set lastModified timestamp on entry create/update
+  - [x] app-context.js - Ensure signals trigger updates when lastModified changes
+- [x] Add midnight rollover check via requestIdleCallback in app-context.js
 
 ##### 6. Update Totals Calculation
 - [ ] Create e2e tests that cover the today-filter total calculation use-case
