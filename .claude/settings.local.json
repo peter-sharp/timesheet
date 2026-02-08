@@ -6,7 +6,10 @@
       "Bash(pnpm exec playwright install:*)",
       "Bash(pnpm test:*)",
       "Bash(pnpm exec playwright test:*)",
-      "Bash(del c:UserspeterProjectstimesheete2edebug.spec.js)"
+      "Bash(del c:UserspeterProjectstimesheete2edebug.spec.js)",
+      "Bash(npx playwright test:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
