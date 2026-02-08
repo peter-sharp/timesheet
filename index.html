@@ -26,72 +26,6 @@
           <h2 class="h4">Timeline</h2>
           <time-sheet></time-sheet>
         </section>
-        <section class="stack wrapper__inner" id="archive">
-          <h2 class="h4">Archive</h2>
-          <form name="archive">
-            <button name="archive">Archive</button>
-          </form>
-          <archive-stats></archive-stats>
-          <div>
-            <h3 class="h5">Tasks</h3>
-            <task-archive></task-archive>
-          </div>
-          <div>
-            <h3 class="h5">Timeline</h3>
-            <timesheet-archive></timesheet-archive>
-          </div>
-        </section>
-        <section class="wrapper__inner stack" id="settings">
-          <h2 class="h4">Settings</h2>
-          <form class="stack" id="settings">
-            <p>
-              <label for="settings_rate">Color</label>
-              <input id="settings_rate" type="color" name="color" />
-            </p>
-            <p>
-              <label for="settings_rate">Rate</label>
-              <input id="settings_rate" type="number" name="rate" step="0.01" />
-            </p>
-            <p>
-              <label for="settings_tax">Tax %</label>
-              <input id="settings_tax" type="number" name="tax" step="0.01" />
-            </p>
-            <p>
-              <label for="settings_focus_interval">Focus Interval</label>
-              <input
-                id="settings_focus_interval"
-                type="number"
-                name="focusInterval"
-                step="0.01"
-              />
-            </p>
-            <p>
-              <label for="settings_time_snap_threshold">Time Snap Threshold (minutes)</label>
-              <input
-                id="settings_time_snap_threshold"
-                type="number"
-                name="timeSnapThreshold"
-                min="0"
-                step="1"
-                value="6"
-              />
-            </p>
-            <button name="save">Save</button>
-          </form>
-          <form class="stack" id="import">
-            <textarea name="data"></textarea>
-            <button name="import">Import</button>
-          </form>
-          <form class="stack" id="export">
-            <textarea name="data"></textarea>
-            <button name="export">Export</button>
-          </form>
-        </section>
-        <section class="wrapper__inner stack" id="sync">
-          <h2 class="h4">Sync</h2>
-          <tasksyncstatus-list></tasksyncstatus-list>
-          <sync-status></sync-status>
-        </section>
       </hash-router>
       <footer class="fixed-footer app-footer">
         <div class="wrapper__inner row padding-y-1" style="--align: center">
@@ -103,20 +37,6 @@
               <ul class="unstyled-list row">
                 <li><a href="#tasks">Tasks</a></li>
                 <li><a href="#time-entries">Timeline</a></li>
-                <li>
-                  <details class="popup-menu">
-                    <summary>...</summary>
-                    <ul
-                      class="unstyled-list stack popup-menu__body"
-                      style="--gap: 0.2em"
-                    >
-                      <li><a href="#archive">Archive</a></li>
-                      <li><a href="#settings">Settings</a></li>
-                      <li><a href="#sync">Sync</a></li>
-                      <li>Version&nbsp;<span id="app-version"></span></li>
-                    </ul>
-                  </details>
-                </li>
                 <li><current-task></current-task></li>
               </ul>
             </hash-nav>

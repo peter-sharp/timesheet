@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Timesheet Archive Tests</title>
+  <title>Timesheet Tests</title>
   <style>
     body { 
         font-family: Arial, sans-serif; 
@@ -19,7 +19,7 @@
   </style>
 </head>
 <body>
-  <h1>Timesheet Archive Tests</h1>
+  <h1>Timesheet Tests</h1>
   <button id="run-tests">Run Tests</button>
   <div id="test-progress" style="margin: 0.5em 0;"></div>
   <h2>Results: <span id="test-summary"></span></h2>
@@ -27,20 +27,13 @@
 
   <!-- App context and components for tests -->
   <app-context></app-context>
-  <timesheet-archive></timesheet-archive>
-  <archive-stats></archive-stats>
   <task-list features="add"></task-list>
 
   <script type="module">
     import '../app-context.js';
-    import '../archive/timesheet-archive.js';
-    import '../archive/archive-stats.js';
     import '../timesheetDb.js';
 
     import './test-runner.js';
-    import './archive/timesheet-archive.test.js';
-    import './archive/archive-stats.test.js';
-    import './archive/indexeddb-integration.test.js';
     import './task-list.test.js';
 
     console.log('Registered tests:', TestRunner.tests.map(t => t.name));

@@ -30,7 +30,7 @@ taskForm.innerHTML = /*html*/ `
     <div class="row">
         <div class="input-group row__col-2">
             <label for="newTask">Task</label>
-            <textarea id="newTask" name="taskRaw" rows="1"></textarea>
+            <input id="newTask" type="text" name="taskRaw" list="prev-tasks">
         </div>
         <button type="submit">Add</button>
     </div>
@@ -48,6 +48,7 @@ taskForm.innerHTML = /*html*/ `
       </div>
       <datalist id="prev-clients"></datalist>
     </details>
+    <datalist id="prev-tasks"></datalist>
 </form>`;
 
 const taskRow = document.createElement("template");
@@ -76,6 +77,7 @@ taskRow.innerHTML = /*html*/ `
 class TaskList extends HTMLElement {
   #clients;
   #tasks;
+  #allTasks;
   #tasksIndex = {};
   #settings;
   #currentTask;
@@ -104,6 +106,7 @@ class TaskList extends HTMLElement {
           this.#currentTask = state.currentTask;
           this.#newEntry = state.newEntry;
           this.#durationTotal = state.durationTotal;
+          this.#allTasks = state.allTasks;
 
           this.#unsubscribe.signals = effect(
             this.update.bind(this),
@@ -118,6 +121,11 @@ class TaskList extends HTMLElement {
           this.#unsubscribe.tasksIndex = effect(
             this.indexTasks.bind(this),
             this.#tasks
+          );
+
+          this.#unsubscribe.datalist = effect(
+            () => this.renderTaskDatalist(this.#allTasks?.value || []),
+            this.#allTasks
           );
 
           this.#unsubscribe.state = unsubscribe;
@@ -172,21 +180,103 @@ class TaskList extends HTMLElement {
     // FIXME add form should be a separate web component
     if (this.getAttribute("features")?.includes("add")) {
       this.newTaskForm = this.querySelector("[data-new-task]");
+      const primaryInput = this.newTaskForm.querySelector('input[name="taskRaw"]');
+      const inputGroup = primaryInput.closest('.input-group');
+
+      // Spawn a new input row below the given reference input
+      const spawnRow = (afterInput, value = '') => {
+        // Wrap inputs in container if not already wrapped
+        let container = inputGroup.querySelector('.batch-input-container');
+        if (!container) {
+          container = document.createElement('div');
+          container.className = 'batch-input-container';
+          primaryInput.replaceWith(container);
+          container.append(primaryInput);
+        }
+        const newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.name = 'taskRawExtra';
+        newInput.value = value;
+        newInput.setAttribute('list', 'prev-tasks');
+        // Remove row when emptied
+        newInput.addEventListener('input', () => {
+          if (!newInput.value && container.children.length > 1) {
+            newInput.remove();
+            // Unwrap container if only primary input remains
+            if (container.children.length === 1) {
+              container.replaceWith(primaryInput);
+            }
+          }
+        });
+        // Insert after the reference input
+        afterInput.after(newInput);
+        return newInput;
+      };
+
+      // Handle multi-line paste
+      primaryInput.addEventListener('paste', (ev) => {
+        const text = ev.clipboardData?.getData('text') || '';
+        if (!text.includes('\n')) return;
+        ev.preventDefault();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (!lines.length) return;
+        primaryInput.value = lines[0];
+        let lastInput = primaryInput;
+        for (let i = 1; i < lines.length; i++) {
+          lastInput = spawnRow(lastInput, lines[i]);
+        }
+      });
+
+      // Handle Ctrl+Enter to spawn new row
+      primaryInput.addEventListener('keydown', (ev) => {
+        if (ev.ctrlKey && ev.key === 'Enter') {
+          ev.preventDefault();
+          const newInput = spawnRow(primaryInput);
+          newInput.focus();
+        }
+      });
+
+      // Also allow Ctrl+Enter on extra rows
+      inputGroup.addEventListener('keydown', (ev) => {
+        if (ev.ctrlKey && ev.key === 'Enter' && ev.target.name === 'taskRawExtra') {
+          ev.preventDefault();
+          const newInput = spawnRow(ev.target);
+          newInput.focus();
+        }
+      });
+
       this.newTaskForm.addEventListener("submit", function addTask(ev) {
         ev.preventDefault();
-        const elTaskRaw = ev.target.elements.taskRaw;
         const elExid = ev.target.elements.exid;
         const elClient = ev.target.elements.client;
-        const lines = elTaskRaw.value.split("\n").map(l => l.trim()).filter(Boolean);
-        const tasks = lines.map((line, i) => ({
-          raw: line,
-          exid: lines.length === 1 ? elExid.value : "",
-          client: lines.length === 1 ? elClient.value : "",
-        }));
-        if (tasks.length > 0) {
-          emitEvent(that, "addTasks", { tasks });
+        const container = inputGroup.querySelector('.batch-input-container');
+        const extraInputs = container
+          ? Array.from(container.querySelectorAll('input[name="taskRawExtra"]'))
+          : [];
+
+        if (extraInputs.length > 0) {
+          // Batch mode: collect all input values
+          const allInputs = [primaryInput, ...extraInputs];
+          const tasks = allInputs
+            .map(input => input.value.trim())
+            .filter(Boolean)
+            .map(raw => ({ raw }));
+          if (tasks.length) {
+            emitEvent(that, "addTasks", { tasks });
+          }
+          // Remove extra inputs and unwrap container
+          for (const input of extraInputs) input.remove();
+          if (container) container.replaceWith(primaryInput);
+          primaryInput.value = "";
+        } else {
+          // Single task mode (preserves manual exid/client)
+          emitEvent(that, "addTask", {
+            raw: primaryInput.value,
+            exid: elExid.value,
+            client: elClient.value,
+          });
+          primaryInput.value = "";
         }
-        elTaskRaw.value = "";
         elExid.value = "";
         elClient.value = "";
 
@@ -339,6 +429,24 @@ class TaskList extends HTMLElement {
     const elDuration = el.querySelector("[data-task-total]");
     elDuration.setAttribute("duration", hoursToMilliseconds(total) + duration);
     elDuration.dataset.state = start ? "started" : "stopped";
+  }
+
+  renderTaskDatalist(tasks) {
+    const datalist = this.querySelector("#prev-tasks");
+    if (!datalist) return;
+    const $frag = document.createDocumentFragment();
+    for (const task of tasks) {
+      const opt = document.createElement("OPTION");
+      const parts = [];
+      if (task.exid) parts.push(`#${task.exid}`);
+      if (task.description) parts.push(task.description);
+      if (task.project) parts.push(`+${task.project}`);
+      if (task.client) parts.push(`client:${task.client}`);
+      opt.value = parts.join(' ');
+      $frag.append(opt);
+    }
+    datalist.innerHTML = "";
+    datalist.append($frag);
   }
 
   renderPrevClientDatalist($prevClients, clients) {

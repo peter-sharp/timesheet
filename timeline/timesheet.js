@@ -100,6 +100,7 @@ class Timesheet extends HTMLElement {
     #newEntry;
     #entries;
     #tasks;
+    #allTasks;
     #tasksIndex = {};
     #durationTotal;
     #durationTotalGaps;
@@ -122,6 +123,7 @@ class Timesheet extends HTMLElement {
             this.#newEntry = state.newEntry;
             this.#entries = state.entries;
             this.#tasks = state.tasks;
+            this.#allTasks = state.allTasks;
             this.#durationTotal = state.durationTotal;
             this.#durationTotalGaps = state.durationTotalGaps;
 
@@ -137,6 +139,10 @@ class Timesheet extends HTMLElement {
             this.#unsubscribe.indexTasks = effect(
                 this.indexTasks.bind(this),
                 this.#tasks
+            );
+            this.#unsubscribe.datalist = effect(
+                () => this.renderTaskdatalist(this.#allTasks?.value || []),
+                this.#allTasks
             );
 
             this.#unsubscribe.state = unsubscribe;
@@ -252,7 +258,6 @@ class Timesheet extends HTMLElement {
             this.entriesList.prepend(section);
         }
         
-        this.renderTaskdatalist(state.tasks)
         //TODO make sure in scope of timesheet
         const elDurationTotal = el.querySelector('[name="durationTotal"]');
         elDurationTotal.value = round1dp(state.durationTotal);
@@ -332,7 +337,12 @@ class Timesheet extends HTMLElement {
         for(const task of Array.from(tasks)) {
             const opt = document.createElement('OPTION');
             opt.value = task.exid;
-            opt.innerText = `${task.client ? task.client + ' ' : ''}${task.description || task.exid} `;
+            const parts = [];
+            if (task.exid) parts.push(`#${task.exid}`);
+            if (task.description) parts.push(task.description);
+            if (task.project) parts.push(`+${task.project}`);
+            if (task.client) parts.push(`client:${task.client}`);
+            opt.innerText = parts.join(' ');
             this.prevTasks.append(opt)
         }
     }
