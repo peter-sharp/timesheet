@@ -207,28 +207,34 @@ All delete operations should be soft by default to allow for data recovery and u
 ##### 4. System Tests (Node.js)
 Automated system tests using Node.js to verify end-to-end functionality. These tests allow Claude to run, check results, and fix bugs iteratively.
 
-- [ ] Set up Node.js test infrastructure
-  - [ ] Install test runner (e.g. Playwright or Puppeteer for browser-based testing)
-  - [ ] Create test directory structure and configuration
-  - [ ] Add npm test script for running system tests
-- [ ] Task CRUD tests
-  - [ ] Test creating a new task via the UI
-  - [ ] Test editing an existing task
-  - [ ] Test soft-deleting a task
-  - [ ] Test that deleted tasks don't appear in the task list
-- [ ] Time entry CRUD tests
-  - [ ] Test creating a new time entry
-  - [ ] Test editing an existing time entry
-  - [ ] Test soft-deleting a time entry
-  - [ ] Test that deleted entries don't appear in the timeline
-- [ ] State management tests
-  - [ ] Test that signals update the UI reactively
-  - [ ] Test that UI state persists in localStorage across page reloads
-  - [ ] Test that data persists in IndexedDB across page reloads
-- [ ] Navigation and routing tests
-  - [ ] Test navigating between tasks and timeline pages
-  - [ ] Test that only tasks and timeline routes are accessible
-- [ ] Today's data filter tests
+- [x] Set up Node.js test infrastructure
+  - [x] Install test runner (Playwright)
+  - [x] Create test directory structure and configuration (e2e/, playwright.config.js)
+  - [x] Add npm test script for running system tests
+  - [x] Create shared test helpers (e2e/helpers.js)
+- [x] Task CRUD tests (e2e/task-crud.spec.js)
+  - [x] Test creating a new task via the UI
+  - [x] Test completing a task via checkbox (shadow DOM)
+  - [x] Test soft-deleting a task
+  - [x] Test that deleted tasks don't appear in the task list
+  - [x] Test deleted task does not reappear after reload
+- [x] Time entry CRUD tests (e2e/entry-crud.spec.js)
+  - [x] Test creating a new time entry
+  - [x] Test editing an existing time entry
+  - [x] Test soft-deleting a time entry
+  - [x] Test that deleted entries don't appear in the timeline
+  - [x] Test that totals update when entry is added
+- [x] State management tests (e2e/state-management.spec.js)
+  - [x] Test that signals update the UI reactively
+  - [x] Test that tasks persist in IndexedDB across page reloads
+  - [x] Test that entries persist in IndexedDB across page reloads
+  - [x] Test starting a task updates current task display
+  - [x] Test stopping a task creates a time entry
+- [x] Navigation and routing tests (e2e/navigation.spec.js)
+  - [x] Test navigating between tasks and timeline pages
+  - [x] Test that only tasks and timeline routes are accessible
+  - [x] Test no archive/settings/sync routes exist
+- [x] Today's data filter tests (e2e/today-filter.spec.js - placeholders for Phase 5)
   - [ ] Test that only today's tasks appear in the task list
   - [ ] Test that only today's entries appear in the timeline
   - [ ] Test that totals reflect only today's data

@@ -244,10 +244,14 @@ TimesheetDB.modules.push(function tasksDb() {
         async function updateTask(task) {
             const transaction = db.transaction(["tasks"], "readwrite");
             const objectStore = transaction.objectStore("tasks");
+            // Look up the auto-increment key via the exid index
+            const index = objectStore.index("exid");
+            const keyRequest = index.getKey(task.exid);
+            const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
             const request = objectStore.put({
                 ...task,
                 lastModified: new Date()
-            });
+            }, key);
             const taskId = await awaitEvt(request, 'onsuccess', 'onerror');
             return taskId;
         }
@@ -276,14 +280,17 @@ TimesheetDB.modules.push(function tasksDb() {
             const transaction = db.transaction(["tasks"], "readwrite");
             const objectStore = transaction.objectStore("tasks");
             const index = objectStore.index("exid");
+            // Get both the value and the auto-increment key
+            const keyRequest = index.getKey(exid);
+            const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
             const request = index.get(exid);
             const task = await awaitEvt(request, 'onsuccess', 'onerror');
-            if (task) {
+            if (task && key !== undefined) {
                 const updateRequest = objectStore.put({
                     ...task,
                     deleted: true,
                     lastModified: new Date()
-                });
+                }, key);
                 await awaitEvt(updateRequest, 'onsuccess', 'onerror');
             }
             return task;
@@ -305,14 +312,16 @@ TimesheetDB.modules.push(function tasksDb() {
             const transaction = db.transaction(["tasks"], "readwrite");
             const objectStore = transaction.objectStore("tasks");
             const index = objectStore.index("exid");
+            const keyRequest = index.getKey(exid);
+            const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
             const request = index.get(exid);
             const task = await awaitEvt(request, 'onsuccess', 'onerror');
-            if (task) {
+            if (task && key !== undefined) {
                 const updateRequest = objectStore.put({
                     ...task,
                     deleted: false,
                     lastModified: new Date()
-                });
+                }, key);
                 await awaitEvt(updateRequest, 'onsuccess', 'onerror');
             }
             return task;
@@ -459,12 +468,16 @@ TimesheetDB.modules.push(function entriesDb() {
         async function updateEntry(entry) {
             const transaction = db.transaction(["entries"], "readwrite");
             const objectStore = transaction.objectStore("entries");
+            // Look up the auto-increment key via the id index
+            const index = objectStore.index("id");
+            const keyRequest = index.getKey(entry.id);
+            const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
             const request = objectStore.put({
                 ...entry,
                 start: new Date(entry.start),
                 end: new Date(entry.end),
                 lastModified: new Date()
-            });
+            }, key);
             const entryId = await awaitEvt(request, 'onsuccess', 'onerror');
             return entryId;
         }
@@ -493,14 +506,17 @@ TimesheetDB.modules.push(function entriesDb() {
             const transaction = db.transaction(["entries"], "readwrite");
             const objectStore = transaction.objectStore("entries");
             const index = objectStore.index("id");
+            // Get both the value and the auto-increment key
+            const keyRequest = index.getKey(id);
+            const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
             const request = index.get(id);
             const entry = await awaitEvt(request, 'onsuccess', 'onerror');
-            if (entry) {
+            if (entry && key !== undefined) {
                 const updateRequest = objectStore.put({
                     ...entry,
                     deleted: true,
                     lastModified: new Date()
-                });
+                }, key);
                 await awaitEvt(updateRequest, 'onsuccess', 'onerror');
             }
             return entry;
@@ -522,14 +538,16 @@ TimesheetDB.modules.push(function entriesDb() {
             const transaction = db.transaction(["entries"], "readwrite");
             const objectStore = transaction.objectStore("entries");
             const index = objectStore.index("id");
+            const keyRequest = index.getKey(id);
+            const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
             const request = index.get(id);
             const entry = await awaitEvt(request, 'onsuccess', 'onerror');
-            if (entry) {
+            if (entry && key !== undefined) {
                 const updateRequest = objectStore.put({
                     ...entry,
                     deleted: false,
                     lastModified: new Date()
-                });
+                }, key);
                 await awaitEvt(updateRequest, 'onsuccess', 'onerror');
             }
             return entry;
