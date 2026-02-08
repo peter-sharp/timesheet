@@ -274,6 +274,7 @@ Automated system tests using Node.js to verify end-to-end functionality. These t
 ##### 7. Task Description Datalist
 - [ ] Create e2e tests that cover the Task Description Datalist use-case
 - [ ] timesheetDb.js - Add indexes for project field on tasks store
+- [ ] update business logic in all files to account for new project field
 - [ ] Create datalist element for task description input field
   - [ ] timeline/timesheet.js - Add `<datalist>` element to task description input
   - [ ] timeline/timesheet.js - Link datalist to input via list attribute
