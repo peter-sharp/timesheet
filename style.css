@@ -195,6 +195,23 @@ label > input {
   width: 100%;
 }
 
+.batch-input-container {
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-input-bg);
+  width: 100%;
+}
+
+.batch-input-container > input {
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  outline: none;
+  width: 100%;
+}
+
+.batch-input-container > input:last-child {
+  border-bottom: none;
+}
+
 th + th,
 td + td {
   padding-left: 0.6em;

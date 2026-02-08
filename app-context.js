@@ -197,6 +197,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'addTask':
                 this.handleAddTask(data);
                 break;
+            case 'addTasks':
+                this.handleAddTasks(data);
+                break;
             case 'deleteTask':
                 this.handleDeleteTask(data);
                 break;
@@ -395,6 +398,40 @@ customElements.define('app-context', class extends HTMLElement {
             if (!clientNames.has(taskClient)) {
                 this.clients.value = [...this.clients.value, { name: taskClient }];
             }
+        }
+    }
+
+    handleAddTasks({ tasks: taskInputs }) {
+        const newTasks = [];
+        const newClients = new Set(this.clients.value.map(c => c.name));
+        const addedClients = [];
+
+        for (const { raw } of taskInputs) {
+            const [exid, project, client, description] = extract([/#(\w+)/, /\+(\w+)/, /client:(\w+)/], raw || '');
+            const taskExid = String(exid || Date.now() + newTasks.length);
+            const taskClient = client || '';
+
+            newTasks.push({
+                exid: taskExid,
+                client: taskClient,
+                project: project || '',
+                description,
+                id: Date.now() + newTasks.length,
+                mostRecentEntry: new Date(),
+                lastModified: new Date()
+            });
+
+            if (taskClient && !newClients.has(taskClient)) {
+                newClients.add(taskClient);
+                addedClients.push({ name: taskClient });
+            }
+        }
+
+        this.tasks.value = [...this.tasks.value, ...newTasks];
+        this.allTasks.value = [...newTasks, ...this.allTasks.value];
+
+        if (addedClients.length) {
+            this.clients.value = [...this.clients.value, ...addedClients];
         }
     }
 
