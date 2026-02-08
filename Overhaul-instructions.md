@@ -279,7 +279,7 @@ Automated system tests using Node.js to verify end-to-end functionality. These t
 - [ ] Create datalist element for task description input field
   - [ ] timeline/timesheet.js - Add `<datalist>` element to task description input
   - [ ] timeline/timesheet.js - Link datalist to input via list attribute
-- [ ] Populate datalist with existing tasks from IndexedDB
+- [ ] Populate datalist with existing tasks from IndexedDB - up to the last 500  by date-modified
   - [ ] timeline/timesheet.js - Query all tasks from IndexedDB on component load
   - [ ] timeline/timesheet.js - Subscribe to tasks signal to update datalist when tasks change
 - [ ] Format datalist options in todo.txt format (#tasknumber description +some_project client:aclient)
