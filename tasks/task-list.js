@@ -30,7 +30,7 @@ taskForm.innerHTML = /*html*/ `
     <div class="row">
         <div class="input-group row__col-2">
             <label for="newTask">Task</label>
-            <input id="newTask" type="text" name="taskRaw">
+            <input id="newTask" type="text" name="taskRaw" list="prev-tasks">
         </div>
         <button type="submit">Add</button>
     </div>
@@ -48,6 +48,7 @@ taskForm.innerHTML = /*html*/ `
       </div>
       <datalist id="prev-clients"></datalist>
     </details>
+    <datalist id="prev-tasks"></datalist>
 </form>`;
 
 const taskRow = document.createElement("template");
@@ -76,6 +77,7 @@ taskRow.innerHTML = /*html*/ `
 class TaskList extends HTMLElement {
   #clients;
   #tasks;
+  #allTasks;
   #tasksIndex = {};
   #settings;
   #currentTask;
@@ -104,6 +106,7 @@ class TaskList extends HTMLElement {
           this.#currentTask = state.currentTask;
           this.#newEntry = state.newEntry;
           this.#durationTotal = state.durationTotal;
+          this.#allTasks = state.allTasks;
 
           this.#unsubscribe.signals = effect(
             this.update.bind(this),
@@ -118,6 +121,11 @@ class TaskList extends HTMLElement {
           this.#unsubscribe.tasksIndex = effect(
             this.indexTasks.bind(this),
             this.#tasks
+          );
+
+          this.#unsubscribe.datalist = effect(
+            () => this.renderTaskDatalist(this.#allTasks?.value || []),
+            this.#allTasks
           );
 
           this.#unsubscribe.state = unsubscribe;
@@ -335,6 +343,24 @@ class TaskList extends HTMLElement {
     const elDuration = el.querySelector("[data-task-total]");
     elDuration.setAttribute("duration", hoursToMilliseconds(total) + duration);
     elDuration.dataset.state = start ? "started" : "stopped";
+  }
+
+  renderTaskDatalist(tasks) {
+    const datalist = this.querySelector("#prev-tasks");
+    if (!datalist) return;
+    const $frag = document.createDocumentFragment();
+    for (const task of tasks) {
+      const opt = document.createElement("OPTION");
+      const parts = [];
+      if (task.exid) parts.push(`#${task.exid}`);
+      if (task.description) parts.push(task.description);
+      if (task.project) parts.push(`+${task.project}`);
+      if (task.client) parts.push(`client:${task.client}`);
+      opt.value = parts.join(' ');
+      $frag.append(opt);
+    }
+    datalist.innerHTML = "";
+    datalist.append($frag);
   }
 
   renderPrevClientDatalist($prevClients, clients) {

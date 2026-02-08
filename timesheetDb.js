@@ -369,6 +369,22 @@ TimesheetDB.modules.push(function tasksDb() {
             return tasks;
         }
 
+        // Returns up to `limit` most-recently-modified non-deleted tasks
+        async function getRecentTasks(limit = 500) {
+            const transaction = db.transaction(["tasks"], "readonly");
+            const objectStore = transaction.objectStore("tasks");
+            const index = objectStore.index("lastModified");
+            const tasks = [];
+            // Walk the index in reverse (newest first)
+            for await (const task of awaitCursor(index.openCursor(null, "prev"))) {
+                if (!task.deleted) {
+                    tasks.push(task);
+                    if (tasks.length >= limit) break;
+                }
+            }
+            return tasks;
+        }
+
         return {
             addTask,
             updateTask,
@@ -379,7 +395,8 @@ TimesheetDB.modules.push(function tasksDb() {
             restoreTask,
             permanentlyDeleteTask,
             getTasksModifiedToday,
-            getAllTasks
+            getAllTasks,
+            getRecentTasks
         }
     }
 

@@ -274,22 +274,24 @@ Automated system tests using Node.js to verify end-to-end functionality. These t
 - [x] Test totals accuracy with various scenarios (3 tests: timeline total, task-level total, gaps)
 
 ##### 7. Task Description Datalist
-- [ ] Create e2e tests that cover the Task Description Datalist use-case
-- [ ] timesheetDb.js - Add indexes for project field on tasks store
-- [ ] update business logic in all files to account for new project field
-- [ ] Create datalist element for task description input field
-  - [ ] timeline/timesheet.js - Add `<datalist>` element to task description input
-  - [ ] timeline/timesheet.js - Link datalist to input via list attribute
-- [ ] Populate datalist with existing tasks from IndexedDB - up to the last 500  by date-modified
-  - [ ] timeline/timesheet.js - Query all tasks from IndexedDB on component load
-  - [ ] timeline/timesheet.js - Subscribe to tasks signal to update datalist when tasks change
-- [ ] Format datalist options in todo.txt format (#tasknumber description +some_project client:aclient)
-  - [ ] timeline/timesheet.js - Format each task as `#${taskNumber} ${description} +${project} client:${client}`
-  - [ ] Verify todo.txt format parsing in tasks/tasks.js
-- [ ] Ensure datalist updates when new tasks are added
-  - [ ] timeline/timesheet.js - Add effect listener to tasks signal to refresh datalist
-- [ ] Test autocomplete functionality
-- [ ] Ensure todo.txt format parsing is working correctly
+- [x] Create e2e tests that cover the Task Description Datalist use-case (e2e/datalist.spec.js)
+- [x] timesheetDb.js - Project index already existed; added getRecentTasks(limit) method
+- [x] update business logic in all files to account for new project field
+  - [x] app-context.js - handleAddTask parses +project via extract(), stores project field
+  - [x] app-context.js - Added allTasks signal loaded via getRecentTasks(500)
+- [x] Create datalist element for task description input field
+  - [x] tasks/task-list.js - Added `<datalist id="prev-tasks">` and `list="prev-tasks"` on taskRaw input
+  - [x] timeline/timesheet.js - Existing datalist updated to use allTasks signal
+- [x] Populate datalist with existing tasks from IndexedDB - up to the last 500 by date-modified
+  - [x] timesheetDb.js - getRecentTasks() walks lastModified index in reverse, yields up to limit
+  - [x] timeline/timesheet.js - Subscribes to allTasks signal via effect
+- [x] Format datalist options in todo.txt format (#tasknumber description +some_project client:aclient)
+  - [x] tasks/task-list.js - renderTaskDatalist formats as `#exid description +project client:client`
+  - [x] timeline/timesheet.js - renderTaskdatalist updated to same todo.txt format
+- [x] Ensure datalist updates when new tasks are added
+  - [x] Both task-list.js and timesheet.js subscribe to allTasks signal via effect
+- [x] Test autocomplete functionality (4 passing e2e tests)
+- [x] Ensure todo.txt format parsing is working correctly
 
 ##### 8. Batch Add Tasks Functionality
 Support adding multiple tasks at once via dynamic input rows. The task description `<input>` keeps its `list` attribute (preserving Phase 7 datalist). New input rows are spawned on Ctrl+Enter or when pasting text containing newlines, and removed when emptied. All rows share the same datalist.

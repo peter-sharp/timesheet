@@ -1,6 +1,7 @@
 import {ContextProvider} from './utils/Context.js';
 import signal from './utils/Signal.js';
 import store from './timesheetStore.js';
+import TimesheetDB from './timesheetDb.js';
 import calcDuration from './utils/calcDuration.js';
 import reduce from './utils/reduce.js';
 import reduceDuration from './utils/reduceDuration.js';
@@ -95,6 +96,7 @@ customElements.define('app-context', class extends HTMLElement {
     stats = signal({})
     deleted = signal([])
     deletedTasks = signal([])
+    allTasks = signal([])
 
     stateProvider = new ContextProvider(this, 'state', {
         settings: this.settings,
@@ -106,7 +108,8 @@ customElements.define('app-context', class extends HTMLElement {
         durationTotal: this.durationTotal,
         durationTotalGaps: this.durationTotalGaps,
         currentTask: this.currentTask,
-        stats: this.stats
+        stats: this.stats,
+        allTasks: this.allTasks
     });
 
     connectedCallback() {
@@ -161,6 +164,10 @@ customElements.define('app-context', class extends HTMLElement {
         // Calculate initial totals
         this.recalculateTaskTotals();
         this.recalculateTotals();
+
+        // Load all recent tasks for datalist
+        const db = await TimesheetDB();
+        this.allTasks.value = await db.getRecentTasks(500);
     }
 
     // Main event handler - processes all state change events
@@ -365,18 +372,22 @@ customElements.define('app-context', class extends HTMLElement {
     }
 
     handleAddTask({ raw, exid: providedExid, client: providedClient }) {
-        const [exid, client, description] = extract([/#(\w+)/, /client:(\w+)/], raw || '');
+        const [exid, project, client, description] = extract([/#(\w+)/, /\+(\w+)/, /client:(\w+)/], raw || '');
         const taskExid = String(providedExid || exid || Date.now());
         const taskClient = providedClient || client;
 
-        this.tasks.value = [...this.tasks.value, {
+        const newTask = {
             exid: taskExid,
             client: taskClient,
+            project: project || '',
             description,
             id: Date.now(),
             mostRecentEntry: new Date(),
             lastModified: new Date()
-        }];
+        };
+
+        this.tasks.value = [...this.tasks.value, newTask];
+        this.allTasks.value = [newTask, ...this.allTasks.value];
 
         // Update clients list
         if (taskClient) {
