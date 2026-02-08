@@ -336,8 +336,8 @@ customElements.define('app-context', class extends HTMLElement {
     }
 
     handleAddTask({ raw, exid: providedExid, client: providedClient }) {
-        const [exid = Date.now(), client, description] = extract([/#(\w+)/, /client:(\w+)/], raw || '');
-        const taskExid = providedExid || exid || Date.now().toString();
+        const [exid, client, description] = extract([/#(\w+)/, /client:(\w+)/], raw || '');
+        const taskExid = String(providedExid || exid || Date.now());
         const taskClient = providedClient || client;
 
         this.tasks.value = [...this.tasks.value, {
