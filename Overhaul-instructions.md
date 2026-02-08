@@ -291,5 +291,32 @@ Automated system tests using Node.js to verify end-to-end functionality. These t
 - [ ] Ensure todo.txt format parsing is working correctly
 
 ##### 8. Batch Add Tasks Functionality
+Support adding multiple tasks at once via dynamic input rows. The task description `<input>` keeps its `list` attribute (preserving Phase 7 datalist). New input rows are spawned on Ctrl+Enter or when pasting text containing newlines, and removed when emptied. All rows share the same datalist.
 
-- [ ] Add the feature from Original branch that allows for pasting multiple entries at once
+- [ ] Create e2e tests that cover the batch add tasks use-case
+  - [ ] Test pasting multiple lines into the task input creates additional input rows
+  - [ ] Test Ctrl+Enter on the task input spawns a new empty input row below
+  - [ ] Test that emptying an additional input row removes it
+  - [ ] Test that submitting the form with multiple input rows creates multiple tasks
+  - [ ] Test that single-line input still works as before (single `addTask` path)
+  - [ ] Test that manual exid/client fields only apply when there is a single input row
+  - [ ] Test that all input rows share the same datalist for autocomplete
+- [ ] Add dynamic input row support to the task form
+  - [ ] tasks/task-list.js - Add `paste` event listener on task input to detect multi-line clipboard content
+  - [ ] tasks/task-list.js - On multi-line paste: populate first input with first line, spawn additional `<input>` rows for remaining lines (each with same `list` attribute pointing to shared datalist)
+  - [ ] tasks/task-list.js - Add `keydown` listener for Ctrl+Enter to spawn a new empty input row below the current one
+  - [ ] tasks/task-list.js - Add `input` event listener on additional rows to remove the row when its value is emptied
+  - [ ] tasks/task-list.js - Update form submit handler to collect values from all input rows
+  - [ ] tasks/task-list.js - Emit `addTasks` event with array of task objects when multiple rows exist
+  - [ ] tasks/task-list.js - Keep single-task `addTask` path when only one input row exists (preserves manual exid/client)
+  - [ ] tasks/task-list.js - Clear all additional input rows after successful submit
+  - [ ] tasks/task-list.js - Wrap input rows in a container element that visually groups them like a textarea (shared border, no gaps between rows, remove individual input borders/padding except outer container)
+  - [ ] style.css - Style the input-row container with a single border, background, and padding matching existing input fields
+  - [ ] style.css - Strip inner input borders/outlines so rows appear as lines within a single text area
+  - [ ] style.css - Ensure single-input state (no container or container with one child) looks identical to current input styling
+- [ ] Add batch task handler to app-context
+  - [ ] app-context.js - Add `handleAddTasks()` method to process an array of tasks
+  - [ ] app-context.js - Parse each line using `extract()` utility for todo.txt format (#exid, client:name)
+  - [ ] app-context.js - Process entire array in a single state update to avoid async collision
+  - [ ] app-context.js - Update clients signal with any new clients from batch
+  - [ ] app-context.js - Register `addTasks` event listener in constructor
