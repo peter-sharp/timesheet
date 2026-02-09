@@ -8,6 +8,7 @@ import reduceDuration from './utils/reduceDuration.js';
 import extract from './utils/extract.js';
 import first from './utils/first.js';
 import last from './utils/last.js';
+import { syncOutbound, syncInbound } from './syncEngine.js';
 
 // Pure function: calculate gaps between entries
 const calculateGaps = (entries) => entries.map((entry, i, arr) => {
@@ -121,6 +122,24 @@ customElements.define('app-context', class extends HTMLElement {
         // Start midnight rollover check
         this._currentDate = new Date().toDateString();
         this._scheduleRolloverCheck();
+
+        // Sync inbound from linked files when tab regains focus
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                requestIdleCallback(async () => {
+                    try {
+                        const merged = await syncInbound(this.tasks.value);
+                        if (merged) {
+                            this.tasks.value = merged;
+                            this.recalculateTaskTotals();
+                            this.persistState();
+                        }
+                    } catch (e) {
+                        console.warn('File sync inbound failed:', e);
+                    }
+                });
+            }
+        });
     }
 
     // Check if the date has rolled over (app left open past midnight)
@@ -168,6 +187,20 @@ customElements.define('app-context', class extends HTMLElement {
         // Load all recent tasks for datalist
         const db = await TimesheetDB();
         this.allTasks.value = await db.getRecentTasks(500);
+
+        // Initial file sync when app loads (idle)
+        requestIdleCallback(async () => {
+            try {
+                const merged = await syncInbound(this.tasks.value);
+                if (merged) {
+                    this.tasks.value = merged;
+                    this.recalculateTaskTotals();
+                    this.persistState();
+                }
+            } catch (e) {
+                console.warn('File sync initial inbound failed:', e);
+            }
+        });
     }
 
     // Main event handler - processes all state change events
@@ -508,5 +541,7 @@ customElements.define('app-context', class extends HTMLElement {
             deleted: this.deleted.value,
             deletedTasks: this.deletedTasks.value
         });
+        // Outbound file sync (idle, coalesced)
+        syncOutbound(this.tasks.value);
     }
 });

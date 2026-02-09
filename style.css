@@ -352,6 +352,16 @@ summary > :where(h1, h2, h3, h4) {
 .popup-menu__body a:visited {
   color: var(--color-popup-text-muted);
 }
+
+file-sync-menu {
+  display: block;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+file-sync-menu button {
+  font-size: 0.85rem;
+}
+
 button[data-style="subtle"] {
     box-sizing: content-box;
     color: var(--color-text);

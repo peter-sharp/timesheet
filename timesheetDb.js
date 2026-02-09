@@ -65,7 +65,7 @@
  */
 export default async function TimesheetDB() {
     const dbName = "timesheet";
-    const version = 5;
+    const version = 6;
     const request = indexedDB.open(dbName, version);
     const modules = TimesheetDB.modules.map(fn => fn());
     request.onupgradeneeded = (event) => {
@@ -631,4 +631,41 @@ TimesheetDB.modules.push(function entriesDb() {
         upgrade
     }
 });
-  
+
+/**
+ * File Handles Module - Stores FileSystemFileHandle objects for todo.txt sync
+ */
+TimesheetDB.modules.push(function fileHandlesDb() {
+    async function upgrade(db, version) {
+        if (!db.objectStoreNames.contains("fileHandles")) {
+            db.createObjectStore("fileHandles", { keyPath: "key" });
+        }
+    }
+
+    function init(db) {
+        async function putFileHandle(key, handle, fileName) {
+            const transaction = db.transaction(["fileHandles"], "readwrite");
+            const store = transaction.objectStore("fileHandles");
+            const request = store.put({ key, handle, fileName, linkedAt: new Date() });
+            return await awaitEvt(request, 'onsuccess', 'onerror');
+        }
+
+        async function getFileHandle(key) {
+            const transaction = db.transaction(["fileHandles"], "readonly");
+            const store = transaction.objectStore("fileHandles");
+            const request = store.get(key);
+            return await awaitEvt(request, 'onsuccess', 'onerror');
+        }
+
+        async function deleteFileHandle(key) {
+            const transaction = db.transaction(["fileHandles"], "readwrite");
+            const store = transaction.objectStore("fileHandles");
+            const request = store.delete(key);
+            return await awaitEvt(request, 'onsuccess', 'onerror');
+        }
+
+        return { putFileHandle, getFileHandle, deleteFileHandle };
+    }
+
+    return { init, upgrade };
+});

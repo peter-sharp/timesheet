@@ -100,7 +100,7 @@ async function getEntryItems(page) {
  */
 async function seedIndexedDB(page, { tasks = [], entries = [] }) {
   await page.evaluate(async ({ tasks, entries }) => {
-    const request = indexedDB.open('timesheet', 5);
+    const request = indexedDB.open('timesheet', 6);
     const db = await new Promise((resolve, reject) => {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
@@ -128,4 +128,25 @@ async function seedIndexedDB(page, { tasks = [], entries = [] }) {
   }, { tasks, entries });
 }
 
-module.exports = { clearAllData, loadApp, addTask, getTaskItems, addEntry, getEntryItems, seedIndexedDB };
+/**
+ * Seed a mock file handle record in IndexedDB fileHandles store.
+ * Used for testing the file-sync-menu UI without actual file system access.
+ */
+async function seedFileHandle(page, key, fileName) {
+  await page.evaluate(async ({ key, fileName }) => {
+    const request = indexedDB.open('timesheet', 6);
+    const db = await new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    const tx = db.transaction(['fileHandles'], 'readwrite');
+    tx.objectStore('fileHandles').put({ key, fileName, linkedAt: new Date() });
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  }, { key, fileName });
+}
+
+module.exports = { clearAllData, loadApp, addTask, getTaskItems, addEntry, getEntryItems, seedIndexedDB, seedFileHandle };

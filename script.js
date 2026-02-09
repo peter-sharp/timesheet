@@ -7,13 +7,14 @@ import "./current-task.js";
 import "./tasks/task-list.js";
 import "./pie-progress.js";
 import "./tasks/task-status.js";
+import "./file-sync-menu.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
 import { offsetHue, hexToHsla } from "./utils/colorUtils.js";
 import store from "./timesheetStore.js";
 import { effect } from "./utils/Signal.js";
 
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.5.0";
 
 (async () => {
     // Register service worker
