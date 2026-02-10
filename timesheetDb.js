@@ -369,18 +369,33 @@ TimesheetDB.modules.push(function tasksDb() {
             return tasks;
         }
 
-        // Returns up to `limit` most-recently-modified non-deleted tasks
+        // Returns up to `limit` most-recently-modified non-deleted tasks, excluding tasks modified today
         async function getRecentTasks(limit = 500) {
             const transaction = db.transaction(["tasks"], "readonly");
             const objectStore = transaction.objectStore("tasks");
             const index = objectStore.index("lastModified");
             const tasks = [];
+
+            // Calculate today's date range
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
             // Walk the index in reverse (newest first)
             for await (const task of awaitCursor(index.openCursor(null, "prev"))) {
-                if (!task.deleted) {
-                    tasks.push(task);
-                    if (tasks.length >= limit) break;
+                // Skip deleted tasks
+                if (task.deleted) continue;
+
+                // Skip tasks modified today
+                if (task.lastModified &&
+                    task.lastModified >= today &&
+                    task.lastModified < tomorrow) {
+                    continue;
                 }
+
+                tasks.push(task);
+                if (tasks.length >= limit) break;
             }
             return tasks;
         }
