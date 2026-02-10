@@ -70,9 +70,10 @@ export default async function TimesheetDB() {
     const modules = TimesheetDB.modules.map(fn => fn());
     request.onupgradeneeded = (event) => {
         const db = event.target.result;
-    
+        const transaction = event.target.transaction;
+
         modules.forEach(({upgrade}) => {
-            upgrade(db, version);
+            upgrade(db, version, transaction);
         })
     };
     
@@ -151,8 +152,9 @@ TimesheetDB.modules.push(function tasksDb() {
      * Handles database schema upgrades for the tasks module
      * @param {IDBDatabase} db - The database instance
      * @param {number} version - The new database version
+     * @param {IDBTransaction} transaction - The upgrade transaction
      */
-    async function upgrade(db, version) {
+    async function upgrade(db, version, transaction) {
         // Create an objectStore to hold task information
         if (!db.objectStoreNames.contains("tasks")) {
             const taskStore = db.createObjectStore("tasks", { autoIncrement: true });
@@ -165,8 +167,7 @@ TimesheetDB.modules.push(function tasksDb() {
             taskStore.createIndex("deleted", "deleted", { unique: false });
         }
 
-        if (version >= 2) {
-            const transaction = db.transaction(["tasks"], "readwrite");
+        if (version >= 2 && transaction) {
             const objectStore = transaction.objectStore("tasks");
 
             let data = {};
@@ -233,9 +234,9 @@ TimesheetDB.modules.push(function tasksDb() {
             const request = objectStore.add({
                 exid: exid || Date.now(),
                 id: id || Date.now(),
-                ...data,
                 deleted: false,
-                lastModified: new Date()
+                lastModified: new Date(),
+                ...data  // Spread data last to allow overriding defaults like lastModified for testing
             });
             const taskId = await awaitEvt(request, 'onsuccess', 'onerror');
             return taskId;
@@ -435,8 +436,9 @@ TimesheetDB.modules.push(function entriesDb() {
      * Handles database schema upgrades for the entries module
      * @param {IDBDatabase} db - The database instance
      * @param {number} version - The new database version
+     * @param {IDBTransaction} transaction - The upgrade transaction
      */
-    async function upgrade(db, version) {
+    async function upgrade(db, version, transaction) {
         // Create an objectStore to hold entry information
         if (!db.objectStoreNames.contains("entries")) {
             const entryStore = db.createObjectStore("entries", { autoIncrement: true });
@@ -449,8 +451,7 @@ TimesheetDB.modules.push(function entriesDb() {
             entryStore.createIndex("deleted", "deleted", { unique: false });
         }
 
-        if (version >= 3) {
-            const transaction = db.transaction(["entries"], "readwrite");
+        if (version >= 3 && transaction) {
             const objectStore = transaction.objectStore("entries");
 
             let data = {};
@@ -651,7 +652,7 @@ TimesheetDB.modules.push(function entriesDb() {
  * File Handles Module - Stores FileSystemFileHandle objects for todo.txt sync
  */
 TimesheetDB.modules.push(function fileHandlesDb() {
-    async function upgrade(db, version) {
+    async function upgrade(db, version, transaction) {
         if (!db.objectStoreNames.contains("fileHandles")) {
             db.createObjectStore("fileHandles", { keyPath: "key" });
         }

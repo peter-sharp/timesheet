@@ -3,16 +3,21 @@
   "version": "1.2.4",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
     "serve-tests": "node server.js",
     "test": "playwright test",
-    "test:headed": "playwright test --headed"
+    "test:headed": "playwright test --headed",
+    "test:unit": "node tests/test-runner-cli.js",
+    "test:prev-tasks": "node tests/run-prev-tasks-tests.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.58.2"
+    "@playwright/test": "^1.58.2",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^28.0.0"
   }
 }
