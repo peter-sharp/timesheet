@@ -5,53 +5,47 @@ A simple time tracking app
 
 For detailed requirements and implementation tasks, see [REQUIREMENTS.md](./REQUIREMENTS.md)
 
-## Migration Plan for Archive Section to Vanilla JS Signals and IndexedDB
+## Architecture Overview
 
-*Note: The detailed requirements for this migration have been moved to [REQUIREMENTS.md](./REQUIREMENTS.md)*
+*For detailed requirements and current tasks, see [REQUIREMENTS.md](./REQUIREMENTS.md)*
 
-This document outlines the remaining steps required to complete the migration of the archive section from a centralized state object to using Vanilla JavaScript signals and direct IndexedDB integration.
+This timesheet application uses a modern architecture with Vanilla JavaScript signals and IndexedDB for persistent storage.
 
-### Current Status
+### Storage Architecture
 
-- Signals introduced for `archiveTasks`, `archiveEntries`, and `totalPages`.
-- IndexedDB adapter updated for pagination and search filtering.
-- `app-context.js` provides context signals.
-- `task-archive.js` partially integrated with signals and context.
+The app uses a **multi-adapter storage system**:
 
-### Remaining Steps
+- **IndexedDB**: Primary persistent storage for ALL tasks and time entries (current and historical)
+- **localStorage**: UI state only (settings, current task, new entry, clients, version)
+- **sessionStorage**: Deletion tracking for the current session
 
-1. Complete Signal Integration in Archive Components  
-   - **timesheet-archive.js**  
-     - Replace state object references with context signals (`archiveEntries`, `archiveBrowserPage`, `archiveBrowserPageSize`).  
-     - Add effects to auto-trigger re-renders on signal changes.  
-   - **archive-stats.js**  
-     - Use context signals (`archiveEntries`, `archiveTasks`) instead of state object.  
-     - Add effects to update charts and statistics reactively.  
+### Key Features
 
-2. Update Event Handling and Emission  
-   - Ensure events (`updateArchiveTaskPage`, `updateArchiveTasks`, `deleteArchiveEntry`, etc.) update signals directly.  
-   - Modify event listeners to call context update functions.  
+#### IndexedDB Implementation
+- **All tasks and entries** are stored in IndexedDB with soft delete functionality
+- Soft deletes use a `deleted` flag to preserve data and allow restoration
+- Daily loading optimizes performance by only loading today's modified items
+- Full history is preserved and accessible through the archive browser
+- Modular plugin architecture for database schema management
 
-3. Refactor Store and IndexedDB Adapter  
-   - Verify `store.js` and `indexedDBAdapter` handle CRUD operations correctly.  
-   - Ensure pagination/search parameters (`archivedTasksSearchTerm`, `archiveBrowserTaskPage`, `archiveBrowserTaskPageSize`) flow from signals.  
+#### Data Indexes
+- Tasks are indexed by: `exid` (unique), `client`, `project`, `lastModified`, `deleted`
+- Entries are indexed by: `id` (unique), `task`, `start`, `lastModified`, `deleted`
+- Indexes enable efficient queries for today's items, searches, and pagination
 
-4. Remove Legacy State Management  
-   - Delete references to the old state object (`model.state`) in archive components.  
-   - Remove legacy TODOs and unused code.  
+#### Signal-Based Reactivity
+- Vanilla JS signals drive UI updates throughout the application
+- Context signals in `app-context.js` provide reactive state management
+- Components subscribe to signals for automatic re-rendering on data changes
 
-5. Testing and Validation  
-   - Test pagination, search filtering, and data loading from IndexedDB.  
-   - Confirm signals drive UI updates without regressions.  
+### Migration History
 
-6. Cleanup and Optimization  
-   - Remove migration `console.log` statements.  
-   - Optimize signal effects to prevent redundant renders.  
-   - Ensure signal subscription cleanup in `disconnectedCallback`.  
+The application migrated from localStorage to IndexedDB in database versions 2 and 3:
+- **Version 2**: Migrated archived tasks from `localStorage.timesheet.archivedTasks` to IndexedDB
+- **Version 3**: Migrated archived entries from `localStorage.timesheet.archive` to IndexedDB
+- **Current (Version 6)**: All tasks and entries live in IndexedDB with soft delete support
 
-7. Documentation and Finalization  
-   - Update documentation to reflect the new signal-based architecture.  
-   - Document signal usage and IndexedDB integration for maintainability.
+There is no longer a separate "archive" storage - all data resides in IndexedDB, and the archive browser provides filtered views of historical data.
 
 ## Running Tests
 
