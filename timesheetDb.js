@@ -65,7 +65,7 @@
  */
 export default async function TimesheetDB() {
     const dbName = "timesheet";
-    const version = 8;
+    const version = 9;
     const request = indexedDB.open(dbName, version);
     const modules = TimesheetDB.modules.map(fn => fn());
     request.onupgradeneeded = (event) => {
@@ -161,7 +161,8 @@ TimesheetDB.modules.push(function tasksDb() {
             taskStore = db.createObjectStore("tasks", { autoIncrement: true });
 
             // Create indexes
-            taskStore.createIndex("id", "id", { unique: true });
+            //TODO Fix bug that is preventing id from being unique
+            // taskStore.createIndex("id", "id", { unique: true });
             taskStore.createIndex("exid", "exid", { unique: true });
             taskStore.createIndex("client", "client", { unique: false });
             taskStore.createIndex("project", "project", { unique: false });
@@ -171,7 +172,7 @@ TimesheetDB.modules.push(function tasksDb() {
         if(!taskStore) taskStore = transaction.objectStore("tasks");
         const indexNames = Array.from(taskStore.indexNames)
 
-        if(!indexNames.includes("id")) taskStore.createIndex("id", "id", { unique: true });
+        // if(!indexNames.includes("id")) taskStore.createIndex("id", "id", { unique: true });
         if(!indexNames.includes("exid")) taskStore.createIndex("exid", "id", { unique: true });
         if(!indexNames.includes("client")) clientStore.createIndex("client", "client", { unique: false });
         if(!indexNames.includes("project")) taskStore.createIndex("project", "project", { unique: false });
