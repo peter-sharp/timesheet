@@ -65,7 +65,7 @@
  */
 export default async function TimesheetDB() {
     const dbName = "timesheet";
-    const version = 7;
+    const version = 8;
     const request = indexedDB.open(dbName, version);
     const modules = TimesheetDB.modules.map(fn => fn());
     request.onupgradeneeded = (event) => {
@@ -156,8 +156,9 @@ TimesheetDB.modules.push(function tasksDb() {
      */
     async function upgrade(db, version, transaction) {
         // Create an objectStore to hold task information
+        let taskStore;
         if (!db.objectStoreNames.contains("tasks")) {
-            const taskStore = db.createObjectStore("tasks", { autoIncrement: true });
+            taskStore = db.createObjectStore("tasks", { autoIncrement: true });
 
             // Create indexes
             taskStore.createIndex("id", "id", { unique: true });
@@ -167,7 +168,7 @@ TimesheetDB.modules.push(function tasksDb() {
             taskStore.createIndex("lastModified", "lastModified", { unique: false });
             taskStore.createIndex("deleted", "deleted", { unique: false });
         }
-
+        if(!taskStore) taskStore = transaction.objectStore("tasks");
         const indexNames = Array.from(taskStore.indexNames)
 
         if(!indexNames.includes("id")) taskStore.createIndex("id", "id", { unique: true });
@@ -178,7 +179,7 @@ TimesheetDB.modules.push(function tasksDb() {
         if(!indexNames.includes("deleted")) taskStore.createIndex("deleted", "deleted", { unique: false });
 
         if (version >= 2 && transaction) {
-            const objectStore = transaction.objectStore("tasks");
+            
 
             let data = {};
             try {
@@ -450,8 +451,9 @@ TimesheetDB.modules.push(function entriesDb() {
      */
     async function upgrade(db, version, transaction) {
         // Create an objectStore to hold entry information
+        let entryStore
         if (!db.objectStoreNames.contains("entries")) {
-            const entryStore = db.createObjectStore("entries", { autoIncrement: true });
+            entryStore = db.createObjectStore("entries", { autoIncrement: true });
 
             // Create indexes
             entryStore.createIndex("id", "id", { unique: true });
@@ -460,7 +462,7 @@ TimesheetDB.modules.push(function entriesDb() {
             entryStore.createIndex("lastModified", "lastModified", { unique: false });
             entryStore.createIndex("deleted", "deleted", { unique: false });
         }
-
+         if(!entryStore) entryStore = transaction.objectStore("entries");
         const indexNames = Array.from(entryStore.indexNames)
 
         if(!indexNames.includes("id")) entryStore.createIndex("id", "id", { unique: true });
