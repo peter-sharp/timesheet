@@ -160,12 +160,22 @@ TimesheetDB.modules.push(function tasksDb() {
             const taskStore = db.createObjectStore("tasks", { autoIncrement: true });
 
             // Create indexes
+            taskStore.createIndex("id", "id", { unique: true });
             taskStore.createIndex("exid", "exid", { unique: true });
             taskStore.createIndex("client", "client", { unique: false });
             taskStore.createIndex("project", "project", { unique: false });
             taskStore.createIndex("lastModified", "lastModified", { unique: false });
             taskStore.createIndex("deleted", "deleted", { unique: false });
         }
+
+        const indexNames = Array.from(taskStore.indexNames)
+
+        if(!indexNames.includes("id")) taskStore.createIndex("id", "id", { unique: true });
+        if(!indexNames.includes("exid")) taskStore.createIndex("exid", "id", { unique: true });
+        if(!indexNames.includes("client")) clientStore.createIndex("client", "client", { unique: false });
+        if(!indexNames.includes("project")) taskStore.createIndex("project", "project", { unique: false });
+        if(!indexNames.includes("lastModified")) taskStore.createIndex("lastModified", "lastModified", { unique: false });
+        if(!indexNames.includes("deleted")) taskStore.createIndex("deleted", "deleted", { unique: false });
 
         if (version >= 2 && transaction) {
             const objectStore = transaction.objectStore("tasks");
@@ -450,6 +460,15 @@ TimesheetDB.modules.push(function entriesDb() {
             entryStore.createIndex("lastModified", "lastModified", { unique: false });
             entryStore.createIndex("deleted", "deleted", { unique: false });
         }
+
+        const indexNames = Array.from(entryStore.indexNames)
+
+        if(!indexNames.includes("id")) entryStore.createIndex("id", "id", { unique: true });
+        if(!indexNames.includes("task")) entryStore.createIndex("task", "task", { unique: false });
+        if(!indexNames.includes("start")) entryStore.createIndex("start", "start", { unique: false });
+        if(!indexNames.includes("lastModified")) entryStore.createIndex("lastModified", "lastModified", { unique: false });
+        if(!indexNames.includes("deleted")) entryStore.createIndex("deleted", "deleted", { unique: false });
+
 
         if (version >= 3 && transaction) {
             const objectStore = transaction.objectStore("entries");

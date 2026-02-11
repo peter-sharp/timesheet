@@ -1,7 +1,7 @@
 import Store from "./store.js";
 import TimesheetDB from "./timesheetDb.js";
 
-const APP_VERSION = "1.3.0"; // Bumped for IndexedDB migration
+const APP_VERSION = "2.0"; // Bumped for IndexedDB migration
 
 const INITIAL_STATE = {
     version: APP_VERSION,
