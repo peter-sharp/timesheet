@@ -65,7 +65,7 @@
  */
 export default async function TimesheetDB() {
     const dbName = "timesheet";
-    const version = 6;
+    const version = 7;
     const request = indexedDB.open(dbName, version);
     const modules = TimesheetDB.modules.map(fn => fn());
     request.onupgradeneeded = (event) => {
