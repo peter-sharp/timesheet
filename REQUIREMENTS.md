@@ -1,55 +1,61 @@
-# Timesheet App: What We're Building & Fixing
+# Timesheet App: Requirements & Development Tasks
 
-This document outlines our plan for the Timesheet app, focusing on two main areas:
-1. Migrating the archive section to use Vanilla JS Signals and IndexedDB
-2. Adding a new time-snapping feature
+This document outlines requirements and current development tasks for the Timesheet app.
 
 ## 👋 What is Timesheet?
 
 Timesheet is a simple time tracking tool that helps you record and analyze your work time. You can see it in action at our [demo site](https://peter-sharp.github.io/timesheet).
 
-## 🚧 Current Status
+## 🏗️ Current Architecture
 
-We've started moving the archive section from using a central state object to a more modern approach with Vanilla JS Signals and IndexedDB:
+The app uses a modern, signal-based architecture with IndexedDB for persistent storage:
 
-- Created signals for `archiveTasks`, `archiveEntries`, and `totalPages`
-- Updated IndexedDB to handle pagination and search filtering
-- Set up context signals in `app-context.js`
-- Partially integrated `task-archive.js` with signals
+### Storage Architecture
+- **IndexedDB**: Primary storage for ALL tasks and time entries (both current and historical)
+- **localStorage**: UI state only (settings, current task, new entry, clients, version)
+- **sessionStorage**: Deletion tracking for the current session
+
+### Key Implementation Details
+- All tasks and entries are stored in IndexedDB with soft delete functionality (using a `deleted` flag)
+- Daily loading optimizes performance by only loading today's modified items into memory
+- Full data history is preserved in IndexedDB and accessible via the archive browser
+- Vanilla JS signals provide reactive state management throughout the application
+- Context signals in `app-context.js` drive UI updates automatically
+
+### Migration History
+- **Database Version 2**: Migrated archived tasks from localStorage to IndexedDB
+- **Database Version 3**: Migrated archived entries from localStorage to IndexedDB
+- **Current (Version 6)**: All data lives in IndexedDB; no separate archive storage
 
 ## 📋 What Needs to Be Done
 
-### Archive Section Migration
+### Signal-Based Architecture Refinements
 
-#### Viewing Archived Time Entries
-- [ ] **High priority**: Update `timesheet-archive.js` to use context signals instead of state object
-  * Replace references to `archiveEntries`, `archiveBrowserPage`, and `archiveBrowserPageSize`
-  * Add effects to automatically re-render when signals change
-  
-- [ ] **High priority**: Update `archive-stats.js` to use context signals
-  * Replace state object references with `archiveEntries` and `archiveTasks` signals
-  * Add reactive effects for charts and statistics updates
+#### UI Components
+- [ ] **High priority**: Ensure `timesheet-archive.js` fully uses context signals
+  * Verify all references use signals (`archiveEntries`, `archiveBrowserPage`, `archiveBrowserPageSize`)
+  * Confirm effects trigger re-renders on signal changes
+
+- [ ] **High priority**: Ensure `archive-stats.js` fully uses context signals
+  * Verify signals (`archiveEntries`, `archiveTasks`) replace any state object references
+  * Confirm reactive effects update charts and statistics correctly
 
 #### Event Handling
-- [ ] **High priority**: Make events update signals directly
-  * Update `updateArchiveTaskPage`, `updateArchiveTasks`, and `deleteArchiveEntry` events
-  * Modify event listeners to call the right context update functions
+- [ ] **High priority**: Verify events update signals directly
+  * Check `updateArchiveTaskPage`, `updateArchiveTasks`, and `deleteArchiveEntry` events
+  * Ensure event listeners call context update functions
 
-#### Data Storage
+#### Data Operations
 - [ ] **Critical priority**: Verify IndexedDB operations work correctly
   * Ensure `store.js` and `indexedDBAdapter` handle CRUD operations properly
-  * Make pagination and search params (`archivedTasksSearchTerm`, `archiveBrowserTaskPage`, etc.) flow from signals
+  * Confirm pagination and search params flow from signals correctly
 
-#### Cleanup
-- [ ] **Medium priority**: Remove old state object references from archive components
-- [ ] **Low priority**: Remove TODOs and unused code
-- [ ] **Low priority**: Delete `console.log` statements used during migration
-- [ ] **Medium priority**: Optimize signal effects to prevent extra renders
-- [ ] **High priority**: Add cleanup for signal subscriptions in `disconnectedCallback`
-
-#### Documentation
-- [ ] **Medium priority**: Update docs to explain the new signal-based architecture
-- [ ] **Medium priority**: Document how signals and IndexedDB work together
+#### Code Quality
+- [ ] **Medium priority**: Remove any remaining state object references from components
+- [ ] **Low priority**: Remove outdated TODOs and unused code
+- [ ] **Low priority**: Clean up migration-related `console.log` statements
+- [ ] **Medium priority**: Optimize signal effects to prevent redundant renders
+- [ ] **High priority**: Verify signal subscription cleanup in `disconnectedCallback`
 
 ### New Feature: Time Snapping
 
