@@ -173,7 +173,7 @@ TimesheetDB.modules.push(function tasksDb() {
         const indexNames = Array.from(taskStore.indexNames)
 
         // if(!indexNames.includes("id")) taskStore.createIndex("id", "id", { unique: true });
-        if(!indexNames.includes("exid")) taskStore.createIndex("exid", "id", { unique: true });
+        if(!indexNames.includes("exid")) taskStore.createIndex("exid", "exid", { unique: true });
         if(!indexNames.includes("client")) clientStore.createIndex("client", "client", { unique: false });
         if(!indexNames.includes("project")) taskStore.createIndex("project", "project", { unique: false });
         if(!indexNames.includes("lastModified")) taskStore.createIndex("lastModified", "lastModified", { unique: false });
