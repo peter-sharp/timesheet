@@ -128,14 +128,14 @@ const indexedDBAdapter = {
         try {
             const db = await TimesheetDB();
 
-            // Write tasks
+            // Write tasks - preserve timestamps when updating existing tasks
             for (const task of state.tasks || []) {
-                await upsert(task, db.addTask.bind(db), db.updateTask.bind(db));
+                await upsert(task, db.addTask.bind(db), db.updateTask.bind(db), true);
             }
 
-            // Write entries
+            // Write entries - preserve timestamps when updating existing entries
             for (const entry of state.entries || []) {
-                await upsert(entry, db.addEntry.bind(db), db.updateEntry.bind(db));
+                await upsert(entry, db.addEntry.bind(db), db.updateEntry.bind(db), true);
             }
 
             // Handle deletions
@@ -157,12 +157,13 @@ const indexedDBAdapter = {
 };
 
 // Helper function to handle upsert operations
-async function upsert(item, addFn, updateFn) {
+async function upsert(item, addFn, updateFn, preserveTimestamp = false) {
     try {
         return await addFn(item);
     } catch (e) {
         if (e.name === 'ConstraintError') {
-            return await updateFn(item);
+            // Pass preserveTimestamp option to updateFn
+            return await updateFn(item, { preserveTimestamp });
         }
         throw e;
     }
