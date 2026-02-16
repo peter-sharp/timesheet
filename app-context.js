@@ -98,6 +98,8 @@ customElements.define('app-context', class extends HTMLElement {
     deleted = signal([])
     deletedTasks = signal([])
     allTasks = signal([])
+    todaysTasks = signal([])
+    allTasksWithDeleted = signal([])
 
     stateProvider = new ContextProvider(this, 'state', {
         settings: this.settings,
@@ -110,7 +112,9 @@ customElements.define('app-context', class extends HTMLElement {
         durationTotalGaps: this.durationTotalGaps,
         currentTask: this.currentTask,
         stats: this.stats,
-        allTasks: this.allTasks
+        allTasks: this.allTasks,
+        todaysTasks: this.todaysTasks,
+        allTasksWithDeleted: this.allTasksWithDeleted
     });
 
     connectedCallback() {
@@ -161,6 +165,15 @@ customElements.define('app-context', class extends HTMLElement {
         this.tasks.value = [...freshState.tasks];
         this.recalculateTaskTotals();
         this.recalculateTotals();
+        await this.refreshTaskLists();
+    }
+
+    // Refresh task lists from database (for datalist components)
+    async refreshTaskLists() {
+        const db = await TimesheetDB();
+        this.allTasks.value = await db.getRecentTasks(500);
+        this.todaysTasks.value = await db.getTodaysTasks();
+        this.allTasksWithDeleted.value = await db.getAllTasksIncludingDeleted(500);
     }
 
     // Initialize state from storage
@@ -184,9 +197,11 @@ customElements.define('app-context', class extends HTMLElement {
         this.recalculateTaskTotals();
         this.recalculateTotals();
 
-        // Load all recent tasks for datalist
+        // Load task lists for different datalist components
         const db = await TimesheetDB();
         this.allTasks.value = await db.getRecentTasks(500);
+        this.todaysTasks.value = await db.getTodaysTasks();
+        this.allTasksWithDeleted.value = await db.getAllTasksIncludingDeleted(500);
 
         // Initial file sync when app loads (idle)
         requestIdleCallback(async () => {
@@ -423,7 +438,10 @@ customElements.define('app-context', class extends HTMLElement {
         };
 
         this.tasks.value = [...this.tasks.value, newTask];
-        this.allTasks.value = [newTask, ...this.allTasks.value];
+
+        // Update task lists for datalist components
+        this.todaysTasks.value = [newTask, ...this.todaysTasks.value];
+        this.allTasksWithDeleted.value = [newTask, ...this.allTasksWithDeleted.value];
 
         // Update clients list
         if (taskClient) {
@@ -461,7 +479,10 @@ customElements.define('app-context', class extends HTMLElement {
         }
 
         this.tasks.value = [...this.tasks.value, ...newTasks];
-        this.allTasks.value = [...newTasks, ...this.allTasks.value];
+
+        // Update task lists for datalist components
+        this.todaysTasks.value = [...newTasks, ...this.todaysTasks.value];
+        this.allTasksWithDeleted.value = [...newTasks, ...this.allTasksWithDeleted.value];
 
         if (addedClients.length) {
             this.clients.value = [...this.clients.value, ...addedClients];
@@ -472,6 +493,15 @@ customElements.define('app-context', class extends HTMLElement {
         const taskToDelete = this.tasks.value.find(x => x.exid === exid);
         if (taskToDelete) {
             this.deletedTasks.value = [...this.deletedTasks.value, taskToDelete];
+
+            // Update task lists: remove from today's tasks and move to end of allTasksWithDeleted
+            this.todaysTasks.value = this.todaysTasks.value.filter(x => x.exid !== exid);
+
+            // Mark as deleted in allTasksWithDeleted list
+            const deletedTask = { ...taskToDelete, deleted: true };
+            const nonDeleted = this.allTasksWithDeleted.value.filter(x => x.exid !== exid && !x.deleted);
+            const deleted = this.allTasksWithDeleted.value.filter(x => x.deleted);
+            this.allTasksWithDeleted.value = [...nonDeleted, ...deleted, deletedTask];
         }
         this.tasks.value = this.tasks.value.filter(x => x.exid !== exid);
     }

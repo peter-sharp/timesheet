@@ -106,7 +106,7 @@ class TaskList extends HTMLElement {
           this.#currentTask = state.currentTask;
           this.#newEntry = state.newEntry;
           this.#durationTotal = state.durationTotal;
-          this.#allTasks = state.allTasks;
+          this.#allTasks = state.allTasksWithDeleted;
 
           this.#unsubscribe.signals = effect(
             this.update.bind(this),
@@ -442,6 +442,7 @@ class TaskList extends HTMLElement {
       if (task.description) parts.push(task.description);
       if (task.project) parts.push(`+${task.project}`);
       if (task.client) parts.push(`client:${task.client}`);
+      if (task.deleted) parts.push('(deleted)');
       opt.value = parts.join(' ');
       $frag.append(opt);
     }
