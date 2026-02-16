@@ -54,7 +54,7 @@ customElements.define('settings-form', class extends HTMLElement {
 
                 this.dispatchEvent(new CustomEvent('updateState', {
                     bubbles: true,
-                    detail: { type: 'updateSettings', data: formData }
+                    detail: { type: 'updateSettings', ...formData }
                 }));
             }
         });
