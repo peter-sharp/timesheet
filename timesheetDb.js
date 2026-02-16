@@ -254,7 +254,7 @@ TimesheetDB.modules.push(function tasksDb() {
             return taskId;
         }
 
-        async function updateTask(task) {
+        async function updateTask(task, options = {}) {
             const transaction = db.transaction(["tasks"], "readwrite");
             const objectStore = transaction.objectStore("tasks");
             // Look up the auto-increment key via the exid index
@@ -263,7 +263,8 @@ TimesheetDB.modules.push(function tasksDb() {
             const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
             const request = objectStore.put({
                 ...task,
-                lastModified: new Date()
+                // Preserve timestamp if explicitly requested, otherwise update to now
+                lastModified: options.preserveTimestamp ? task.lastModified : new Date()
             }, key);
             const taskId = await awaitEvt(request, 'onsuccess', 'onerror');
             return taskId;
@@ -514,13 +515,14 @@ TimesheetDB.modules.push(function entriesDb() {
                 start: new Date(entry.start),
                 end: new Date(entry.end),
                 deleted: false,
-                lastModified: new Date()
+                // Allow overriding lastModified for testing, otherwise use now
+                lastModified: entry.lastModified || new Date()
             });
             const entryId = await awaitEvt(request, 'onsuccess', 'onerror');
             return entryId;
         }
 
-        async function updateEntry(entry) {
+        async function updateEntry(entry, options = {}) {
             const transaction = db.transaction(["entries"], "readwrite");
             const objectStore = transaction.objectStore("entries");
             // Look up the auto-increment key via the id index
@@ -531,7 +533,8 @@ TimesheetDB.modules.push(function entriesDb() {
                 ...entry,
                 start: new Date(entry.start),
                 end: new Date(entry.end),
-                lastModified: new Date()
+                // Preserve timestamp if explicitly requested, otherwise update to now
+                lastModified: options.preserveTimestamp ? entry.lastModified : new Date()
             }, key);
             const entryId = await awaitEvt(request, 'onsuccess', 'onerror');
             return entryId;
