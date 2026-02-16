@@ -33,6 +33,10 @@ export function mergeTasks(appTasks, fileTasks) {
                 project: fileTask.project,
                 client: fileTask.client,
                 complete: fileTask.complete,
+                due: fileTask.due,
+                estimate: fileTask.estimate,
+                context: fileTask.context,
+                ...(fileTask.metadata ? { metadata: fileTask.metadata } : {}),
                 lastModified: new Date()
             });
         }
