@@ -26,6 +26,10 @@
           <h2 class="h4">Timeline</h2>
           <time-sheet></time-sheet>
         </section>
+        <section class="wrapper__inner stack" id="settings">
+          <h2 class="h4">Settings</h2>
+          <settings-form></settings-form>
+        </section>
       </hash-router>
       <footer class="fixed-footer app-footer">
         <div class="wrapper__inner row padding-y-1" style="--align: center">
@@ -42,6 +46,8 @@
                     <summary>...</summary>
                     <div class="popup-menu__body">
                       <file-sync-menu></file-sync-menu>
+                      <hr style="margin: 0.5em 0; border: 0; border-top: 1px solid var(--color-border, #333);">
+                      <a href="#settings" style="display: block; padding: 0.5em;">Settings</a>
                     </div>
                   </details>
                 </li>
