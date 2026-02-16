@@ -58,10 +58,11 @@ taskRow.innerHTML = /*html*/ `
           <input type="checkbox" name="complete" >
         </task-status>
         <div class="task-item__content">
-        <p class="task-item__details">
+        <p class="task-item__details opacity50">
             <span data-task></span>
+            <span data-project></span>
             <span data-client></span>
-            
+
         </p>
         <p class="task-item__description" data-description></p>
         
@@ -388,6 +389,7 @@ class TaskList extends HTMLElement {
     item,
     {
       exid,
+      project = "",
       client = "",
       timingState = "stop",
       description = "",
@@ -398,6 +400,7 @@ class TaskList extends HTMLElement {
     item.dataset.exid = exid;
     item.querySelector("task-status").checked = complete;
     item.querySelector("[data-task]").innerText = exid;
+    item.querySelector("[data-project]").innerText = project;
     item.querySelector("[data-client]").innerText = client;
     const elDesc = item.querySelector("[data-description]");
     elDesc.innerText = description;
