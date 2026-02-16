@@ -45,7 +45,7 @@ export function lineToTask(line) {
         remainder
     );
 
-    // Extract any additional key:value metadata
+    // Extract any additional key:value metadata and clean description
     const metadata = {};
     const knownKeys = new Set(['client', 'due', 'estimate']);
     const metadataPattern = /\b(\w+):(\S+)/g;
@@ -55,11 +55,14 @@ export function lineToTask(line) {
     while ((metaMatch = metadataPattern.exec(description || '')) !== null) {
         const key = metaMatch[1];
         const value = metaMatch[2];
+
+        // Collect unknown metadata
         if (!knownKeys.has(key)) {
             metadata[key] = value;
-            // Remove this metadata from description
-            cleanDescription = cleanDescription.replace(metaMatch[0], '');
         }
+
+        // Remove ALL key:value patterns from description (both known and unknown)
+        cleanDescription = cleanDescription.replace(metaMatch[0], '');
     }
 
     const task = {
