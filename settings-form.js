@@ -13,9 +13,9 @@ customElements.define('settings-form', class extends HTMLElement {
             if (form.id === 'settings') {
                 const formData = this.getFormData(form);
 
-                // Convert focusInterval to number
-                if (formData.focusInterval !== undefined) {
-                    formData.focusInterval = parseFloat(formData.focusInterval);
+                // Convert focusInterval from hh:mm to decimal hours
+                if (formData.focusInterval !== undefined && formData.focusInterval !== '') {
+                    formData.focusInterval = this.durationToHours(formData.focusInterval);
                 }
 
                 // Convert timeSnapThreshold to number
@@ -31,6 +31,24 @@ customElements.define('settings-form', class extends HTMLElement {
         });
     }
 
+    // Convert hh:mm or h:mm format to decimal hours
+    durationToHours(duration) {
+        const parts = duration.split(':');
+        if (parts.length !== 2) return 0;
+        const hours = parseInt(parts[0], 10) || 0;
+        const minutes = parseInt(parts[1], 10) || 0;
+        return hours + (minutes / 60);
+    }
+
+    // Convert decimal hours to hh:mm format
+    hoursToDuration(hours) {
+        if (hours === undefined || hours === null || hours === '') return '';
+        const totalMinutes = Math.round(hours * 60);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        return `${h}:${String(m).padStart(2, '0')}`;
+    }
+
     getFormData(form) {
         const data = {};
         for (const element of form.elements) {
@@ -44,7 +62,12 @@ customElements.define('settings-form', class extends HTMLElement {
     setFormData(form, data) {
         for (const element of form.elements) {
             if (!(element instanceof HTMLButtonElement) && element.name) {
-                element.value = data[element.name] === undefined ? '' : data[element.name];
+                // Special handling for focusInterval - convert decimal hours to hh:mm
+                if (element.name === 'focusInterval') {
+                    element.value = data[element.name] !== undefined ? this.hoursToDuration(data[element.name]) : '';
+                } else {
+                    element.value = data[element.name] === undefined ? '' : data[element.name];
+                }
             }
         }
     }
@@ -57,13 +80,13 @@ customElements.define('settings-form', class extends HTMLElement {
                     <input id="settings_color" type="color" name="color" />
                 </p>
                 <p>
-                    <label for="settings_focus_interval">Focus Interval (hours)</label>
+                    <label for="settings_focus_interval">Focus Interval (hh:mm)</label>
                     <input
                         id="settings_focus_interval"
-                        type="number"
+                        type="text"
                         name="focusInterval"
-                        step="0.01"
-                        min="0"
+                        pattern="[0-9]+:[0-5][0-9]"
+                        placeholder="0:50"
                     />
                 </p>
                 <p>
