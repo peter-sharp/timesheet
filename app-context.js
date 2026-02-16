@@ -427,6 +427,20 @@ customElements.define('app-context', class extends HTMLElement {
         const taskExid = String(providedExid || exid || Date.now());
         const taskClient = providedClient || client;
 
+        // Extract any additional key:value metadata
+        const metadata = {};
+        const knownKeys = new Set(['client']);
+        const metadataPattern = /\b(\w+):(\S+)/g;
+        let metaMatch;
+
+        while ((metaMatch = metadataPattern.exec(description || '')) !== null) {
+            const key = metaMatch[1];
+            const value = metaMatch[2];
+            if (!knownKeys.has(key)) {
+                metadata[key] = value;
+            }
+        }
+
         // Check if task with this exid already exists
         const existingTaskIndex = this.tasks.value.findIndex(t => t.exid === taskExid);
 
@@ -439,6 +453,7 @@ customElements.define('app-context', class extends HTMLElement {
                         client: taskClient || task.client,
                         project: project || task.project,
                         description: description || task.description,
+                        ...(Object.keys(metadata).length > 0 ? { metadata: { ...task.metadata, ...metadata } } : {}),
                         lastModified: new Date()
                     }
                     : task
@@ -459,6 +474,7 @@ customElements.define('app-context', class extends HTMLElement {
                 client: taskClient,
                 project: project || '',
                 description,
+                ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
                 id: Date.now(),
                 mostRecentEntry: new Date(),
                 lastModified: new Date()
@@ -491,6 +507,20 @@ customElements.define('app-context', class extends HTMLElement {
             const taskExid = String(exid || Date.now() + newTasks.length);
             const taskClient = client || '';
 
+            // Extract any additional key:value metadata
+            const metadata = {};
+            const knownKeys = new Set(['client']);
+            const metadataPattern = /(\w+):(\S+)/g;
+            let metaMatch;
+
+            while ((metaMatch = metadataPattern.exec(description || '')) !== null) {
+                const key = metaMatch[1];
+                const value = metaMatch[2];
+                if (!knownKeys.has(key)) {
+                    metadata[key] = value;
+                }
+            }
+
             // Check if task with this exid already exists
             const existingTask = this.tasks.value.find(t => t.exid === taskExid);
 
@@ -501,6 +531,7 @@ customElements.define('app-context', class extends HTMLElement {
                     client: taskClient || existingTask.client,
                     project: project || existingTask.project,
                     description: description || existingTask.description,
+                    ...(Object.keys(metadata).length > 0 ? { metadata: { ...existingTask.metadata, ...metadata } } : {}),
                     lastModified: new Date()
                 });
             } else {
@@ -510,6 +541,7 @@ customElements.define('app-context', class extends HTMLElement {
                     client: taskClient,
                     project: project || '',
                     description,
+                    ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
                     id: Date.now() + newTasks.length,
                     mostRecentEntry: new Date(),
                     lastModified: new Date()

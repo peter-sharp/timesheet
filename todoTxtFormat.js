@@ -11,6 +11,12 @@ export function taskToLine(task) {
     if (task.client) parts.push(`client:${task.client}`);
     if (task.due) parts.push(`due:${task.due}`);
     if (task.estimate) parts.push(`estimate:${task.estimate}`);
+    // Add any additional metadata
+    if (task.metadata && typeof task.metadata === 'object') {
+        Object.entries(task.metadata).forEach(([key, value]) => {
+            if (value) parts.push(`${key}:${value}`);
+        });
+    }
     const line = parts.join(' ');
     if (task.complete) {
         const date = task.completedDate || new Date().toISOString().slice(0, 10);
@@ -35,13 +41,30 @@ export function lineToTask(line) {
     }
 
     const [exid, project, context, client, due, estimate, description] = extract(
-        [/#(\w+)/, /\+(\S+)/, /@(\S+)/, /client:(\w+)/, /due:(\S+)/, /estimate:(\S+)/],
+        [/#(\w+)/, /\+(\S+)/, /@(\S+)/, /\bclient:(\w+)/, /\bdue:(\S+)/, /\bestimate:(\S+)/],
         remainder
     );
 
-    return {
+    // Extract any additional key:value metadata
+    const metadata = {};
+    const knownKeys = new Set(['client', 'due', 'estimate']);
+    const metadataPattern = /\b(\w+):(\S+)/g;
+    let metaMatch;
+    let cleanDescription = description || '';
+
+    while ((metaMatch = metadataPattern.exec(description || '')) !== null) {
+        const key = metaMatch[1];
+        const value = metaMatch[2];
+        if (!knownKeys.has(key)) {
+            metadata[key] = value;
+            // Remove this metadata from description
+            cleanDescription = cleanDescription.replace(metaMatch[0], '');
+        }
+    }
+
+    const task = {
         exid: exid || undefined,
-        description: description ? description.trim() : '',
+        description: cleanDescription.trim().replace(/\s+/g, ' '),
         project: project || '',
         context: context || '',
         client: client || '',
@@ -50,6 +73,13 @@ export function lineToTask(line) {
         complete,
         completedDate
     };
+
+    // Only add metadata field if there are additional metadata entries
+    if (Object.keys(metadata).length > 0) {
+        task.metadata = metadata;
+    }
+
+    return task;
 }
 
 export function tasksToTodoTxt(tasks) {
