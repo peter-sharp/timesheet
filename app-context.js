@@ -427,21 +427,49 @@ customElements.define('app-context', class extends HTMLElement {
         const taskExid = String(providedExid || exid || Date.now());
         const taskClient = providedClient || client;
 
-        const newTask = {
-            exid: taskExid,
-            client: taskClient,
-            project: project || '',
-            description,
-            id: Date.now(),
-            mostRecentEntry: new Date(),
-            lastModified: new Date()
-        };
+        // Check if task with this exid already exists
+        const existingTaskIndex = this.tasks.value.findIndex(t => t.exid === taskExid);
 
-        this.tasks.value = [...this.tasks.value, newTask];
+        if (existingTaskIndex !== -1) {
+            // Update existing task with new info
+            this.tasks.value = this.tasks.value.map((task, index) =>
+                index === existingTaskIndex
+                    ? {
+                        ...task,
+                        client: taskClient || task.client,
+                        project: project || task.project,
+                        description: description || task.description,
+                        lastModified: new Date()
+                    }
+                    : task
+            );
 
-        // Update task lists for datalist components
-        this.todaysTasks.value = [newTask, ...this.todaysTasks.value];
-        this.allTasksWithDeleted.value = [newTask, ...this.allTasksWithDeleted.value];
+            // Update task lists for datalist components
+            const updatedTask = this.tasks.value[existingTaskIndex];
+            this.todaysTasks.value = this.todaysTasks.value.map(t =>
+                t.exid === taskExid ? updatedTask : t
+            );
+            this.allTasksWithDeleted.value = this.allTasksWithDeleted.value.map(t =>
+                t.exid === taskExid ? updatedTask : t
+            );
+        } else {
+            // Add new task
+            const newTask = {
+                exid: taskExid,
+                client: taskClient,
+                project: project || '',
+                description,
+                id: Date.now(),
+                mostRecentEntry: new Date(),
+                lastModified: new Date()
+            };
+
+            this.tasks.value = [...this.tasks.value, newTask];
+
+            // Update task lists for datalist components
+            this.todaysTasks.value = [newTask, ...this.todaysTasks.value];
+            this.allTasksWithDeleted.value = [newTask, ...this.allTasksWithDeleted.value];
+        }
 
         // Update clients list
         if (taskClient) {
@@ -454,6 +482,7 @@ customElements.define('app-context', class extends HTMLElement {
 
     handleAddTasks({ tasks: taskInputs }) {
         const newTasks = [];
+        const updatedTasks = [];
         const newClients = new Set(this.clients.value.map(c => c.name));
         const addedClients = [];
 
@@ -462,15 +491,30 @@ customElements.define('app-context', class extends HTMLElement {
             const taskExid = String(exid || Date.now() + newTasks.length);
             const taskClient = client || '';
 
-            newTasks.push({
-                exid: taskExid,
-                client: taskClient,
-                project: project || '',
-                description,
-                id: Date.now() + newTasks.length,
-                mostRecentEntry: new Date(),
-                lastModified: new Date()
-            });
+            // Check if task with this exid already exists
+            const existingTask = this.tasks.value.find(t => t.exid === taskExid);
+
+            if (existingTask) {
+                // Update existing task with new info
+                updatedTasks.push({
+                    ...existingTask,
+                    client: taskClient || existingTask.client,
+                    project: project || existingTask.project,
+                    description: description || existingTask.description,
+                    lastModified: new Date()
+                });
+            } else {
+                // Add new task
+                newTasks.push({
+                    exid: taskExid,
+                    client: taskClient,
+                    project: project || '',
+                    description,
+                    id: Date.now() + newTasks.length,
+                    mostRecentEntry: new Date(),
+                    lastModified: new Date()
+                });
+            }
 
             if (taskClient && !newClients.has(taskClient)) {
                 newClients.add(taskClient);
@@ -478,11 +522,31 @@ customElements.define('app-context', class extends HTMLElement {
             }
         }
 
-        this.tasks.value = [...this.tasks.value, ...newTasks];
+        // Apply updates to existing tasks and add new tasks
+        let updatedTasksValue = this.tasks.value.map(task => {
+            const updated = updatedTasks.find(u => u.exid === task.exid);
+            return updated || task;
+        });
+
+        this.tasks.value = [...updatedTasksValue, ...newTasks];
 
         // Update task lists for datalist components
-        this.todaysTasks.value = [...newTasks, ...this.todaysTasks.value];
-        this.allTasksWithDeleted.value = [...newTasks, ...this.allTasksWithDeleted.value];
+        if (newTasks.length > 0) {
+            this.todaysTasks.value = [...newTasks, ...this.todaysTasks.value];
+            this.allTasksWithDeleted.value = [...newTasks, ...this.allTasksWithDeleted.value];
+        }
+
+        // Update existing tasks in datalist components
+        if (updatedTasks.length > 0) {
+            this.todaysTasks.value = this.todaysTasks.value.map(t => {
+                const updated = updatedTasks.find(u => u.exid === t.exid);
+                return updated || t;
+            });
+            this.allTasksWithDeleted.value = this.allTasksWithDeleted.value.map(t => {
+                const updated = updatedTasks.find(u => u.exid === t.exid);
+                return updated || t;
+            });
+        }
 
         if (addedClients.length) {
             this.clients.value = [...this.clients.value, ...addedClients];
