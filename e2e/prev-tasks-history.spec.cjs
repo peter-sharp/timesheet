@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { loadApp, addTask, seedIndexedDB } = require('./helpers');
+const { loadApp, addTask, seedIndexedDB } = require('./helpers.cjs');
 
 test.describe('Prev-Tasks History (excludes today\'s tasks)', () => {
   test.beforeEach(async ({ page }) => {

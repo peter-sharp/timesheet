@@ -424,7 +424,7 @@ class TaskList extends HTMLElement {
     const pieProgress = el.querySelector("pie-progress");
     pieProgress.setAttribute(
       "percent",
-      duration / formatDurationDecimal(focusInterval)
+      duration / hoursToMilliseconds(focusInterval)
     );
     const elDuration = el.querySelector("[data-task-total]");
     elDuration.setAttribute("duration", hoursToMilliseconds(total) + duration);

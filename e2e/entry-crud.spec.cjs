@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { loadApp, addTask, addEntry, getEntryItems } = require('./helpers');
+const { loadApp, addTask, addEntry, getEntryItems } = require('./helpers.cjs');
 
 test.describe('Time Entry CRUD', () => {
   test.beforeEach(async ({ page }) => {

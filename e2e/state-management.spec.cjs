@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { loadApp, addTask, addEntry, getTaskItems, getEntryItems } = require('./helpers');
+const { loadApp, addTask, addEntry, getTaskItems, getEntryItems } = require('./helpers.cjs');
 
 test.describe('State Management', () => {
   test.beforeEach(async ({ page }) => {

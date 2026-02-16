@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { loadApp, addTask, getEntryItems } = require('./helpers');
+const { loadApp, addTask, getEntryItems } = require('./helpers.cjs');
 
 test.describe('Play / Pause', () => {
   test.beforeEach(async ({ page }) => {

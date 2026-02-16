@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { loadApp, seedIndexedDB } = require('./helpers');
+const { loadApp, seedIndexedDB } = require('./helpers.cjs');
 
 function yesterdayAt(hours, minutes) {
   const d = new Date();
