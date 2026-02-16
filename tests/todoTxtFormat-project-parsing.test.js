@@ -84,6 +84,24 @@ console.log('  Serialized:', serialized9);
 console.log('  ✓ Pass:', serialized9.includes('due:2026-01-07') && serialized9.includes('estimate:3h'));
 console.log();
 
+// Test 10: Parse @context
+const task10 = lineToTask('#630034 Task with context @home +project');
+console.log('Test 10 - Context parsing:');
+console.log('  Input: "#630034 Task with context @home +project"');
+console.log('  Parsed context:', task10.context);
+console.log('  Expected: "home"');
+console.log('  ✓ Pass:', task10.context === 'home');
+console.log();
+
+// Test 11: Context with special characters
+const task11 = lineToTask('#11111 Task @work-from-home');
+console.log('Test 11 - Context with dashes:');
+console.log('  Input: "#11111 Task @work-from-home"');
+console.log('  Parsed context:', task11.context);
+console.log('  Expected: "work-from-home"');
+console.log('  ✓ Pass:', task11.context === 'work-from-home');
+console.log();
+
 // Summary
 const allPassed =
   task1.project === 'NCBOA-test' &&
@@ -98,7 +116,9 @@ const allPassed =
   task8.due === '2026-01-07' &&
   task8.estimate === '3h' &&
   serialized9.includes('due:2026-01-07') &&
-  serialized9.includes('estimate:3h');
+  serialized9.includes('estimate:3h') &&
+  task10.context === 'home' &&
+  task11.context === 'work-from-home';
 
 console.log('='.repeat(50));
 console.log(allPassed ? '✓ All tests PASSED' : '✗ Some tests FAILED');

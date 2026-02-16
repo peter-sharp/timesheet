@@ -61,6 +61,7 @@ taskRow.innerHTML = /*html*/ `
         <p class="task-item__details opacity50">
             <span data-task></span>
             <span data-project></span>
+            <span data-context></span>
             <span data-client></span>
             <span data-due></span>
             <span data-estimate></span>
@@ -391,6 +392,7 @@ class TaskList extends HTMLElement {
     {
       exid,
       project = "",
+      context = "",
       client = "",
       due = "",
       estimate = "",
@@ -404,6 +406,7 @@ class TaskList extends HTMLElement {
     item.querySelector("task-status").checked = complete;
     item.querySelector("[data-task]").innerText = exid;
     item.querySelector("[data-project]").innerText = project ? `+${project}` : '';
+    item.querySelector("[data-context]").innerText = context ? `@${context}` : '';
     item.querySelector("[data-client]").innerText = client ? `client:${client}` : '';
     item.querySelector("[data-due]").innerText = due ? `due:${due}` : '';
     item.querySelector("[data-estimate]").innerText = estimate ? `estimate:${estimate}` : '';
@@ -449,6 +452,7 @@ class TaskList extends HTMLElement {
       if (task.exid) parts.push(`#${task.exid}`);
       if (task.description) parts.push(task.description);
       if (task.project) parts.push(`+${task.project}`);
+      if (task.context) parts.push(`@${task.context}`);
       if (task.client) parts.push(`client:${task.client}`);
       if (task.due) parts.push(`due:${task.due}`);
       if (task.estimate) parts.push(`estimate:${task.estimate}`);
