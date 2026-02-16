@@ -62,7 +62,8 @@ taskRow.innerHTML = /*html*/ `
             <span data-task></span>
             <span data-project></span>
             <span data-client></span>
-
+            <span data-due></span>
+            <span data-estimate></span>
         </p>
         <p class="task-item__description" data-description></p>
         
@@ -391,6 +392,8 @@ class TaskList extends HTMLElement {
       exid,
       project = "",
       client = "",
+      due = "",
+      estimate = "",
       timingState = "stop",
       description = "",
       total = 0,
@@ -400,8 +403,10 @@ class TaskList extends HTMLElement {
     item.dataset.exid = exid;
     item.querySelector("task-status").checked = complete;
     item.querySelector("[data-task]").innerText = exid;
-    item.querySelector("[data-project]").innerText = project;
-    item.querySelector("[data-client]").innerText = client;
+    item.querySelector("[data-project]").innerText = project ? `+${project}` : '';
+    item.querySelector("[data-client]").innerText = client ? `client:${client}` : '';
+    item.querySelector("[data-due]").innerText = due ? `due:${due}` : '';
+    item.querySelector("[data-estimate]").innerText = estimate ? `estimate:${estimate}` : '';
     const elDesc = item.querySelector("[data-description]");
     elDesc.innerText = description;
     elDesc.hidden = description.length == 0;
@@ -445,6 +450,8 @@ class TaskList extends HTMLElement {
       if (task.description) parts.push(task.description);
       if (task.project) parts.push(`+${task.project}`);
       if (task.client) parts.push(`client:${task.client}`);
+      if (task.due) parts.push(`due:${task.due}`);
+      if (task.estimate) parts.push(`estimate:${task.estimate}`);
       if (task.deleted) parts.push('(deleted)');
       opt.value = parts.join(' ');
       $frag.append(opt);

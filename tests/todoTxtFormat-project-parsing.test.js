@@ -48,13 +48,57 @@ console.log('  Serialized:', serialized);
 console.log('  ✓ Pass:', serialized.includes('+NCBOA-test'));
 console.log();
 
+// Test 6: Parse due date
+const task6 = lineToTask('#630034 NASBA NTC Import AT +NCBOA due:2026-01-07');
+console.log('Test 6 - Due date parsing:');
+console.log('  Input: "#630034 NASBA NTC Import AT +NCBOA due:2026-01-07"');
+console.log('  Parsed due:', task6.due);
+console.log('  Expected: "2026-01-07"');
+console.log('  ✓ Pass:', task6.due === '2026-01-07');
+console.log();
+
+// Test 7: Parse estimate
+const task7 = lineToTask('#12345 Task with estimate +project estimate:2h');
+console.log('Test 7 - Estimate parsing:');
+console.log('  Input: "#12345 Task with estimate +project estimate:2h"');
+console.log('  Parsed estimate:', task7.estimate);
+console.log('  Expected: "2h"');
+console.log('  ✓ Pass:', task7.estimate === '2h');
+console.log();
+
+// Test 8: Parse all metadata together
+const task8 = lineToTask('#630034 NASBA NTC Import AT +NCBOA-test client:clientA due:2026-01-07 estimate:3h');
+console.log('Test 8 - All metadata together:');
+console.log('  Input: "#630034 NASBA NTC Import AT +NCBOA-test client:clientA due:2026-01-07 estimate:3h"');
+console.log('  Project:', task8.project);
+console.log('  Client:', task8.client);
+console.log('  Due:', task8.due);
+console.log('  Estimate:', task8.estimate);
+console.log('  ✓ Pass:', task8.project === 'NCBOA-test' && task8.client === 'clientA' && task8.due === '2026-01-07' && task8.estimate === '3h');
+console.log();
+
+// Test 9: Round-trip with all metadata
+const serialized9 = taskToLine(task8);
+console.log('Test 9 - Round-trip with all metadata:');
+console.log('  Serialized:', serialized9);
+console.log('  ✓ Pass:', serialized9.includes('due:2026-01-07') && serialized9.includes('estimate:3h'));
+console.log();
+
 // Summary
 const allPassed =
   task1.project === 'NCBOA-test' &&
   task2.project === 'project_name' &&
   task3.project === 'my-project_name' &&
   task4.project === 'project.v2' &&
-  serialized.includes('+NCBOA-test');
+  serialized.includes('+NCBOA-test') &&
+  task6.due === '2026-01-07' &&
+  task7.estimate === '2h' &&
+  task8.project === 'NCBOA-test' &&
+  task8.client === 'clientA' &&
+  task8.due === '2026-01-07' &&
+  task8.estimate === '3h' &&
+  serialized9.includes('due:2026-01-07') &&
+  serialized9.includes('estimate:3h');
 
 console.log('='.repeat(50));
 console.log(allPassed ? '✓ All tests PASSED' : '✗ Some tests FAILED');
