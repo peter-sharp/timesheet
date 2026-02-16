@@ -5,6 +5,13 @@ customElements.define('settings-form', class extends HTMLElement {
         this.stateConsumer = new ContextConsumer(this, 'state');
         this.render();
 
+        // Add input mask to focus interval field
+        this.addEventListener('input', (ev) => {
+            if (ev.target.id === 'settings_focus_interval') {
+                this.applyDurationMask(ev.target);
+            }
+        });
+
         // Handle form submission
         this.addEventListener('submit', (ev) => {
             ev.preventDefault();
@@ -29,6 +36,38 @@ customElements.define('settings-form', class extends HTMLElement {
                 }));
             }
         });
+    }
+
+    // Apply input mask for hh:mm format
+    applyDurationMask(input) {
+        let value = input.value.replace(/[^0-9]/g, ''); // Remove non-digits
+
+        if (value.length === 0) {
+            input.value = '';
+            return;
+        }
+
+        // Auto-format as user types
+        if (value.length <= 2) {
+            // Just hours (0-99)
+            input.value = value;
+        } else if (value.length === 3) {
+            // h:mm format
+            const hours = value.substring(0, 1);
+            const minutes = value.substring(1, 3);
+            input.value = `${hours}:${minutes}`;
+        } else {
+            // hh:mm format (or more)
+            const hours = value.substring(0, value.length - 2);
+            let minutes = value.substring(value.length - 2);
+
+            // Clamp minutes to 59
+            if (parseInt(minutes, 10) > 59) {
+                minutes = '59';
+            }
+
+            input.value = `${hours}:${minutes}`;
+        }
     }
 
     // Convert hh:mm or h:mm format to decimal hours
