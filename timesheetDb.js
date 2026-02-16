@@ -413,6 +413,37 @@ TimesheetDB.modules.push(function tasksDb() {
             return tasks;
         }
 
+        // Returns only non-deleted tasks modified today as array
+        async function getTodaysTasks() {
+            const tasks = [];
+            for await (const task of getTasksModifiedToday()) {
+                tasks.push(task);
+            }
+            return tasks;
+        }
+
+        // Returns all tasks (non-deleted first by lastModified desc, then deleted last)
+        async function getAllTasksIncludingDeleted(limit = 500) {
+            const transaction = db.transaction(["tasks"], "readonly");
+            const objectStore = transaction.objectStore("tasks");
+            const index = objectStore.index("lastModified");
+            const nonDeletedTasks = [];
+            const deletedTasks = [];
+
+            // Walk the index in reverse (newest first)
+            for await (const task of awaitCursor(index.openCursor(null, "prev"))) {
+                if (task.deleted) {
+                    deletedTasks.push(task);
+                } else {
+                    nonDeletedTasks.push(task);
+                }
+                if (nonDeletedTasks.length + deletedTasks.length >= limit) break;
+            }
+
+            // Return non-deleted tasks first, then deleted tasks
+            return [...nonDeletedTasks, ...deletedTasks];
+        }
+
         return {
             addTask,
             updateTask,
@@ -424,7 +455,9 @@ TimesheetDB.modules.push(function tasksDb() {
             permanentlyDeleteTask,
             getTasksModifiedToday,
             getAllTasks,
-            getRecentTasks
+            getRecentTasks,
+            getTodaysTasks,
+            getAllTasksIncludingDeleted
         }
     }
 

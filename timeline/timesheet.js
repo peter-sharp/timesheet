@@ -123,7 +123,7 @@ class Timesheet extends HTMLElement {
             this.#newEntry = state.newEntry;
             this.#entries = state.entries;
             this.#tasks = state.tasks;
-            this.#allTasks = state.allTasks;
+            this.#allTasks = state.todaysTasks;
             this.#durationTotal = state.durationTotal;
             this.#durationTotalGaps = state.durationTotalGaps;
 
