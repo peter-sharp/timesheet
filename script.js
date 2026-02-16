@@ -8,6 +8,7 @@ import "./tasks/task-list.js";
 import "./pie-progress.js";
 import "./tasks/task-status.js";
 import "./file-sync-menu.js";
+import "./settings-form.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
 import { offsetHue, hexToHsla } from "./utils/colorUtils.js";
@@ -31,7 +32,8 @@ const APP_VERSION = "1.5.0";
     // Initialize default settings
     const defaultSettings = {
         timeSnapThreshold: 6,
-        color: "#112233"
+        color: "#112233",
+        focusInterval: 50 / 60 // 50 minutes in hours
     };
 
     // Load initial state from storage

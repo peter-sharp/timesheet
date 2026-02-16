@@ -12,7 +12,7 @@ const INITIAL_STATE = {
     currentTask: {},
     settings: {
         color: "#112233",
-        focusInterval: 0.4,
+        focusInterval: 50 / 60, // 50 minutes in hours
         timeSnapThreshold: 6
     }
 };
