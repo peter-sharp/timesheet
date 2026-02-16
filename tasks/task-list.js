@@ -405,7 +405,7 @@ class TaskList extends HTMLElement {
     item.dataset.exid = exid;
     item.querySelector("task-status").checked = complete;
     item.querySelector("[data-task]").innerText = exid;
-    item.querySelector("[data-project]").innerText = project ? `+${project}` : '';
+    item.querySelector("[data-project]").innerText = project ? `+${project.replace(/_/g, ' ')}` : '';
     item.querySelector("[data-context]").innerText = context ? `@${context}` : '';
     item.querySelector("[data-client]").innerText = client ? `client:${client}` : '';
     item.querySelector("[data-due]").innerText = due ? `due:${due}` : '';
@@ -451,7 +451,7 @@ class TaskList extends HTMLElement {
       const parts = [];
       if (task.exid) parts.push(`#${task.exid}`);
       if (task.description) parts.push(task.description);
-      if (task.project) parts.push(`+${task.project}`);
+      if (task.project) parts.push(`+${task.project.replace(/_/g, ' ')}`);
       if (task.context) parts.push(`@${task.context}`);
       if (task.client) parts.push(`client:${task.client}`);
       if (task.due) parts.push(`due:${task.due}`);
