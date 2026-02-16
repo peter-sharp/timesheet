@@ -423,23 +423,33 @@ customElements.define('app-context', class extends HTMLElement {
     }
 
     handleAddTask({ raw, exid: providedExid, client: providedClient }) {
-        const [exid, project, client, description] = extract([/#(\w+)/, /\+(\S+)/, /client:(\w+)/], raw || '');
+        // Extract all known patterns from raw input
+        const [exid, project, context, client, due, estimate, description] = extract(
+            [/#(\w+)/, /\+(\S+)/, /@(\S+)/, /\bclient:(\w+)/, /\bdue:(\S+)/, /\bestimate:(\S+)/],
+            raw || ''
+        );
         const taskExid = String(providedExid || exid || Date.now());
         const taskClient = providedClient || client;
 
         // Extract any additional key:value metadata
         const metadata = {};
-        const knownKeys = new Set(['client']);
+        const knownKeys = new Set(['client', 'due', 'estimate']);
         const metadataPattern = /\b(\w+):(\S+)/g;
         let metaMatch;
+        let cleanDescription = description || '';
 
         while ((metaMatch = metadataPattern.exec(description || '')) !== null) {
             const key = metaMatch[1];
             const value = metaMatch[2];
             if (!knownKeys.has(key)) {
                 metadata[key] = value;
+                // Remove this metadata from description
+                cleanDescription = cleanDescription.replace(metaMatch[0], '');
             }
         }
+
+        // Clean up description (remove extra spaces)
+        cleanDescription = cleanDescription.trim().replace(/\s+/g, ' ');
 
         // Check if task with this exid already exists
         const existingTaskIndex = this.tasks.value.findIndex(t => t.exid === taskExid);
@@ -452,7 +462,8 @@ customElements.define('app-context', class extends HTMLElement {
                         ...task,
                         client: taskClient || task.client,
                         project: project || task.project,
-                        description: description || task.description,
+                        context: context || task.context,
+                        description: cleanDescription || task.description,
                         ...(Object.keys(metadata).length > 0 ? { metadata: { ...task.metadata, ...metadata } } : {}),
                         lastModified: new Date()
                     }
@@ -473,7 +484,8 @@ customElements.define('app-context', class extends HTMLElement {
                 exid: taskExid,
                 client: taskClient,
                 project: project || '',
-                description,
+                context: context || '',
+                description: cleanDescription,
                 ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
                 id: Date.now(),
                 mostRecentEntry: new Date(),
@@ -503,23 +515,33 @@ customElements.define('app-context', class extends HTMLElement {
         const addedClients = [];
 
         for (const { raw } of taskInputs) {
-            const [exid, project, client, description] = extract([/#(\w+)/, /\+(\S+)/, /client:(\w+)/], raw || '');
+            // Extract all known patterns from raw input
+            const [exid, project, context, client, due, estimate, description] = extract(
+                [/#(\w+)/, /\+(\S+)/, /@(\S+)/, /\bclient:(\w+)/, /\bdue:(\S+)/, /\bestimate:(\S+)/],
+                raw || ''
+            );
             const taskExid = String(exid || Date.now() + newTasks.length);
             const taskClient = client || '';
 
             // Extract any additional key:value metadata
             const metadata = {};
-            const knownKeys = new Set(['client']);
-            const metadataPattern = /(\w+):(\S+)/g;
+            const knownKeys = new Set(['client', 'due', 'estimate']);
+            const metadataPattern = /\b(\w+):(\S+)/g;
             let metaMatch;
+            let cleanDescription = description || '';
 
             while ((metaMatch = metadataPattern.exec(description || '')) !== null) {
                 const key = metaMatch[1];
                 const value = metaMatch[2];
                 if (!knownKeys.has(key)) {
                     metadata[key] = value;
+                    // Remove this metadata from description
+                    cleanDescription = cleanDescription.replace(metaMatch[0], '');
                 }
             }
+
+            // Clean up description (remove extra spaces)
+            cleanDescription = cleanDescription.trim().replace(/\s+/g, ' ');
 
             // Check if task with this exid already exists
             const existingTask = this.tasks.value.find(t => t.exid === taskExid);
@@ -530,7 +552,8 @@ customElements.define('app-context', class extends HTMLElement {
                     ...existingTask,
                     client: taskClient || existingTask.client,
                     project: project || existingTask.project,
-                    description: description || existingTask.description,
+                    context: context || existingTask.context,
+                    description: cleanDescription || existingTask.description,
                     ...(Object.keys(metadata).length > 0 ? { metadata: { ...existingTask.metadata, ...metadata } } : {}),
                     lastModified: new Date()
                 });
@@ -540,7 +563,8 @@ customElements.define('app-context', class extends HTMLElement {
                     exid: taskExid,
                     client: taskClient,
                     project: project || '',
-                    description,
+                    context: context || '',
+                    description: cleanDescription,
                     ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
                     id: Date.now() + newTasks.length,
                     mostRecentEntry: new Date(),
