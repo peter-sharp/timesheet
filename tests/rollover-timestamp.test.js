@@ -218,3 +218,178 @@ TestRunner.test('rollover: task modified today gets today timestamp', async () =
     'Modified task should have today\'s date'
   );
 });
+
+TestRunner.test('rollover: full day simulation with 5 tasks and multiple entries', async () => {
+  const db = await TimesheetDB();
+
+  // Create 5 tasks with various timestamps from yesterday
+  const tasks = [
+    {
+      exid: 'TASK1',
+      description: 'Client meeting preparation',
+      client: 'AcmeCorp',
+      lastModified: yesterdayAt(9, 0),
+      complete: true,
+      deleted: false
+    },
+    {
+      exid: 'TASK2',
+      description: 'Code review',
+      project: 'WebApp',
+      lastModified: yesterdayAt(10, 30),
+      complete: false,
+      deleted: false
+    },
+    {
+      exid: 'TASK3',
+      description: 'Bug fixes',
+      project: 'API',
+      lastModified: yesterdayAt(13, 0),
+      complete: true,
+      deleted: false
+    },
+    {
+      exid: 'TASK4',
+      description: 'Documentation',
+      lastModified: yesterdayAt(15, 0),
+      complete: false,
+      deleted: false
+    },
+    {
+      exid: 'TASK5',
+      description: 'Team standup',
+      lastModified: yesterdayAt(16, 30),
+      complete: true,
+      deleted: false
+    }
+  ];
+
+  // Create 4-5 entries for each task
+  const entries = [
+    // TASK1 entries (4 entries)
+    { id: 'e1', task: 'TASK1', annotation: 'Research', start: yesterdayAt(9, 0), end: yesterdayAt(9, 45), lastModified: yesterdayAt(9, 45) },
+    { id: 'e2', task: 'TASK1', annotation: 'Prep slides', start: yesterdayAt(9, 45), end: yesterdayAt(10, 30), lastModified: yesterdayAt(10, 30) },
+    { id: 'e3', task: 'TASK1', annotation: 'Practice', start: yesterdayAt(10, 30), end: yesterdayAt(11, 0), lastModified: yesterdayAt(11, 0) },
+    { id: 'e4', task: 'TASK1', annotation: 'Final review', start: yesterdayAt(11, 0), end: yesterdayAt(11, 15), lastModified: yesterdayAt(11, 15) },
+
+    // TASK2 entries (5 entries)
+    { id: 'e5', task: 'TASK2', annotation: 'Review PR #123', start: yesterdayAt(11, 15), end: yesterdayAt(11, 45), lastModified: yesterdayAt(11, 45) },
+    { id: 'e6', task: 'TASK2', annotation: 'Test changes', start: yesterdayAt(11, 45), end: yesterdayAt(12, 15), lastModified: yesterdayAt(12, 15) },
+    { id: 'e7', task: 'TASK2', annotation: 'Add comments', start: yesterdayAt(12, 15), end: yesterdayAt(12, 30), lastModified: yesterdayAt(12, 30) },
+    { id: 'e8', task: 'TASK2', annotation: 'Review PR #124', start: yesterdayAt(12, 30), end: yesterdayAt(13, 0), lastModified: yesterdayAt(13, 0) },
+    { id: 'e9', task: 'TASK2', annotation: 'Approve changes', start: yesterdayAt(13, 0), end: yesterdayAt(13, 15), lastModified: yesterdayAt(13, 15) },
+
+    // TASK3 entries (4 entries)
+    { id: 'e10', task: 'TASK3', annotation: 'Debug endpoint', start: yesterdayAt(14, 0), end: yesterdayAt(14, 45), lastModified: yesterdayAt(14, 45) },
+    { id: 'e11', task: 'TASK3', annotation: 'Write test', start: yesterdayAt(14, 45), end: yesterdayAt(15, 15), lastModified: yesterdayAt(15, 15) },
+    { id: 'e12', task: 'TASK3', annotation: 'Fix validation', start: yesterdayAt(15, 15), end: yesterdayAt(15, 45), lastModified: yesterdayAt(15, 45) },
+    { id: 'e13', task: 'TASK3', annotation: 'Deploy fix', start: yesterdayAt(15, 45), end: yesterdayAt(16, 0), lastModified: yesterdayAt(16, 0) },
+
+    // TASK4 entries (5 entries)
+    { id: 'e14', task: 'TASK4', annotation: 'Update README', start: yesterdayAt(16, 0), end: yesterdayAt(16, 20), lastModified: yesterdayAt(16, 20) },
+    { id: 'e15', task: 'TASK4', annotation: 'API docs', start: yesterdayAt(16, 20), end: yesterdayAt(16, 45), lastModified: yesterdayAt(16, 45) },
+    { id: 'e16', task: 'TASK4', annotation: 'Code examples', start: yesterdayAt(16, 45), end: yesterdayAt(17, 10), lastModified: yesterdayAt(17, 10) },
+    { id: 'e17', task: 'TASK4', annotation: 'Screenshots', start: yesterdayAt(17, 10), end: yesterdayAt(17, 25), lastModified: yesterdayAt(17, 25) },
+    { id: 'e18', task: 'TASK4', annotation: 'Proofread', start: yesterdayAt(17, 25), end: yesterdayAt(17, 40), lastModified: yesterdayAt(17, 40) },
+
+    // TASK5 entries (4 entries)
+    { id: 'e19', task: 'TASK5', annotation: 'Daily standup', start: yesterdayAt(9, 30), end: yesterdayAt(9, 45), lastModified: yesterdayAt(9, 45) },
+    { id: 'e20', task: 'TASK5', annotation: 'Sprint planning', start: yesterdayAt(13, 30), end: yesterdayAt(14, 0), lastModified: yesterdayAt(14, 0) },
+    { id: 'e21', task: 'TASK5', annotation: 'Retro notes', start: yesterdayAt(14, 0), end: yesterdayAt(14, 15), lastModified: yesterdayAt(14, 15) },
+    { id: 'e22', task: 'TASK5', annotation: 'Action items', start: yesterdayAt(14, 15), end: yesterdayAt(14, 30), lastModified: yesterdayAt(14, 30) }
+  ];
+
+  // Seed all data
+  await seedData({ tasks, entries });
+
+  // Verify data was seeded correctly
+  const allTasksBefore = await db.getAllTasks();
+  const allEntriesBefore = await db.getAllEntries();
+
+  TestRunner.assertEquals(allTasksBefore.length, 5, 'Should have 5 tasks before rollover');
+  TestRunner.assertEquals(allEntriesBefore.length, 22, 'Should have 22 entries before rollover');
+
+  // Verify some tasks are marked complete
+  const completeTasks = allTasksBefore.filter(t => t.complete);
+  TestRunner.assertEquals(completeTasks.length, 3, 'Should have 3 completed tasks');
+
+  // Simulate rollover - read today's state
+  const todayState = await store.read();
+
+  // After rollover, NO tasks from yesterday should be loaded
+  TestRunner.assertEquals(
+    todayState.tasks.length,
+    0,
+    'No tasks from yesterday should appear in today\'s state after rollover'
+  );
+
+  // After rollover, NO entries from yesterday should be loaded
+  TestRunner.assertEquals(
+    todayState.entries.length,
+    0,
+    'No entries from yesterday should appear in today\'s state after rollover'
+  );
+
+  // But verify all data still exists in database with original timestamps
+  const allTasksAfter = await db.getAllTasks();
+  const allEntriesAfter = await db.getAllEntries();
+
+  TestRunner.assertEquals(
+    allTasksAfter.length,
+    5,
+    'All 5 tasks should still exist in database after rollover'
+  );
+
+  TestRunner.assertEquals(
+    allEntriesAfter.length,
+    22,
+    'All 22 entries should still exist in database after rollover'
+  );
+
+  // Verify timestamps were preserved for all tasks
+  for (const originalTask of tasks) {
+    const dbTask = allTasksAfter.find(t => t.exid === originalTask.exid);
+    TestRunner.assert(dbTask, `Task ${originalTask.exid} should exist in database`);
+    TestRunner.assertEquals(
+      new Date(dbTask.lastModified).toISOString(),
+      originalTask.lastModified.toISOString(),
+      `Task ${originalTask.exid} timestamp should be preserved`
+    );
+    TestRunner.assertEquals(
+      dbTask.complete,
+      originalTask.complete,
+      `Task ${originalTask.exid} complete status should be preserved`
+    );
+  }
+
+  // Verify timestamps were preserved for all entries
+  for (const originalEntry of entries) {
+    const dbEntry = allEntriesAfter.find(e => e.id === originalEntry.id);
+    TestRunner.assert(dbEntry, `Entry ${originalEntry.id} should exist in database`);
+    TestRunner.assertEquals(
+      new Date(dbEntry.lastModified).toISOString(),
+      originalEntry.lastModified.toISOString(),
+      `Entry ${originalEntry.id} timestamp should be preserved`
+    );
+  }
+
+  // Verify that if we were to persist today's state, it wouldn't affect yesterday's data
+  await store.write(todayState);
+
+  const tasksAfterWrite = await db.getAllTasks();
+  TestRunner.assertEquals(
+    tasksAfterWrite.length,
+    5,
+    'Tasks should still exist after writing empty today state'
+  );
+
+  // Verify timestamps still preserved after write
+  for (const originalTask of tasks) {
+    const dbTask = tasksAfterWrite.find(t => t.exid === originalTask.exid);
+    TestRunner.assertEquals(
+      new Date(dbTask.lastModified).toISOString(),
+      originalTask.lastModified.toISOString(),
+      `Task ${originalTask.exid} timestamp should still be preserved after write`
+    );
+  }
+});
