@@ -32,7 +32,7 @@ export function lineToTask(line) {
     }
 
     const [exid, project, client, description] = extract(
-        [/#(\w+)/, /\+(\w+)/, /client:(\w+)/],
+        [/#(\w+)/, /\+(\S+)/, /client:(\w+)/],
         remainder
     );
 
