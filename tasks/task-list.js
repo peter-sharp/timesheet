@@ -456,6 +456,12 @@ class TaskList extends HTMLElement {
       if (task.client) parts.push(`client:${task.client}`);
       if (task.due) parts.push(`due:${task.due}`);
       if (task.estimate) parts.push(`estimate:${task.estimate}`);
+      // Add any additional metadata
+      if (task.metadata && typeof task.metadata === 'object') {
+        Object.entries(task.metadata).forEach(([key, value]) => {
+          if (value) parts.push(`${key}:${value}`);
+        });
+      }
       if (task.deleted) parts.push('(deleted)');
       opt.value = parts.join(' ');
       $frag.append(opt);
