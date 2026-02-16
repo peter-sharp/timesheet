@@ -17,8 +17,6 @@ module.exports = defineConfig({
       name: 'chromium',
       use: {
         browserName: 'chromium',
-        // Use headed Chrome channel to avoid needing headless shell download
-        channel: 'chrome',
         headless: true,
       },
     },

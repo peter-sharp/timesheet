@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { loadApp, getTaskItems } = require('./helpers');
+const { loadApp, getTaskItems } = require('./helpers.cjs');
 
 test.describe('Batch Add Tasks (Phase 8)', () => {
   test.beforeEach(async ({ page }) => {

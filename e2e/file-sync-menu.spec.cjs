@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { loadApp, seedFileHandle } = require('./helpers');
+const { loadApp, seedFileHandle } = require('./helpers.cjs');
 
 test.describe('File Sync Menu', () => {
   test.beforeEach(async ({ page }) => {

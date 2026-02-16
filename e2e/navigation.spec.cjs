@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { loadApp } = require('./helpers');
+const { loadApp } = require('./helpers.cjs');
 
 test.describe('Navigation', () => {
   test.beforeEach(async ({ page }) => {

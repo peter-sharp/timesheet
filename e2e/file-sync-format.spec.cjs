@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { loadApp } = require('./helpers');
+const { loadApp } = require('./helpers.cjs');
 
 test.describe('Todo.txt Format Conversion', () => {
   test.beforeEach(async ({ page }) => {
