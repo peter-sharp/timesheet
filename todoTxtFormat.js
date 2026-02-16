@@ -7,7 +7,10 @@ export function taskToLine(task) {
     if (task.exid) parts.push(`#${task.exid}`);
     if (task.description) parts.push(task.description);
     if (task.project) parts.push(`+${task.project}`);
+    if (task.context) parts.push(`@${task.context}`);
     if (task.client) parts.push(`client:${task.client}`);
+    if (task.due) parts.push(`due:${task.due}`);
+    if (task.estimate) parts.push(`estimate:${task.estimate}`);
     const line = parts.join(' ');
     if (task.complete) {
         const date = task.completedDate || new Date().toISOString().slice(0, 10);
@@ -31,8 +34,8 @@ export function lineToTask(line) {
         remainder = trimmed.slice(match[0].length);
     }
 
-    const [exid, project, client, description] = extract(
-        [/#(\w+)/, /\+(\w+)/, /client:(\w+)/],
+    const [exid, project, context, client, due, estimate, description] = extract(
+        [/#(\w+)/, /\+(\S+)/, /@(\S+)/, /client:(\w+)/, /due:(\S+)/, /estimate:(\S+)/],
         remainder
     );
 
@@ -40,7 +43,10 @@ export function lineToTask(line) {
         exid: exid || undefined,
         description: description ? description.trim() : '',
         project: project || '',
+        context: context || '',
         client: client || '',
+        due: due || '',
+        estimate: estimate || '',
         complete,
         completedDate
     };
