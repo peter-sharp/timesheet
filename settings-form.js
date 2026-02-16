@@ -1,9 +1,31 @@
-import { ContextConsumer } from './utils/Context.js';
+import { ContextRequestEvent } from './utils/Context.js';
 
 customElements.define('settings-form', class extends HTMLElement {
+    #settings;
+    #unsubscribe;
+
     connectedCallback() {
-        this.stateConsumer = new ContextConsumer(this, 'state');
         this.render();
+
+        // Request context state
+        this.dispatchEvent(
+            new ContextRequestEvent(
+                'state',
+                (state, unsubscribe) => {
+                    this.#settings = state.settings;
+                    this.#unsubscribe = unsubscribe;
+
+                    // Subscribe to settings changes
+                    this.#settings.effect(() => {
+                        this.updateFormValues();
+                    });
+
+                    // Initial render
+                    this.updateFormValues();
+                },
+                true
+            )
+        );
 
         // Add input mask to focus interval field
         this.addEventListener('input', (ev) => {
@@ -36,6 +58,19 @@ customElements.define('settings-form', class extends HTMLElement {
                 }));
             }
         });
+    }
+
+    disconnectedCallback() {
+        if (this.#unsubscribe) {
+            this.#unsubscribe();
+        }
+    }
+
+    updateFormValues() {
+        const form = this.querySelector('#settings');
+        if (form && this.#settings) {
+            this.setFormData(form, this.#settings.value);
+        }
     }
 
     // Apply input mask for hh:mm format
@@ -141,15 +176,5 @@ customElements.define('settings-form', class extends HTMLElement {
                 <button type="submit">Save</button>
             </form>
         `;
-
-        // Update form when settings change
-        this.stateConsumer.subscribe((state) => {
-            if (state?.settings) {
-                const form = this.querySelector('#settings');
-                if (form) {
-                    this.setFormData(form, state.settings);
-                }
-            }
-        });
     }
 });
