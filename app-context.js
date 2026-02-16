@@ -423,7 +423,7 @@ customElements.define('app-context', class extends HTMLElement {
     }
 
     handleAddTask({ raw, exid: providedExid, client: providedClient }) {
-        const [exid, project, client, description] = extract([/#(\w+)/, /\+(\w+)/, /client:(\w+)/], raw || '');
+        const [exid, project, client, description] = extract([/#(\w+)/, /\+(\S+)/, /client:(\w+)/], raw || '');
         const taskExid = String(providedExid || exid || Date.now());
         const taskClient = providedClient || client;
 
@@ -487,7 +487,7 @@ customElements.define('app-context', class extends HTMLElement {
         const addedClients = [];
 
         for (const { raw } of taskInputs) {
-            const [exid, project, client, description] = extract([/#(\w+)/, /\+(\w+)/, /client:(\w+)/], raw || '');
+            const [exid, project, client, description] = extract([/#(\w+)/, /\+(\S+)/, /client:(\w+)/], raw || '');
             const taskExid = String(exid || Date.now() + newTasks.length);
             const taskClient = client || '';
 
