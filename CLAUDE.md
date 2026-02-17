@@ -99,11 +99,38 @@ The `assets` array in serviceWorker.js should mirror the actual file structure. 
 
 ## Testing Strategy
 
-1. **Unit Tests** (test-runner-cli.js): Tests database operations, rollover logic, and core utilities
-2. **Integration Tests** (if applicable): Test component interactions
-3. **E2E Tests** (playwright): Test full user workflows in browser
+**This project uses the Trophy Testing Model** 🏆
 
-Focus on running unit tests after each change, as they're fastest and catch most issues.
+The trophy model emphasizes:
+- **More end-to-end tests** that test real user workflows
+- **Fewer unit tests** - only for critical utilities and business logic
+- **Integration over isolation** - test how components work together, not in isolation
+
+### Test Types
+
+1. **E2E Tests** (playwright) 🎯 **PRIMARY**: Test full user workflows in real browser
+   - User interactions, navigation, form submissions
+   - Cross-component behavior and state management
+   - Visual rendering and UI states
+
+2. **Unit Tests** (test-runner-cli.js) ⚡ **MINIMAL**: Only for critical non-UI logic
+   - Database operations (rollover, queries, indexing)
+   - Core utilities and pure functions
+   - Complex business logic that's hard to test via E2E
+
+### Why Trophy Model?
+
+- **More confidence**: E2E tests catch real bugs users will experience
+- **Less brittleness**: Not coupled to implementation details
+- **Better coverage**: Tests actual user value, not internal structure
+- **Faster feedback**: One E2E test can cover multiple "units"
+
+### Testing Guidelines
+
+- **Write E2E first**: When adding features, start with E2E test for the user workflow
+- **Unit test sparingly**: Only add unit tests for complex logic that's hard to verify via E2E
+- **Avoid testing implementation**: Don't test internal component state or private methods
+- **Test user behavior**: Focus on what users see and do, not how code is structured
 
 ## Important Notes
 
