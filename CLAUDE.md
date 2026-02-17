@@ -44,7 +44,18 @@ npm run test:unit
 npm run test:prev-tasks
 ```
 
-Ensure all tests pass or document any known failures with explanations.
+**⚠️ CRITICAL: ALL tests must pass before committing.**
+
+If tests fail:
+1. **Fix the code first, not the test** - Failing tests indicate bugs in the implementation
+2. Only modify tests if they're testing incorrect behavior or are genuinely broken
+3. Never commit with failing tests
+4. Never skip or disable tests without explicit user approval
+
+Common test issues:
+- `CustomEvent` errors: Check Signal.js event dispatching
+- Timeouts: Check for missing awaits or infinite loops
+- Assertion failures: The code doesn't match expected behavior - fix the code
 
 ### 5. Verify Functionality
 
