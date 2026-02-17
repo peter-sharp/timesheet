@@ -285,8 +285,7 @@ customElements.define('app-context', class extends HTMLElement {
 
         this.tasks.value = this.tasks.value.map(x => ({
             ...x,
-            timingState: x.exid === task ? "start" : "stop",
-            lastModified: new Date()
+            timingState: x.exid === task ? "start" : "stop"
         }));
     }
 
@@ -295,7 +294,7 @@ customElements.define('app-context', class extends HTMLElement {
         this.currentTask.value = {};
     }
 
-    handleChangedEntry({ id, task, annotation, start, end }) {
+    async handleChangedEntry({ id, task, annotation, start, end }) {
         let entries = [...this.entries.value];
 
         if (id) {
@@ -328,7 +327,7 @@ customElements.define('app-context', class extends HTMLElement {
 
             this.newEntry.value = {};
             this.tasks.value = this.tasks.value.map(x =>
-                x.exid === task ? { ...x, timingState: "stop", lastModified: new Date() } : x
+                x.exid === task ? { ...x, timingState: "stop" } : x
             );
         }
 
@@ -338,7 +337,18 @@ customElements.define('app-context', class extends HTMLElement {
 
         // Ensure task exists
         if (!this.tasks.value.find(t => t.exid === task)) {
-            this.tasks.value = [...this.tasks.value, { exid: task, lastModified: new Date() }];
+            // Load task from database if it exists (preserve timestamp)
+            const db = await TimesheetDB();
+            const allTasks = await db.getAllTasks();
+            const existingTask = allTasks.find(t => t.exid === task);
+
+            if (existingTask) {
+                // Load existing task with original timestamp
+                this.tasks.value = [...this.tasks.value, existingTask];
+            } else {
+                // Create new task with today's timestamp
+                this.tasks.value = [...this.tasks.value, { exid: task, lastModified: new Date() }];
+            }
         }
 
         this.entries.value = entries;
@@ -377,8 +387,7 @@ customElements.define('app-context', class extends HTMLElement {
         this.currentTask.value = this.tasks.value.find(x => x.exid === exid) || {};
         this.tasks.value = this.tasks.value.map(x => ({
             ...x,
-            timingState: x.exid === exid ? "start" : "stop",
-            lastModified: new Date()
+            timingState: x.exid === exid ? "start" : "stop"
         }));
     }
 
@@ -414,8 +423,7 @@ customElements.define('app-context', class extends HTMLElement {
         this.currentTask.value = {};
         this.tasks.value = this.tasks.value.map(x => ({
             ...x,
-            timingState: x.exid === exid ? "stop" : x.timingState,
-            lastModified: new Date()
+            timingState: x.exid === exid ? "stop" : x.timingState
         }));
 
         this.recalculateTaskTotals();

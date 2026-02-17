@@ -18,8 +18,9 @@ const dom = new JSDOM(`
   <!DOCTYPE html>
   <html>
     <body>
-      <app-context></app-context>
-      <task-list features="add"></task-list>
+      <app-context>
+        <task-list features="add"></task-list>
+      </app-context>
       <div id="test-results"></div>
       <div id="test-progress"></div>
       <div id="test-summary"></div>
@@ -43,6 +44,7 @@ Object.defineProperties(global, {
   Element: { value: window.Element, writable: true, configurable: true },
   Event: { value: window.Event, writable: true, configurable: true },
   CustomEvent: { value: window.CustomEvent, writable: true, configurable: true },
+  EventTarget: { value: window.EventTarget, writable: true, configurable: true },
   Node: { value: window.Node, writable: true, configurable: true },
   requestAnimationFrame: { value: (cb) => setTimeout(cb, 16), writable: true, configurable: true },
   requestIdleCallback: { value: (cb) => setTimeout(cb, 1), writable: true, configurable: true },
@@ -67,6 +69,21 @@ async function runTests() {
     // Import app components (needed for tests)
     await import('../app-context.js');
     await import('../timesheetDb.js');
+
+    // Initialize app-context with minimal state for tests
+    const appContext = document.querySelector('app-context');
+    if (appContext && typeof appContext.initialize === 'function') {
+      await appContext.initialize({
+        settings: { timeSnapThreshold: 6 },
+        newEntry: {},
+        entries: [],
+        tasks: [],
+        clients: [],
+        currentTask: {},
+        deleted: [],
+        deletedTasks: []
+      });
+    }
 
     // Import test files
     await import('./task-list.test.js');

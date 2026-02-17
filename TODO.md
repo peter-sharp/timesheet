@@ -1,5 +1,19 @@
 # TODO.md — File System Access API: Two-Way Sync with todo.txt / done.txt
 
+## Recent Completions
+
+### ✅ Fix Rollover Clearout (2026-02-17)
+
+Fixed rollover clearout not working properly. Tasks modified yesterday were appearing in today's view because:
+1. When adding entries for yesterday's tasks, the code created new task objects with today's timestamp instead of loading from database
+2. Updating UI state (timingState) was incorrectly updating lastModified timestamps
+
+**Solution:** Load tasks from database when they don't exist in today's state, and only update lastModified when actual task data changes (not transient UI state).
+
+**Tests:** All rollover timestamp preservation tests pass.
+
+---
+
 ## Context
 
 The timesheet PWA manages tasks in IndexedDB but has no way to sync with external files. Users want to maintain a local `todo.txt` and `done.txt` (the [todo.txt standard](https://github.com/todotxt/todo.txt)) so tasks are editable from any text editor. The File System Access API (`showOpenFilePicker`, `FileSystemFileHandle.createWritable`) works on GitHub Pages — it only needs HTTPS (no special COOP/COEP headers). Browser support is Chromium-only (Chrome, Edge).

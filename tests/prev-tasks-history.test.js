@@ -17,8 +17,8 @@ async function seedTasks(tasks) {
 
 // Helper to wait for allTasks signal to update
 async function waitForAllTasksUpdate() {
-  // Wait for next tick to allow signals to propagate
-  await new Promise(r => setTimeout(r, 100));
+  // Wait for signals to propagate and DOM to update
+  await new Promise(r => setTimeout(r, 500));
 }
 
 TestRunner.test('getRecentTasks excludes tasks modified today', async () => {
@@ -195,7 +195,8 @@ TestRunner.test('task-list datalist populates with historical tasks only', async
   const appContext = document.querySelector('app-context');
   if (appContext) {
     const db = await TimesheetDB();
-    appContext.allTasks.value = await db.getRecentTasks(500);
+    // task-list watches allTasksWithDeleted, not allTasks
+    appContext.allTasksWithDeleted.value = await db.getAllTasksIncludingDeleted(500);
   }
 
   await waitForAllTasksUpdate();
@@ -205,9 +206,14 @@ TestRunner.test('task-list datalist populates with historical tasks only', async
   const options = Array.from(datalist?.querySelectorAll('option') || []);
   const values = options.map(opt => opt.value);
 
+  // Debug: log what we found
+  console.log('Datalist options count:', options.length);
+  console.log('Datalist values:', values);
+  console.log('allTasksWithDeleted value:', appContext?.allTasksWithDeleted?.value);
+
   TestRunner.assert(
     values.some(v => v.includes('#HIST1')),
-    'Datalist should include historical task'
+    `Datalist should include historical task. Found: ${JSON.stringify(values)}`
   );
 
   TestRunner.assert(
