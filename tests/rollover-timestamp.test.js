@@ -136,6 +136,51 @@ TestRunner.test('rollover: entries removed but tasks keep original timestamps', 
   );
 });
 
+TestRunner.test('rollover: preserveTimestamp uses DB timestamp even when in-memory task has new Date()', async () => {
+  // This is the core regression test for the bug where handleNewEntry creates a task stub
+  // with lastModified: new Date() for a task that already exists in the DB with an older date.
+  // The upsert then calls updateTask(stubWithTodayDate, { preserveTimestamp: true }).
+  // With the old code, this incorrectly preserved today's date from the stub.
+  // With the fix, updateTask reads the current DB timestamp and uses that instead.
+  const yesterdayTimestamp = yesterdayAt(11, 0);
+  const db = await TimesheetDB();
+
+  await seedData({
+    tasks: [
+      {
+        exid: 'STUB_BUG',
+        description: 'Task with yesterday timestamp in DB',
+        lastModified: yesterdayTimestamp,
+        deleted: false
+      }
+    ]
+  });
+
+  // Simulate what handleNewEntry does: creates a stub with lastModified: new Date()
+  // for a task that isn't in today's view but already exists in the DB.
+  const stubWithTodayDate = {
+    exid: 'STUB_BUG',
+    id: Date.now(),
+    mostRecentEntry: new Date(),
+    total: 0,
+    lastModified: new Date() // today's date - this is the bug trigger
+  };
+
+  // This is what persistState -> upsert calls when the task already exists in DB
+  await db.updateTask(stubWithTodayDate, { preserveTimestamp: true });
+
+  // Verify the DB still has yesterday's timestamp, not today's
+  const allTasks = await db.getAllTasks();
+  const storedTask = allTasks.find(t => t.exid === 'STUB_BUG');
+
+  TestRunner.assert(storedTask, 'Task should exist in database');
+  TestRunner.assertEquals(
+    new Date(storedTask.lastModified).toISOString(),
+    yesterdayTimestamp.toISOString(),
+    'DB timestamp should be yesterday even though the in-memory stub had today\'s date'
+  );
+});
+
 TestRunner.test('rollover: writing yesterday task without new modifications preserves timestamp', async () => {
   const yesterdayTimestamp = yesterdayAt(9, 0);
   const db = await TimesheetDB();

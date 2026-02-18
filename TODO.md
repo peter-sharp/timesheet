@@ -2,6 +2,14 @@
 
 ## Recent Completions
 
+### ✅ Fix Rollover lastModified Still Being Updated (2026-02-18)
+
+Deeper fix for rollover: `updateTask`/`updateEntry` with `preserveTimestamp: true` was preserving the in-memory `lastModified`, not the DB's stored timestamp. When `handleNewEntry` creates a task stub for a task that isn't in today's view (e.g. after rollover), the stub has `lastModified: new Date()`. The upsert then calls `updateTask(stub, { preserveTimestamp: true })` which kept today's date.
+
+**Fix:** When `preserveTimestamp: true`, read the current DB record's `lastModified` instead of trusting the in-memory value.
+
+**Tests:** New regression test added: "rollover: preserveTimestamp uses DB timestamp even when in-memory task has new Date()". All 12 tests pass.
+
 ### ✅ Fix Rollover Clearout (2026-02-17)
 
 Fixed rollover clearout not working properly. Tasks modified yesterday were appearing in today's view because:

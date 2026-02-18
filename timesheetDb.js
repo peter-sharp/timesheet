@@ -261,10 +261,23 @@ TimesheetDB.modules.push(function tasksDb() {
             const index = objectStore.index("exid");
             const keyRequest = index.getKey(task.exid);
             const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
+
+            let lastModified;
+            if (options.preserveTimestamp) {
+                // Read the current DB record to get the real stored timestamp.
+                // Never trust the in-memory value: handleNewEntry and similar code
+                // create task stubs with lastModified: new Date() for tasks that
+                // already exist in the DB with an older date.
+                const currentRequest = index.get(task.exid);
+                const currentTask = await awaitEvt(currentRequest, 'onsuccess', 'onerror');
+                lastModified = currentTask?.lastModified || task.lastModified;
+            } else {
+                lastModified = new Date();
+            }
+
             const request = objectStore.put({
                 ...task,
-                // Preserve timestamp if explicitly requested, otherwise update to now
-                lastModified: options.preserveTimestamp ? task.lastModified : new Date()
+                lastModified
             }, key);
             const taskId = await awaitEvt(request, 'onsuccess', 'onerror');
             return taskId;
@@ -562,12 +575,23 @@ TimesheetDB.modules.push(function entriesDb() {
             const index = objectStore.index("id");
             const keyRequest = index.getKey(entry.id);
             const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
+
+            let lastModified;
+            if (options.preserveTimestamp) {
+                // Read the current DB record to get the real stored timestamp,
+                // not the potentially stale in-memory value.
+                const currentRequest = index.get(entry.id);
+                const currentEntry = await awaitEvt(currentRequest, 'onsuccess', 'onerror');
+                lastModified = currentEntry?.lastModified || entry.lastModified;
+            } else {
+                lastModified = new Date();
+            }
+
             const request = objectStore.put({
                 ...entry,
                 start: new Date(entry.start),
                 end: new Date(entry.end),
-                // Preserve timestamp if explicitly requested, otherwise update to now
-                lastModified: options.preserveTimestamp ? entry.lastModified : new Date()
+                lastModified
             }, key);
             const entryId = await awaitEvt(request, 'onsuccess', 'onerror');
             return entryId;
