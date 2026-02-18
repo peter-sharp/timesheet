@@ -19,6 +19,16 @@ The app uses a **multi-adapter storage system**:
 - **localStorage**: UI state only (settings, current task, new entry, clients, version)
 - **sessionStorage**: Deletion tracking for the current session
 
+### Task Status
+
+Tasks support four statuses selectable via the checkbox:
+- **Not started** — empty checkbox (default)
+- **In progress** — blue box with a play icon
+- **On hold** — orange box with pause bars
+- **Complete** — green box with a checkmark
+
+To change status: **long press** (hold 500 ms) or **right-click** the checkbox to open the status picker dialog. A regular click still toggles between *Not started* and *Complete*.
+
 ### Key Features
 
 #### IndexedDB Implementation

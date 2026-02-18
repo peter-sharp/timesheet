@@ -2,6 +2,17 @@
 
 ## Recent Completions
 
+### ✅ Task Status Dialog on Checkbox Long Press / Right Click (2026-02-18)
+
+Added a status picker dialog to the task checkbox in `task-status.js`. Long pressing (500 ms) or right-clicking the checkbox opens a menu with four statuses:
+
+- **Not started** — empty checkbox (default)
+- **In progress** — blue box with play-triangle icon
+- **On hold** — orange box with pause-bars icon
+- **Complete** — green box with checkmark icon
+
+The dialog dispatches a `taskStatusChange` custom event. `task-list.js` relays it as `taskStatusChanged` to `app-context.js`, which persists both the new `status` field and the derived `complete` boolean. A simple click still toggles between *not started* and *complete* (backward-compatible).
+
 ### ✅ Fix Rollover lastModified Still Being Updated (2026-02-18)
 
 Deeper fix for rollover: `updateTask`/`updateEntry` with `preserveTimestamp: true` was preserving the in-memory `lastModified`, not the DB's stored timestamp. When `handleNewEntry` creates a task stub for a task that isn't in today's view (e.g. after rollover), the stub has `lastModified: new Date()`. The upsert then calls `updateTask(stub, { preserveTimestamp: true })` which kept today's date.

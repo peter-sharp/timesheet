@@ -254,6 +254,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'taskComplete':
                 this.handleTaskComplete(data);
                 break;
+            case 'taskStatusChanged':
+                this.handleTaskStatusChanged(data);
+                break;
             case 'taskSyncChanged':
                 this.handleTaskSyncChanged(data);
                 break;
@@ -640,6 +643,16 @@ customElements.define('app-context', class extends HTMLElement {
     handleTaskComplete({ exid, complete }) {
         this.tasks.value = this.tasks.value.map(x =>
             x.exid === exid ? { ...x, complete, synced: complete, lastModified: new Date() } : x
+        );
+        this.entries.value = this.entries.value.map(x =>
+            x.task === exid ? { ...x, synced: complete } : x
+        );
+    }
+
+    handleTaskStatusChanged({ exid, status }) {
+        const complete = status === "complete";
+        this.tasks.value = this.tasks.value.map(x =>
+            x.exid === exid ? { ...x, status, complete, synced: complete, lastModified: new Date() } : x
         );
         this.entries.value = this.entries.value.map(x =>
             x.task === exid ? { ...x, synced: complete } : x

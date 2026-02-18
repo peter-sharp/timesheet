@@ -302,6 +302,13 @@ class TaskList extends HTMLElement {
       }
     });
 
+    this.addEventListener("taskStatusChange", function handleTaskStatusChange(ev) {
+      const status = ev.detail?.status;
+      const exid = ev.target.closest("li")?.querySelector("[data-task]")?.innerText;
+      if (!exid || !status) return;
+      emitEvent(that, "taskStatusChanged", { exid, status });
+    });
+
     this.addEventListener("click", function handleArchiveAction(ev) {
       if (ev.target.closest("button") && ev.target.closest("[data-exid]")) {
         const btn = ev.target.closest("button");
@@ -400,10 +407,12 @@ class TaskList extends HTMLElement {
       description = "",
       total = 0,
       complete = false,
+      status = null,
     }
   ) {
     item.dataset.exid = exid;
-    item.querySelector("task-status").checked = complete;
+    const taskStatusEl = item.querySelector("task-status");
+    taskStatusEl.setAttribute("status", status || (complete ? "complete" : "not-started"));
     item.querySelector("[data-task]").innerText = exid;
     item.querySelector("[data-project]").innerText = project ? `+${project.replace(/_/g, ' ')}` : '';
     item.querySelector("[data-context]").innerText = context ? `@${context}` : '';
