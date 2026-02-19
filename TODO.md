@@ -2,6 +2,16 @@
 
 ## Recent Completions
 
+### ✅ Fix Task Display Bug — Yesterday's Tasks Still Showing (2026-02-19)
+
+Fixed two related issues causing tasks with `lastModified` from a prior day to appear in today's task list:
+
+1. **Rollover not firing on tab focus**: The `_scheduleRolloverCheck` uses `requestIdleCallback` which doesn't fire while the computer is sleeping. When the user returns to a backgrounded tab after midnight, stale yesterday state remained. Fixed by adding a synchronous date check in the `visibilitychange` handler that immediately calls `_reloadTodayData()` if the date has changed.
+
+2. **Stub tasks from entry data**: After rollover, if today's entries reference a task whose `lastModified` is from a prior day, `recalculateTaskTotals` would create a minimal stub (no description/client). Added `_ensureEntryTasksLoaded()` which loads full task data from the DB for any such tasks and updates their `lastModified` to today so they appear correctly on subsequent reloads.
+
+**Tests:** 2 new regression tests added — all 14 tests pass.
+
 ### ✅ Task Status Dialog on Checkbox Long Press / Right Click (2026-02-18)
 
 Added a status picker dialog to the task checkbox in `task-status.js`. Long pressing (500 ms) or right-clicking the checkbox opens a menu with four statuses:
