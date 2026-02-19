@@ -130,6 +130,16 @@ customElements.define('app-context', class extends HTMLElement {
         // Sync inbound from linked files when tab regains focus
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
+                // Check for date rollover immediately when tab becomes visible.
+                // requestIdleCallback won't fire while the computer is sleeping, so
+                // stale state from yesterday can persist until the user returns to the tab.
+                const now = new Date().toDateString();
+                if (now !== this._currentDate) {
+                    this._currentDate = now;
+                    this._reloadTodayData();
+                    return; // _reloadTodayData handles sync as well
+                }
+
                 requestIdleCallback(async () => {
                     try {
                         const merged = await syncInbound(this.tasks.value);
@@ -163,9 +173,38 @@ customElements.define('app-context', class extends HTMLElement {
         const freshState = await store.read();
         this.entries.value = [...freshState.entries];
         this.tasks.value = [...freshState.tasks];
+        await this._ensureEntryTasksLoaded();
         this.recalculateTaskTotals();
         this.recalculateTotals();
         await this.refreshTaskLists();
+    }
+
+    // Loads full task data for tasks referenced by today's entries but missing from
+    // today's task list (e.g. the task's lastModified is from a previous day but the
+    // user worked on it again today). Updates lastModified to today in the DB so the
+    // task appears correctly on subsequent reloads.
+    async _ensureEntryTasksLoaded() {
+        const entryExids = [...new Set(this.entries.value.map(e => e.task))];
+        const missingExids = entryExids.filter(exid => !this.tasks.value.find(t => t.exid === exid));
+        if (missingExids.length === 0) return;
+
+        const db = await TimesheetDB();
+        const allTasks = await db.getAllTasks();
+        const today = new Date();
+        const loadedTasks = [];
+
+        for (const exid of missingExids) {
+            const task = allTasks.find(t => t.exid === exid);
+            if (task) {
+                // Touch lastModified so this task is included in getTasksModifiedToday() on next load
+                await db.updateTask({ ...task, lastModified: today }, { preserveTimestamp: false });
+                loadedTasks.push({ ...task, lastModified: today });
+            }
+        }
+
+        if (loadedTasks.length > 0) {
+            this.tasks.value = [...this.tasks.value, ...loadedTasks];
+        }
     }
 
     // Refresh task lists from database (for datalist components)
@@ -192,6 +231,10 @@ customElements.define('app-context', class extends HTMLElement {
         if (settings?.timeSnapThreshold !== undefined) {
             this.timeSnapThreshold.value = settings.timeSnapThreshold;
         }
+
+        // Load full task data for any tasks referenced by today's entries but not in
+        // today's task list (e.g. task lastModified is from a prior day)
+        await this._ensureEntryTasksLoaded();
 
         // Calculate initial totals
         this.recalculateTaskTotals();

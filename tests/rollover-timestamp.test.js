@@ -438,3 +438,128 @@ TestRunner.test('rollover: full day simulation with 5 tasks and multiple entries
     );
   }
 });
+
+TestRunner.test('ensure-entry-tasks: task with yesterday lastModified but today entry loads with full data', async () => {
+  // Simulate the bug: task was last modified yesterday, but user has a new entry today.
+  // After rollover (or page reload), getTasksModifiedToday() omits the task, but
+  // _ensureEntryTasksLoaded should recover it with its full description from the DB.
+  await seedData({
+    tasks: [
+      {
+        exid: 'RECOVER_TASK',
+        description: 'Task worked on again today',
+        client: 'AcmeCorp',
+        lastModified: yesterdayAt(14, 0),
+        deleted: false
+      }
+    ],
+    entries: [
+      {
+        id: 'recover_entry1',
+        task: 'RECOVER_TASK',
+        annotation: 'Back on it',
+        start: todayAt(9, 0),
+        end: todayAt(10, 0),
+        lastModified: todayAt(10, 0),
+        deleted: false
+      }
+    ]
+  });
+
+  // Simulate what initialize receives from store.read():
+  // - tasks: [] because getTasksModifiedToday() filters out yesterday's lastModified
+  // - entries: the today entry (has today's lastModified)
+  const appContext = document.querySelector('app-context');
+  await appContext.initialize({
+    tasks: [],
+    entries: [
+      {
+        id: 'recover_entry1',
+        task: 'RECOVER_TASK',
+        annotation: 'Back on it',
+        start: todayAt(9, 0),
+        end: todayAt(10, 0),
+        lastModified: todayAt(10, 0)
+      }
+    ],
+    settings: { timeSnapThreshold: 6 },
+    newEntry: {},
+    clients: [],
+    currentTask: {},
+    deleted: [],
+    deletedTasks: []
+  });
+
+  await new Promise(r => setTimeout(r, 100));
+
+  // Task should appear with its full description (not a minimal stub)
+  const loadedTask = appContext.tasks.value.find(t => t.exid === 'RECOVER_TASK');
+  TestRunner.assert(loadedTask, 'Task should appear in tasks list when it has entries today');
+  TestRunner.assertEquals(
+    loadedTask.description,
+    'Task worked on again today',
+    'Task should have its full description loaded from DB, not an empty stub'
+  );
+  TestRunner.assertEquals(
+    loadedTask.client,
+    'AcmeCorp',
+    'Task should have its client data loaded from DB'
+  );
+
+  // DB lastModified should be updated to today (so the task appears after next reload too)
+  const db = await TimesheetDB();
+  const allTasks = await db.getAllTasks();
+  const dbTask = allTasks.find(t => t.exid === 'RECOVER_TASK');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dbTaskDate = new Date(dbTask.lastModified);
+  dbTaskDate.setHours(0, 0, 0, 0);
+  TestRunner.assertEquals(
+    dbTaskDate.toISOString(),
+    today.toISOString(),
+    'DB lastModified should be updated to today since the task has entries today'
+  );
+});
+
+TestRunner.test('ensure-entry-tasks: task with yesterday lastModified and no today entries does NOT appear', async () => {
+  await seedData({
+    tasks: [
+      {
+        exid: 'OLD_TASK',
+        description: 'Task only worked on yesterday',
+        lastModified: yesterdayAt(16, 0),
+        deleted: false
+      }
+    ],
+    entries: [
+      {
+        id: 'old_entry1',
+        task: 'OLD_TASK',
+        annotation: 'Yesterday work',
+        start: yesterdayAt(14, 0),
+        end: yesterdayAt(15, 0),
+        lastModified: yesterdayAt(15, 0),
+        deleted: false
+      }
+    ]
+  });
+
+  // Initialize with no entries today and no tasks (both filtered by date)
+  const appContext = document.querySelector('app-context');
+  await appContext.initialize({
+    tasks: [],
+    entries: [],
+    settings: { timeSnapThreshold: 6 },
+    newEntry: {},
+    clients: [],
+    currentTask: {},
+    deleted: [],
+    deletedTasks: []
+  });
+
+  await new Promise(r => setTimeout(r, 100));
+
+  // Task should NOT appear - it has no entries today
+  const loadedTask = appContext.tasks.value.find(t => t.exid === 'OLD_TASK');
+  TestRunner.assert(!loadedTask, 'Task with no entries today should NOT appear after rollover');
+});
