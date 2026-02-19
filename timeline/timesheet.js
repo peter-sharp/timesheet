@@ -166,6 +166,7 @@ class Timesheet extends HTMLElement {
                     emitEvent(el, 'clearNewEntry', {task: that.task});
                 } else if(section.dataset.new) {
                     that.task = section.querySelector('[name="task"]').value;
+                    if (!that.task) return; // Guard: don't emit newEntry without a task — prevents phantom task creation
                     const annotation = section.querySelector('[name="annotation"]').value;
                     const start = section.querySelector('[name="time_start"]').value;
                     const end = section.querySelector('[name="time_end"]').value;
@@ -176,7 +177,7 @@ class Timesheet extends HTMLElement {
                         start: start ? timeToDate(start) : null,
                         end: end ? timeToDate(end) : null,
                     });
-                } 
+                }
             
             }
         });

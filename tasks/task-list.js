@@ -273,6 +273,8 @@ class TaskList extends HTMLElement {
           primaryInput.value = "";
         } else {
           // Single task mode (preserves manual exid/client)
+          // Guard: don't submit if both raw and exid are blank (prevents phantom blank tasks)
+          if (!primaryInput.value.trim() && !elExid.value.trim()) return;
           emitEvent(that, "addTask", {
             raw: primaryInput.value,
             exid: elExid.value,

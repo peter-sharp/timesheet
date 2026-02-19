@@ -275,6 +275,8 @@ customElements.define('app-context', class extends HTMLElement {
     }
 
     handleNewEntry({ task, annotation, start, end }) {
+        if (!task) return; // Guard: ignore partial entries with no task — prevents phantom task creation
+
         this.newEntry.value = { task, annotation, start, end };
         const currentTask = this.tasks.value.find(x => x.exid === task);
 
@@ -338,8 +340,8 @@ customElements.define('app-context', class extends HTMLElement {
         entries = sortByStart(entries);
         entries = calculateGaps(entries);
 
-        // Ensure task exists
-        if (!this.tasks.value.find(t => t.exid === task)) {
+        // Ensure task exists (skip if task is empty — avoids phantom blank tasks)
+        if (task && !this.tasks.value.find(t => t.exid === task)) {
             // Load task from database if it exists (preserve timestamp)
             const db = await TimesheetDB();
             const allTasks = await db.getAllTasks();
@@ -434,6 +436,9 @@ customElements.define('app-context', class extends HTMLElement {
     }
 
     handleAddTask({ raw, exid: providedExid, client: providedClient }) {
+        // Guard: reject completely blank submissions to prevent phantom blank tasks
+        if (!raw?.trim() && !providedExid?.trim()) return;
+
         // Extract all known patterns from raw input
         const [exid, project, context, client, due, estimate, description] = extract(
             [/#(\w+)/, /\+(\S+)/, /@(\S+)/, /\bclient:(\w+)/, /\bdue:(\S+)/, /\bestimate:(\S+)/],
