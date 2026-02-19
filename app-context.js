@@ -252,7 +252,8 @@ customElements.define('app-context', class extends HTMLElement {
                 this.handleDeleteTask(data);
                 break;
             case 'taskComplete':
-                this.handleTaskComplete(data);
+                // Legacy: checkbox toggle maps to state change
+                this.handleTaskStatusChanged({ exid: data.exid, state: data.complete ? 'Complete' : 'Not Started' });
                 break;
             case 'taskStatusChanged':
                 this.handleTaskStatusChanged(data);
@@ -640,22 +641,13 @@ customElements.define('app-context', class extends HTMLElement {
         this.tasks.value = this.tasks.value.filter(x => x.exid !== exid);
     }
 
-    handleTaskComplete({ exid, complete }) {
+    handleTaskStatusChanged({ exid, state }) {
+        const synced = state === 'Complete';
         this.tasks.value = this.tasks.value.map(x =>
-            x.exid === exid ? { ...x, complete, synced: complete, lastModified: new Date() } : x
+            x.exid === exid ? { ...x, state, synced, lastModified: new Date() } : x
         );
         this.entries.value = this.entries.value.map(x =>
-            x.task === exid ? { ...x, synced: complete } : x
-        );
-    }
-
-    handleTaskStatusChanged({ exid, status }) {
-        const complete = status === "complete";
-        this.tasks.value = this.tasks.value.map(x =>
-            x.exid === exid ? { ...x, status, complete, synced: complete, lastModified: new Date() } : x
-        );
-        this.entries.value = this.entries.value.map(x =>
-            x.task === exid ? { ...x, synced: complete } : x
+            x.task === exid ? { ...x, synced } : x
         );
     }
 
