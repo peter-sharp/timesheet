@@ -2,6 +2,7 @@
 
 ## Recent Completions
 
+
 ### ✅ Refactor Task State: Replace `complete` Boolean with `state` Enum (2026-02-19)
 
 Replaced the `complete` boolean field with a `state` enum field across the entire codebase. The new `state` field stores one of four values:
@@ -17,6 +18,17 @@ Replaced the `complete` boolean field with a `state` enum field across the entir
 - `app-context.js`: `handleTaskStatusChanged` uses `state` (removed `handleTaskComplete`); legacy `taskComplete` event maps to `Not Started`/`Complete` state
 - `tasks/task-list.js`: `renderTask` maps Title Case `state` to kebab-case for `task-status` component; `taskStatusChange` event converts kebab-case back to Title Case `state`
 - Tests updated: `metadata-sync.test.js`, `rollover-timestamp.test.js`
+
+### ✅ Fix Task Display Bug — Yesterday's Tasks Still Showing (2026-02-19)
+
+Fixed two related issues causing tasks with `lastModified` from a prior day to appear in today's task list:
+
+1. **Rollover not firing on tab focus**: The `_scheduleRolloverCheck` uses `requestIdleCallback` which doesn't fire while the computer is sleeping. When the user returns to a backgrounded tab after midnight, stale yesterday state remained. Fixed by adding a synchronous date check in the `visibilitychange` handler that immediately calls `_reloadTodayData()` if the date has changed.
+
+2. **Stub tasks from entry data**: After rollover, if today's entries reference a task whose `lastModified` is from a prior day, `recalculateTaskTotals` would create a minimal stub (no description/client). Added `_ensureEntryTasksLoaded()` which loads full task data from the DB for any such tasks and updates their `lastModified` to today so they appear correctly on subsequent reloads.
+
+**Tests:** 2 new regression tests added — all 14 tests pass.
+
 
 ### ✅ Task Status Dialog on Checkbox Long Press / Right Click (2026-02-18)
 
