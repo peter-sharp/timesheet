@@ -274,7 +274,7 @@ TestRunner.test('rollover: full day simulation with 5 tasks and multiple entries
       description: 'Client meeting preparation',
       client: 'AcmeCorp',
       lastModified: yesterdayAt(9, 0),
-      complete: true,
+      state: 'Complete',
       deleted: false
     },
     {
@@ -282,7 +282,7 @@ TestRunner.test('rollover: full day simulation with 5 tasks and multiple entries
       description: 'Code review',
       project: 'WebApp',
       lastModified: yesterdayAt(10, 30),
-      complete: false,
+      state: 'Not Started',
       deleted: false
     },
     {
@@ -290,21 +290,21 @@ TestRunner.test('rollover: full day simulation with 5 tasks and multiple entries
       description: 'Bug fixes',
       project: 'API',
       lastModified: yesterdayAt(13, 0),
-      complete: true,
+      state: 'Complete',
       deleted: false
     },
     {
       exid: 'TASK4',
       description: 'Documentation',
       lastModified: yesterdayAt(15, 0),
-      complete: false,
+      state: 'Not Started',
       deleted: false
     },
     {
       exid: 'TASK5',
       description: 'Team standup',
       lastModified: yesterdayAt(16, 30),
-      complete: true,
+      state: 'Complete',
       deleted: false
     }
   ];
@@ -355,7 +355,7 @@ TestRunner.test('rollover: full day simulation with 5 tasks and multiple entries
   TestRunner.assertEquals(allEntriesBefore.length, 22, 'Should have 22 entries before rollover');
 
   // Verify some tasks are marked complete
-  const completeTasks = allTasksBefore.filter(t => t.complete);
+  const completeTasks = allTasksBefore.filter(t => t.state === 'Complete');
   TestRunner.assertEquals(completeTasks.length, 3, 'Should have 3 completed tasks');
 
   // Simulate rollover - read today's state
@@ -401,9 +401,9 @@ TestRunner.test('rollover: full day simulation with 5 tasks and multiple entries
       `Task ${originalTask.exid} timestamp should be preserved`
     );
     TestRunner.assertEquals(
-      dbTask.complete,
-      originalTask.complete,
-      `Task ${originalTask.exid} complete status should be preserved`
+      dbTask.state,
+      originalTask.state,
+      `Task ${originalTask.exid} state should be preserved`
     );
   }
 

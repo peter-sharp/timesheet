@@ -32,7 +32,7 @@ export function mergeTasks(appTasks, fileTasks) {
                 description: fileTask.description,
                 project: fileTask.project,
                 client: fileTask.client,
-                complete: fileTask.complete,
+                state: fileTask.state,
                 due: fileTask.due,
                 estimate: fileTask.estimate,
                 context: fileTask.context,
@@ -96,8 +96,8 @@ export async function syncInbound(appTasks) {
     if (doneHandle && await verifyPermission(doneHandle)) {
         const text = await readFile(doneHandle);
         const doneTasks = parseTodoTxt(text);
-        // Ensure all done.txt tasks are marked complete
-        fileTasks = fileTasks.concat(doneTasks.map(t => ({ ...t, complete: true })));
+        // Ensure all done.txt tasks are marked as Complete
+        fileTasks = fileTasks.concat(doneTasks.map(t => ({ ...t, state: 'Complete' })));
     }
 
     if (fileTasks.length === 0 && !todoHandle) return null;

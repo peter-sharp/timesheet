@@ -25,7 +25,7 @@ function mergeTasks(appTasks, fileTasks) {
                 description: fileTask.description,
                 project: fileTask.project,
                 client: fileTask.client,
-                complete: fileTask.complete,
+                state: fileTask.state,
                 due: fileTask.due,
                 estimate: fileTask.estimate,
                 context: fileTask.context,
@@ -48,7 +48,7 @@ const tasks1 = [
         project: 'TestProject',
         client: 'TestClient',
         metadata: { project_due: '2026-04-03', priority: 'high', total: '5.5' },
-        complete: false,
+        state: 'Not Started',
         deleted: false
     }
 ];
@@ -68,7 +68,7 @@ const tasks2 = [
         description: 'Completed task with metadata',
         project: 'DoneProject',
         metadata: { total: '3.25', status: 'verified' },
-        complete: true,
+        state: 'Complete',
         completedDate: '2026-02-15',
         deleted: false
     }
@@ -101,7 +101,7 @@ const appTasks4 = [
         project: 'OldProject',
         metadata: { old_key: 'old_value' },
         entries: [{ start: '2026-02-10T10:00:00Z', duration: 3600 }],
-        complete: false
+        state: 'Not Started'
     }
 ];
 
@@ -127,7 +127,7 @@ const originalTask5 = {
     due: '2026-06-01',
     estimate: '4h',
     metadata: { project_due: '2026-07-01', total: '12.75', custom_field: 'custom_value' },
-    complete: false,
+    state: 'Not Started',
     deleted: false
 };
 
@@ -152,7 +152,7 @@ const multiTasks6 = [
         description: 'Task A',
         project: 'ProjectA',
         metadata: { total: '1.5' },
-        complete: false,
+        state: 'Not Started',
         deleted: false
     },
     {
@@ -160,7 +160,7 @@ const multiTasks6 = [
         description: 'Task B',
         project: 'ProjectB',
         metadata: { total: '2.5', priority: 'high' },
-        complete: false,
+        state: 'Not Started',
         deleted: false
     },
     {
@@ -168,7 +168,7 @@ const multiTasks6 = [
         description: 'Task C',
         project: 'ProjectC',
         // No metadata
-        complete: false,
+        state: 'Not Started',
         deleted: false
     }
 ];
@@ -187,6 +187,33 @@ console.log('  ✓ Task C has no metadata:', !lines6[2].match(/\w+:\S+/) ||
     (lines6[2].match(/\w+:\S+/) && lines6[2].includes('+ProjectC')));
 console.log();
 
+// Test 7: In Progress and On Hold state tags round-trip
+const stateTasks7 = [
+    {
+        exid: 'IP1',
+        description: 'In progress task',
+        state: 'In Progress',
+        deleted: false
+    },
+    {
+        exid: 'OH1',
+        description: 'On hold task',
+        state: 'On Hold',
+        deleted: false
+    }
+];
+
+const todoContent7 = tasksToTodoTxt(stateTasks7);
+const reparsed7 = parseTodoTxt(todoContent7);
+
+console.log('Test 7 - State tags round-trip:');
+console.log('  Serialized:', todoContent7);
+console.log('  ✓ In Progress has state tag:', todoContent7.includes('state:in-progress'));
+console.log('  ✓ On Hold has state tag:', todoContent7.includes('state:on-hold'));
+console.log('  ✓ In Progress parses back:', reparsed7[0]?.state === 'In Progress');
+console.log('  ✓ On Hold parses back:', reparsed7[1]?.state === 'On Hold');
+console.log();
+
 // Summary
 const allPassed =
     todoContent1.includes('project_due:2026-04-03') &&
@@ -202,7 +229,11 @@ const allPassed =
     reparsed5[0].metadata?.total === '12.75' &&
     reparsed5[0].metadata?.custom_field === 'custom_value' &&
     lines6[0].includes('total:1.5') &&
-    lines6[1].includes('total:2.5');
+    lines6[1].includes('total:2.5') &&
+    todoContent7.includes('state:in-progress') &&
+    todoContent7.includes('state:on-hold') &&
+    reparsed7[0]?.state === 'In Progress' &&
+    reparsed7[1]?.state === 'On Hold';
 
 console.log('='.repeat(50));
 console.log(allPassed ? '✓ All tests PASSED' : '✗ Some tests FAILED');

@@ -2,6 +2,23 @@
 
 ## Recent Completions
 
+
+### ✅ Refactor Task State: Replace `complete` Boolean with `state` Enum (2026-02-19)
+
+Replaced the `complete` boolean field with a `state` enum field across the entire codebase. The new `state` field stores one of four values:
+
+- **"Not Started"** — default, no tag in todo.txt
+- **"In Progress"** — written as `state:in-progress` tag in todo.txt
+- **"On Hold"** — written as `state:on-hold` tag in todo.txt
+- **"Complete"** — written as `x YYYY-MM-DD` prefix in done.txt
+
+**Files changed:**
+- `todoTxtFormat.js`: `lineToTask` returns `state` string (replaces `complete` boolean); `taskToLine` emits `state:` tags and `x` prefix; filter functions updated
+- `syncEngine.js`: `mergeTasks` syncs `state` instead of `complete`; `syncInbound` sets `state: 'Complete'` for done.txt tasks
+- `app-context.js`: `handleTaskStatusChanged` uses `state` (removed `handleTaskComplete`); legacy `taskComplete` event maps to `Not Started`/`Complete` state
+- `tasks/task-list.js`: `renderTask` maps Title Case `state` to kebab-case for `task-status` component; `taskStatusChange` event converts kebab-case back to Title Case `state`
+- Tests updated: `metadata-sync.test.js`, `rollover-timestamp.test.js`
+
 ### ✅ Fix Task Display Bug — Yesterday's Tasks Still Showing (2026-02-19)
 
 Fixed two related issues causing tasks with `lastModified` from a prior day to appear in today's task list:
@@ -12,6 +29,7 @@ Fixed two related issues causing tasks with `lastModified` from a prior day to a
 
 **Tests:** 2 new regression tests added — all 14 tests pass.
 
+
 ### ✅ Task Status Dialog on Checkbox Long Press / Right Click (2026-02-18)
 
 Added a status picker dialog to the task checkbox in `task-status.js`. Long pressing (500 ms) or right-clicking the checkbox opens a menu with four statuses:
@@ -21,7 +39,7 @@ Added a status picker dialog to the task checkbox in `task-status.js`. Long pres
 - **On hold** — orange box with pause-bars icon
 - **Complete** — green box with checkmark icon
 
-The dialog dispatches a `taskStatusChange` custom event. `task-list.js` relays it as `taskStatusChanged` to `app-context.js`, which persists both the new `status` field and the derived `complete` boolean. A simple click still toggles between *not started* and *complete* (backward-compatible).
+The dialog dispatches a `taskStatusChange` custom event with a kebab-case status value. `task-list.js` converts it to a Title Case `state` enum value and relays it as `taskStatusChanged` to `app-context.js`, which persists the `state` field. A simple click still toggles between *not started* and *complete* (backward-compatible).
 
 ### ✅ Fix Rollover lastModified Still Being Updated (2026-02-18)
 

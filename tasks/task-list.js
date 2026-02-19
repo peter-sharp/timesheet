@@ -303,10 +303,17 @@ class TaskList extends HTMLElement {
     });
 
     this.addEventListener("taskStatusChange", function handleTaskStatusChange(ev) {
-      const status = ev.detail?.status;
+      const statusKebab = ev.detail?.status;
       const exid = ev.target.closest("li")?.querySelector("[data-task]")?.innerText;
-      if (!exid || !status) return;
-      emitEvent(that, "taskStatusChanged", { exid, status });
+      if (!exid || !statusKebab) return;
+      const STATUS_TO_STATE = {
+        "not-started": "Not Started",
+        "in-progress": "In Progress",
+        "on-hold": "On Hold",
+        "complete": "Complete",
+      };
+      const state = STATUS_TO_STATE[statusKebab] || "Not Started";
+      emitEvent(that, "taskStatusChanged", { exid, state });
     });
 
     this.addEventListener("click", function handleArchiveAction(ev) {
@@ -406,13 +413,18 @@ class TaskList extends HTMLElement {
       timingState = "stop",
       description = "",
       total = 0,
-      complete = false,
-      status = null,
+      state = "Not Started",
     }
   ) {
     item.dataset.exid = exid;
     const taskStatusEl = item.querySelector("task-status");
-    taskStatusEl.setAttribute("status", status || (complete ? "complete" : "not-started"));
+    const STATE_TO_STATUS = {
+      "Not Started": "not-started",
+      "In Progress": "in-progress",
+      "On Hold": "on-hold",
+      "Complete": "complete",
+    };
+    taskStatusEl.setAttribute("status", STATE_TO_STATUS[state] || "not-started");
     item.querySelector("[data-task]").innerText = exid;
     item.querySelector("[data-project]").innerText = project ? `+${project.replace(/_/g, ' ')}` : '';
     item.querySelector("[data-context]").innerText = context ? `@${context}` : '';

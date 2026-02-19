@@ -2,6 +2,18 @@ import extract from './utils/extract.js';
 
 const COMPLETION_RE = /^x\s+(\d{4}-\d{2}-\d{2})\s+/;
 
+// Maps from todo.txt state tag values to Title Case state enum values
+const STATE_TAG_TO_ENUM = {
+    'in-progress': 'In Progress',
+    'on-hold': 'On Hold',
+};
+
+// Maps from Title Case state enum values to todo.txt state tag values
+const STATE_ENUM_TO_TAG = {
+    'In Progress': 'in-progress',
+    'On Hold': 'on-hold',
+};
+
 export function taskToLine(task) {
     const parts = [];
     if (task.exid) parts.push(`#${task.exid}`);
@@ -11,6 +23,10 @@ export function taskToLine(task) {
     if (task.client) parts.push(`client:${task.client}`);
     if (task.due) parts.push(`due:${task.due}`);
     if (task.estimate) parts.push(`estimate:${task.estimate}`);
+    // Add state tag for non-default states (not started and complete are handled externally)
+    if (task.state && STATE_ENUM_TO_TAG[task.state]) {
+        parts.push(`state:${STATE_ENUM_TO_TAG[task.state]}`);
+    }
     // Add any additional metadata
     if (task.metadata && typeof task.metadata === 'object') {
         Object.entries(task.metadata).forEach(([key, value]) => {
@@ -18,7 +34,7 @@ export function taskToLine(task) {
         });
     }
     const line = parts.join(' ');
-    if (task.complete) {
+    if (task.state === 'Complete') {
         const date = task.completedDate || new Date().toISOString().slice(0, 10);
         return `x ${date} ${line}`;
     }
@@ -29,13 +45,13 @@ export function lineToTask(line) {
     const trimmed = line.trim();
     if (!trimmed) return null;
 
-    let complete = false;
+    let state = 'Not Started';
     let completedDate = undefined;
     let remainder = trimmed;
 
     const match = trimmed.match(COMPLETION_RE);
     if (match) {
-        complete = true;
+        state = 'Complete';
         completedDate = match[1];
         remainder = trimmed.slice(match[0].length);
     }
@@ -47,7 +63,7 @@ export function lineToTask(line) {
 
     // Extract any additional key:value metadata and clean description
     const metadata = {};
-    const knownKeys = new Set(['client', 'due', 'estimate']);
+    const knownKeys = new Set(['client', 'due', 'estimate', 'state']);
     const metadataPattern = /\b(\w+):(\S+)/g;
     let metaMatch;
     let cleanDescription = description || '';
@@ -56,7 +72,12 @@ export function lineToTask(line) {
         const key = metaMatch[1];
         const value = metaMatch[2];
 
-        // Collect unknown metadata
+        // Handle state tag: map to enum value
+        if (key === 'state' && state !== 'Complete') {
+            state = STATE_TAG_TO_ENUM[value] || 'Not Started';
+        }
+
+        // Collect unknown metadata (exclude known keys including state)
         if (!knownKeys.has(key)) {
             metadata[key] = value;
         }
@@ -73,7 +94,7 @@ export function lineToTask(line) {
         client: client || '',
         due: due || '',
         estimate: estimate || '',
-        complete,
+        state,
         completedDate
     };
 
@@ -87,14 +108,14 @@ export function lineToTask(line) {
 
 export function tasksToTodoTxt(tasks) {
     return tasks
-        .filter(t => !t.complete && !t.deleted)
+        .filter(t => t.state !== 'Complete' && !t.deleted)
         .map(taskToLine)
         .join('\n');
 }
 
 export function tasksToDoneTxt(tasks) {
     return tasks
-        .filter(t => t.complete && !t.deleted)
+        .filter(t => t.state === 'Complete' && !t.deleted)
         .map(taskToLine)
         .join('\n');
 }
