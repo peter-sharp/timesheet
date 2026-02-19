@@ -1,3 +1,4 @@
+// Small icons used inside the dialog option chips
 const STATUS_ICONS = {
     'in-progress': `<svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true"><polyline points="3,1 13,8 3,15 3,1" style="fill:white;stroke:white;stroke-width:1;stroke-linecap:round;stroke-linejoin:round" /></svg>`,
     'on-hold': `<svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="4" height="12" rx="1" style="fill:white" /><rect x="10" y="2" width="4" height="12" rx="1" style="fill:white" /></svg>`,
@@ -5,11 +6,12 @@ const STATUS_ICONS = {
     'not-started': '',
 };
 
-const STATUS_LABELS = {
-    'not-started': 'Not started',
-    'in-progress': 'In progress',
-    'on-hold': 'On hold',
-    'complete': 'Complete',
+// Larger icons rendered inside the main status-box
+const STATUS_BOX_ICONS = {
+    'in-progress': `<svg width="1.2em" height="1.2em" viewBox="0 0 16 16" aria-hidden="true"><polyline points="3,1 13,8 3,15 3,1" style="fill:white;stroke:white;stroke-width:1;stroke-linecap:round;stroke-linejoin:round" /></svg>`,
+    'on-hold': `<svg width="1.2em" height="1.2em" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="2" width="4" height="12" rx="1" style="fill:white" /><rect x="10" y="2" width="4" height="12" rx="1" style="fill:white" /></svg>`,
+    'complete': `<svg class="check-icon" width="1.2em" height="1.2em" viewBox="0 0 16 16" aria-hidden="true"><polyline class="check-stroke" points="1.5 6 4.5 9 10.5 1" style="stroke:white;fill:transparent;stroke-linecap:round;stroke-linejoin:round;stroke-width:2" /></svg>`,
+    'not-started': '',
 };
 
 const template = document.createElement("template");
@@ -182,6 +184,21 @@ template.innerHTML = /*html*/
     transform: scale(0.9);
   }
 }
+
+.check-stroke {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+}
+
+.status-box[data-status="complete"] .check-stroke {
+  animation: stroke-animation 0.3s ease forwards;
+}
+
+@keyframes stroke-animation {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
 </style>
 <div class="checkbox-container">
     <div class="sr-only">
@@ -296,9 +313,8 @@ class TaskStatus extends HTMLElement {
                 this.update({ status, checked });
                 this.hideDialog();
 
-                // Sync native checkbox
+                // Sync native checkbox state without firing change (taskStatusChange covers it)
                 this.checkBox.checked = checked;
-                this.checkBox.dispatchEvent(new Event("change", { bubbles: true }));
 
                 // Dispatch status-specific event
                 this.dispatchEvent(new CustomEvent("taskStatusChange", {
@@ -378,7 +394,7 @@ class TaskStatus extends HTMLElement {
         }
         if (this.statusBox) {
             this.statusBox.dataset.status = status || "not-started";
-            this.statusBox.innerHTML = STATUS_ICONS[status] || "";
+            this.statusBox.innerHTML = STATUS_BOX_ICONS[status] || "";
         }
     }
 }
