@@ -2,14 +2,30 @@
   "permissions": {
     "allow": [
       "Bash(tree:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(node:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(npm run test:prev-tasks:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm test:*)",
       "WebFetch(domain:github.com)",
       "Bash(pnpm exec playwright install:*)",
       "Bash(pnpm test:*)",
       "Bash(pnpm exec playwright test:*)",
-      "Bash(del c:UserspeterProjectstimesheete2edebug.spec.js)",
       "Bash(npx playwright test:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }

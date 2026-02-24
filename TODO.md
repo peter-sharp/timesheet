@@ -1,48 +1,5 @@
 # TODO.md — File System Access API: Two-Way Sync with todo.txt / done.txt
 
-## Recent Completions
-
-### ✅ Fix Task Display Bug — Yesterday's Tasks Still Showing (2026-02-19)
-
-Fixed two related issues causing tasks with `lastModified` from a prior day to appear in today's task list:
-
-1. **Rollover not firing on tab focus**: The `_scheduleRolloverCheck` uses `requestIdleCallback` which doesn't fire while the computer is sleeping. When the user returns to a backgrounded tab after midnight, stale yesterday state remained. Fixed by adding a synchronous date check in the `visibilitychange` handler that immediately calls `_reloadTodayData()` if the date has changed.
-
-2. **Stub tasks from entry data**: After rollover, if today's entries reference a task whose `lastModified` is from a prior day, `recalculateTaskTotals` would create a minimal stub (no description/client). Added `_ensureEntryTasksLoaded()` which loads full task data from the DB for any such tasks and updates their `lastModified` to today so they appear correctly on subsequent reloads.
-
-**Tests:** 2 new regression tests added — all 14 tests pass.
-
-### ✅ Task Status Dialog on Checkbox Long Press / Right Click (2026-02-18)
-
-Added a status picker dialog to the task checkbox in `task-status.js`. Long pressing (500 ms) or right-clicking the checkbox opens a menu with four statuses:
-
-- **Not started** — empty checkbox (default)
-- **In progress** — blue box with play-triangle icon
-- **On hold** — orange box with pause-bars icon
-- **Complete** — green box with checkmark icon
-
-The dialog dispatches a `taskStatusChange` custom event. `task-list.js` relays it as `taskStatusChanged` to `app-context.js`, which persists both the new `status` field and the derived `complete` boolean. A simple click still toggles between *not started* and *complete* (backward-compatible).
-
-### ✅ Fix Rollover lastModified Still Being Updated (2026-02-18)
-
-Deeper fix for rollover: `updateTask`/`updateEntry` with `preserveTimestamp: true` was preserving the in-memory `lastModified`, not the DB's stored timestamp. When `handleNewEntry` creates a task stub for a task that isn't in today's view (e.g. after rollover), the stub has `lastModified: new Date()`. The upsert then calls `updateTask(stub, { preserveTimestamp: true })` which kept today's date.
-
-**Fix:** When `preserveTimestamp: true`, read the current DB record's `lastModified` instead of trusting the in-memory value.
-
-**Tests:** New regression test added: "rollover: preserveTimestamp uses DB timestamp even when in-memory task has new Date()". All 12 tests pass.
-
-### ✅ Fix Rollover Clearout (2026-02-17)
-
-Fixed rollover clearout not working properly. Tasks modified yesterday were appearing in today's view because:
-1. When adding entries for yesterday's tasks, the code created new task objects with today's timestamp instead of loading from database
-2. Updating UI state (timingState) was incorrectly updating lastModified timestamps
-
-**Solution:** Load tasks from database when they don't exist in today's state, and only update lastModified when actual task data changes (not transient UI state).
-
-**Tests:** All rollover timestamp preservation tests pass.
-
----
-
 ## Context
 
 The timesheet PWA manages tasks in IndexedDB but has no way to sync with external files. Users want to maintain a local `todo.txt` and `done.txt` (the [todo.txt standard](https://github.com/todotxt/todo.txt)) so tasks are editable from any text editor. The File System Access API (`showOpenFilePicker`, `FileSystemFileHandle.createWritable`) works on GitHub Pages — it only needs HTTPS (no special COOP/COEP headers). Browser support is Chromium-only (Chrome, Edge).
