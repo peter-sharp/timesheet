@@ -1,6 +1,7 @@
 // Rollover timestamp preservation tests
 import TimesheetDB from '../timesheetDb.js';
 import store from '../timesheetStore.js';
+import { mergeTasks, filterRelevantFileTasks } from '../syncEngine.js';
 
 // Helper to clear and seed IndexedDB
 async function seedData({ tasks = [], entries = [] }) {
@@ -562,4 +563,108 @@ TestRunner.test('ensure-entry-tasks: task with yesterday lastModified and no tod
   // Task should NOT appear - it has no entries today
   const loadedTask = appContext.tasks.value.find(t => t.exid === 'OLD_TASK');
   TestRunner.assert(!loadedTask, 'Task with no entries today should NOT appear after rollover');
+});
+
+TestRunner.test('filesync rollover: filterRelevantFileTasks excludes old DB tasks from today\'s view', async () => {
+  // This is the regression test for the bug where file sync would bypass the
+  // daily rollover. After rollover appTasks is empty (no tasks modified today).
+  // Without the fix, mergeTasks([], fileTasks) sets lastModified: new Date() on
+  // every file task, making them all appear in today's view.
+  //
+  // The fix: filterRelevantFileTasks strips out file tasks that already exist in
+  // the DB (old tasks from a previous day) and are NOT in today's appTasks.
+
+  // Seed the DB with old tasks from yesterday
+  await seedData({
+    tasks: [
+      { exid: 'FS_OLD1', description: 'Old task 1', lastModified: yesterdayAt(9, 0), deleted: false },
+      { exid: 'FS_OLD2', description: 'Old task 2', lastModified: yesterdayAt(11, 0), deleted: false }
+    ]
+  });
+
+  // Simulate what syncInbound receives: appTasks is empty after rollover
+  const appTasks = [];
+  const appTaskExids = new Set(appTasks.map(t => t.exid));
+
+  // Build dbTaskExids from the DB (as syncInbound now does)
+  const db = await TimesheetDB();
+  const allDbTasks = await db.getAllTasks();
+  const dbTaskExids = new Set(allDbTasks.map(t => t.exid));
+
+  // File contains both old DB tasks and one genuinely new task
+  const fileTasks = [
+    { exid: 'FS_OLD1', description: 'Old task 1 from file' },
+    { exid: 'FS_OLD2', description: 'Old task 2 from file' },
+    { exid: 'FS_NEW1', description: 'Brand new task from file' }  // not in DB
+  ];
+
+  const relevant = filterRelevantFileTasks(fileTasks, appTaskExids, dbTaskExids);
+
+  TestRunner.assertEquals(
+    relevant.length,
+    1,
+    'Only the genuinely new file task should pass the filter'
+  );
+  TestRunner.assertEquals(
+    relevant[0].exid,
+    'FS_NEW1',
+    'The new task should be the one that passes through'
+  );
+
+  // Confirm old tasks are excluded
+  const hasOld1 = relevant.some(t => t.exid === 'FS_OLD1');
+  const hasOld2 = relevant.some(t => t.exid === 'FS_OLD2');
+  TestRunner.assert(!hasOld1, 'Old DB task FS_OLD1 should be filtered out');
+  TestRunner.assert(!hasOld2, 'Old DB task FS_OLD2 should be filtered out');
+
+  // After filtering, mergeTasks sees only the new task — old tasks stay out of today's view
+  const merged = mergeTasks(appTasks, relevant);
+  TestRunner.assertEquals(merged.length, 1, 'Only 1 task in today\'s view after merge');
+  TestRunner.assertEquals(merged[0].exid, 'FS_NEW1', 'New task is in today\'s view');
+});
+
+TestRunner.test('filesync rollover: filterRelevantFileTasks keeps today tasks and new tasks', async () => {
+  // When the user has been working today, file sync should still update their
+  // today tasks' metadata AND add genuinely new file tasks.
+
+  await seedData({
+    tasks: [
+      { exid: 'FS_TODAY1', description: 'Today task', lastModified: new Date(), deleted: false },
+      { exid: 'FS_OLD3', description: 'Old task 3', lastModified: yesterdayAt(14, 0), deleted: false }
+    ]
+  });
+
+  // appTasks has the today task (simulating real usage)
+  const appTasks = [
+    { exid: 'FS_TODAY1', description: 'Today task', lastModified: new Date() }
+  ];
+  const appTaskExids = new Set(appTasks.map(t => t.exid));
+
+  const db = await TimesheetDB();
+  const allDbTasks = await db.getAllTasks();
+  const dbTaskExids = new Set(allDbTasks.map(t => t.exid));
+
+  const fileTasks = [
+    { exid: 'FS_TODAY1', description: 'Today task (updated in file)' }, // today's task
+    { exid: 'FS_OLD3', description: 'Old task 3 from file' },           // old DB task
+    { exid: 'FS_BRAND_NEW', description: 'New task added in file' }     // genuinely new
+  ];
+
+  const relevant = filterRelevantFileTasks(fileTasks, appTaskExids, dbTaskExids);
+
+  // Should keep: FS_TODAY1 (in appTasks) and FS_BRAND_NEW (not in DB)
+  // Should exclude: FS_OLD3 (in DB but not in today's appTasks)
+  TestRunner.assertEquals(relevant.length, 2, 'Today task and new task should pass through');
+  TestRunner.assert(relevant.some(t => t.exid === 'FS_TODAY1'), 'Today task should pass through');
+  TestRunner.assert(relevant.some(t => t.exid === 'FS_BRAND_NEW'), 'New task should pass through');
+  TestRunner.assert(!relevant.some(t => t.exid === 'FS_OLD3'), 'Old DB task should be filtered out');
+
+  // The merged result should have the today task with updated metadata plus the new task
+  const merged = mergeTasks(appTasks, relevant);
+  const todayTask = merged.find(t => t.exid === 'FS_TODAY1');
+  TestRunner.assertEquals(
+    todayTask?.description,
+    'Today task (updated in file)',
+    'Today task description should be updated from file'
+  );
 });
