@@ -121,14 +121,15 @@ customElements.define('app-context', class extends HTMLElement {
         this.style.display = 'contents';
 
         // Listen for state update events from child components
-        this.addEventListener('updateState', this.handleStateEvent.bind(this));
+        this._handleStateEvent = this.handleStateEvent.bind(this);
+        this.addEventListener('updateState', this._handleStateEvent);
 
         // Start midnight rollover check
         this._currentDate = new Date().toDateString();
         this._scheduleRolloverCheck();
 
         // Sync inbound from linked files when tab regains focus
-        document.addEventListener('visibilitychange', () => {
+        this._handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
                 // Check for date rollover immediately when tab becomes visible.
                 // requestIdleCallback won't fire while the computer is sleeping, so
@@ -153,12 +154,19 @@ customElements.define('app-context', class extends HTMLElement {
                     }
                 });
             }
-        });
+        };
+        document.addEventListener('visibilitychange', this._handleVisibilityChange);
+    }
+
+    disconnectedCallback() {
+        this.removeEventListener('updateState', this._handleStateEvent);
+        document.removeEventListener('visibilitychange', this._handleVisibilityChange);
     }
 
     // Check if the date has rolled over (app left open past midnight)
     _scheduleRolloverCheck() {
         requestIdleCallback(() => {
+            if (!this.isConnected) return;
             const now = new Date().toDateString();
             if (now !== this._currentDate) {
                 this._currentDate = now;

@@ -203,7 +203,7 @@ class Timesheet extends HTMLElement {
         });
     }
 
-    diconnectedCallback() {
+    disconnectedCallback() {
         this.#unsubscribe.signals()
         this.#unsubscribe.state()
         this.#unsubscribe.indexTasks();
