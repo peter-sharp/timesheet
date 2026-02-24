@@ -1,5 +1,25 @@
 # TODO.md — File System Access API: Two-Way Sync with todo.txt / done.txt
 
+## Bug Fixes Applied
+
+### ✅ File sync bypasses daily rollover (fixed in v1.6.2)
+
+**Root cause:** `syncInbound` called `mergeTasks(appTasks, fileTasks)` without filtering. After
+a daily rollover `appTasks = []`, so every file task fell into the `!existing` path of
+`mergeTasks` and received `lastModified: new Date()`. Those tasks were then placed directly
+into `this.tasks.value`, making all old file tasks reappear in today's view.
+
+**Fix (syncEngine.js):** Before calling `mergeTasks`, `syncInbound` now queries all DB task
+exids and filters `fileTasks` to only pass through:
+1. File tasks already in today's `appTasks` (metadata updates for today's work)
+2. File tasks genuinely new — not present in the DB at all
+
+Old tasks from a previous day that exist in the DB but aren't in today's view are skipped.
+A new exported helper `filterRelevantFileTasks(fileTasks, appTaskExids, dbTaskExids)` encapsulates
+this logic and is unit-tested in `tests/rollover-timestamp.test.js`.
+
+---
+
 ## Context
 
 The timesheet PWA manages tasks in IndexedDB but has no way to sync with external files. Users want to maintain a local `todo.txt` and `done.txt` (the [todo.txt standard](https://github.com/todotxt/todo.txt)) so tasks are editable from any text editor. The File System Access API (`showOpenFilePicker`, `FileSystemFileHandle.createWritable`) works on GitHub Pages — it only needs HTTPS (no special COOP/COEP headers). Browser support is Chromium-only (Chrome, Edge).
