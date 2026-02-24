@@ -2,6 +2,21 @@
 
 ## Bug Fixes Applied
 
+### ✅ On Hold status freezes page (fixed in v1.6.3)
+
+**Root cause:** `task-status.js` `connectedCallback()` registered ~10 event listeners (on dialog
+buttons, the label, and the shadow checkbox) every time it ran, but `disconnectedCallback()` only
+removed 2 of them. In `task-list.js`, `renderTasks()` calls `elTotals.append(item)` for every task
+on every render, which moves existing DOM elements and triggers `disconnectedCallback` →
+`connectedCallback` cycles. Over normal usage, duplicate event listeners accumulated. When the user
+clicked a status option (e.g. "On Hold"), every duplicate click handler fired, each dispatching a
+`taskStatusChange` event and triggering a full state update + re-render cycle, causing an
+exponentially growing cascade that froze the page.
+
+**Fix (task-status.js):** Added a `_listenersReady` guard flag so event listeners are registered
+only once in the component's lifetime. Subsequent `connectedCallback` calls (from DOM moves) still
+re-initialize visual state from the `status` attribute but skip listener registration entirely.
+
 ### ✅ File sync bypasses daily rollover (fixed in v1.6.2)
 
 **Root cause:** `syncInbound` called `mergeTasks(appTasks, fileTasks)` without filtering. After
