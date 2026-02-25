@@ -256,6 +256,18 @@ class TaskStatus extends HTMLElement {
         this.state.id = this.id || Date.now();
         this.replacementCheckbox.disabled = this.checkBox.disabled;
 
+        // Initialize from native checkbox
+        const { checked } = this.checkBox;
+        const statusAttr = this.getAttribute("status");
+        const initStatus = statusAttr || (checked ? "complete" : "not-started");
+        this.update({ checked: initStatus === "complete", status: initStatus });
+
+        // Only bind event listeners once; subsequent connectedCallback calls
+        // (e.g. when the element is moved in the DOM by renderTasks) skip
+        // re-registration to prevent duplicate handlers from accumulating.
+        if (this._listenersReady) return;
+        this._listenersReady = true;
+
         // Click: toggle between not-started and complete
         this.updateCheckbox = () => {
             const { checked } = this.replacementCheckbox;
@@ -265,12 +277,6 @@ class TaskStatus extends HTMLElement {
             this.checkBox.dispatchEvent(ev);
         };
         this.replacementCheckbox.addEventListener("change", this.updateCheckbox);
-
-        // Initialize from native checkbox
-        const { checked } = this.checkBox;
-        const statusAttr = this.getAttribute("status");
-        const initStatus = statusAttr || (checked ? "complete" : "not-started");
-        this.update({ checked: initStatus === "complete", status: initStatus });
 
         // Long press detection
         let longPressTimer = null;
@@ -334,7 +340,6 @@ class TaskStatus extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.replacementCheckbox.removeEventListener("change", this.updateCheckbox);
         document.removeEventListener("click", this._clickOutsideHandler);
     }
 
