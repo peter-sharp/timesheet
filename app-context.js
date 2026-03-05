@@ -299,6 +299,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'addTasks':
                 this.handleAddTasks(data);
                 break;
+            case 'archiveTask':
+                this.handleArchiveTask(data);
+                break;
             case 'deleteTask':
                 this.handleDeleteTask(data);
                 break;
@@ -484,7 +487,7 @@ customElements.define('app-context', class extends HTMLElement {
         this.recalculateTotals();
     }
 
-    handleAddTask({ raw, exid: providedExid, client: providedClient }) {
+    async handleAddTask({ raw, exid: providedExid, client: providedClient }) {
         // Extract all known patterns from raw input
         const [exid, project, context, client, due, estimate, description] = extract(
             [/#(\w+)/, /\+(\S+)/, /@(\S+)/, /\bclient:(\w+)/, /\bdue:(\S+)/, /\bestimate:(\S+)/],
@@ -544,24 +547,46 @@ customElements.define('app-context', class extends HTMLElement {
                 t.exid === taskExid ? updatedTask : t
             );
         } else {
-            // Add new task
-            const newTask = {
-                exid: taskExid,
-                client: taskClient,
-                project: project || '',
-                context: context || '',
-                description: cleanDescription,
-                ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
-                id: Date.now(),
-                mostRecentEntry: new Date(),
-                lastModified: new Date()
-            };
+            // Check if this task exists in DB but was archived
+            const db = await TimesheetDB();
+            const allTasks = await db.getAllTasks();
+            const archivedTask = allTasks.find(t => t.exid === taskExid && t.archived);
 
-            this.tasks.value = [...this.tasks.value, newTask];
+            if (archivedTask) {
+                // Unarchive the existing task and add back to today's list
+                await db.unarchiveTask(taskExid);
+                const restoredTask = {
+                    ...archivedTask,
+                    archived: false,
+                    client: taskClient || archivedTask.client,
+                    project: project || archivedTask.project,
+                    context: context || archivedTask.context,
+                    description: cleanDescription || archivedTask.description,
+                    ...(Object.keys(metadata).length > 0 ? { metadata: { ...archivedTask.metadata, ...metadata } } : {}),
+                    lastModified: new Date()
+                };
+                this.tasks.value = [...this.tasks.value, restoredTask];
+                this.todaysTasks.value = [restoredTask, ...this.todaysTasks.value];
+            } else {
+                // Add new task
+                const newTask = {
+                    exid: taskExid,
+                    client: taskClient,
+                    project: project || '',
+                    context: context || '',
+                    description: cleanDescription,
+                    ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
+                    id: Date.now(),
+                    mostRecentEntry: new Date(),
+                    lastModified: new Date()
+                };
 
-            // Update task lists for datalist components
-            this.todaysTasks.value = [newTask, ...this.todaysTasks.value];
-            this.allTasksWithDeleted.value = [newTask, ...this.allTasksWithDeleted.value];
+                this.tasks.value = [...this.tasks.value, newTask];
+
+                // Update task lists for datalist components
+                this.todaysTasks.value = [newTask, ...this.todaysTasks.value];
+                this.allTasksWithDeleted.value = [newTask, ...this.allTasksWithDeleted.value];
+            }
         }
 
         // Update clients list
@@ -672,6 +697,23 @@ customElements.define('app-context', class extends HTMLElement {
         if (addedClients.length) {
             this.clients.value = [...this.clients.value, ...addedClients];
         }
+    }
+
+    async handleArchiveTask({ exid }) {
+        // Stop timer if this task is currently timing
+        if (this.newEntry.value.task === exid) {
+            this.handleStopTask({ exid });
+        }
+
+        // Remove from today's tasks signal
+        this.tasks.value = this.tasks.value.filter(x => x.exid !== exid);
+
+        // Update task lists
+        this.todaysTasks.value = this.todaysTasks.value.filter(x => x.exid !== exid);
+
+        // Persist archived flag directly to DB
+        const db = await TimesheetDB();
+        await db.archiveTask(exid);
     }
 
     handleDeleteTask({ exid }) {

@@ -31,6 +31,12 @@ To change status: **long press** (hold 500 ms) or **right-click** the checkbox t
 
 ### Key Features
 
+#### Task Archiving
+- Tasks can be **archived** to remove them from today's active list without deleting them
+- Archived tasks remain in the database and appear in the add-task autocomplete
+- Re-adding an archived task by name automatically unarchives it and restores it to today's list
+- Archiving stops any active timer on the task
+
 #### IndexedDB Implementation
 - **All tasks and entries** are stored in IndexedDB with soft delete functionality
 - Soft deletes use a `deleted` flag to preserve data and allow restoration
