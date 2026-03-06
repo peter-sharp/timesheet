@@ -302,6 +302,46 @@ TimesheetDB.modules.push(function tasksDb() {
             }
         }
 
+        // Archive a task - hides from today's view but keeps in DB for autocomplete
+        async function archiveTask(exid) {
+            const transaction = db.transaction(["tasks"], "readwrite");
+            const objectStore = transaction.objectStore("tasks");
+            const index = objectStore.index("exid");
+            const keyRequest = index.getKey(exid);
+            const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
+            const request = index.get(exid);
+            const task = await awaitEvt(request, 'onsuccess', 'onerror');
+            if (task && key !== undefined) {
+                const updateRequest = objectStore.put({
+                    ...task,
+                    archived: true,
+                    lastModified: new Date()
+                }, key);
+                await awaitEvt(updateRequest, 'onsuccess', 'onerror');
+            }
+            return task;
+        }
+
+        // Unarchive a task - makes it visible in today's view again
+        async function unarchiveTask(exid) {
+            const transaction = db.transaction(["tasks"], "readwrite");
+            const objectStore = transaction.objectStore("tasks");
+            const index = objectStore.index("exid");
+            const keyRequest = index.getKey(exid);
+            const key = await awaitEvt(keyRequest, 'onsuccess', 'onerror');
+            const request = index.get(exid);
+            const task = await awaitEvt(request, 'onsuccess', 'onerror');
+            if (task && key !== undefined) {
+                const updateRequest = objectStore.put({
+                    ...task,
+                    archived: false,
+                    lastModified: new Date()
+                }, key);
+                await awaitEvt(updateRequest, 'onsuccess', 'onerror');
+            }
+            return task;
+        }
+
         // Soft delete - sets deleted: true instead of removing
         async function deleteTask(exid) {
             const transaction = db.transaction(["tasks"], "readwrite");
@@ -378,7 +418,7 @@ TimesheetDB.modules.push(function tasksDb() {
             tomorrow.setDate(tomorrow.getDate() + 1);
 
             for await (const task of awaitCursor(objectStore.openCursor())) {
-                if (!task.deleted &&
+                if (!task.deleted && !task.archived &&
                     task.lastModified &&
                     task.lastModified >= today &&
                     task.lastModified < tomorrow) {
@@ -463,6 +503,8 @@ TimesheetDB.modules.push(function tasksDb() {
             updateTask,
             getTask,
             getTasks,
+            archiveTask,
+            unarchiveTask,
             deleteTask,
             getDeletedTasks,
             restoreTask,

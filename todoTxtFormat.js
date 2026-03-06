@@ -87,14 +87,14 @@ export function lineToTask(line) {
 
 export function tasksToTodoTxt(tasks) {
     return tasks
-        .filter(t => !t.complete && !t.deleted)
+        .filter(t => !t.complete && !t.deleted && !t.archived)
         .map(taskToLine)
         .join('\n');
 }
 
 export function tasksToDoneTxt(tasks) {
     return tasks
-        .filter(t => t.complete && !t.deleted)
+        .filter(t => t.complete && !t.deleted && !t.archived)
         .map(taskToLine)
         .join('\n');
 }
