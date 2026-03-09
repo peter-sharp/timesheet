@@ -457,6 +457,9 @@ class TaskList extends HTMLElement {
     if (!datalist) return;
     const $frag = document.createDocumentFragment();
     for (const task of tasks) {
+      // Skip blank tasks (no exid, or numeric-only exid with no description)
+      if (!task.exid && !task.description) continue;
+      if (/^\d{10,}$/.test(String(task.exid)) && !task.description) continue;
       const opt = document.createElement("OPTION");
       const parts = [];
       if (task.exid) parts.push(`#${task.exid}`);

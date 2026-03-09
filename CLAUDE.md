@@ -16,8 +16,8 @@ After implementing any feature or bug fix, **ALWAYS** complete the following cho
 
 Update the following version numbers (increment patch version for bug fixes, minor version for features):
 
-- **script.js**: Update `APP_VERSION` constant (currently "1.7.0")
-- **package.json**: Update `version` field (currently "1.7.0")
+- **script.js**: Update `APP_VERSION` constant (currently "1.7.1")
+- **package.json**: Update `version` field (currently "1.7.1")
 - **⚠️ IMPORTANT**: script.js and package.json versions **MUST match**
 - **timesheetStore.js**: Update `APP_VERSION` constant (currently "2.0") - only if storage schema changes
 

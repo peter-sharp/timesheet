@@ -89,6 +89,7 @@ async function runTests() {
     await import('./task-list.test.js');
     await import('./prev-tasks-history.test.js');
     await import('./rollover-timestamp.test.js');
+    await import('./blank-tasks-cleanup.test.js');
 
     // Wait a bit for tests to register and async operations to complete
     await new Promise(resolve => setTimeout(resolve, 200));

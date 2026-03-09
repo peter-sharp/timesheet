@@ -215,6 +215,49 @@ customElements.define('app-context', class extends HTMLElement {
         }
     }
 
+    // Remove blank or timestamp-only tasks from the database.
+    // A task is considered blank if it has no exid, or has a numeric-only exid
+    // (auto-generated from Date.now()) with no description.
+    async _cleanupBlankTasks(db) {
+        const allDbTasks = await db.getAllTasks();
+        const isNumericTimestamp = (exid) => /^\d{10,}$/.test(String(exid));
+
+        const blankTasks = allDbTasks.filter(t => {
+            if (!t.exid) return true;
+            if (isNumericTimestamp(t.exid) && !t.description) return true;
+            return false;
+        });
+
+        if (blankTasks.length === 0) return;
+
+        // Check which blank tasks have entries referencing them
+        const allEntries = await db.getAllEntries();
+        const entryTaskExids = new Set(allEntries.map(e => e.task));
+
+        for (const task of blankTasks) {
+            if (!task.exid) {
+                // No exid at all - can't look up, skip (shouldn't normally happen with unique index)
+                continue;
+            }
+            if (entryTaskExids.has(task.exid)) {
+                // Has real time entries - give it a description instead of deleting
+                await db.updateTask({ ...task, description: `Task ${task.exid}` });
+            } else {
+                // No entries reference it - safe to delete
+                await db.permanentlyDeleteTask(task.exid);
+            }
+        }
+
+        // Also clean up in-memory tasks array
+        this.tasks.value = this.tasks.value.filter(t => {
+            if (!t.exid) return false;
+            if (isNumericTimestamp(t.exid) && !t.description) return false;
+            return true;
+        });
+
+        console.log(`Cleaned up ${blankTasks.length} blank task(s) from database`);
+    }
+
     // Refresh task lists from database (for datalist components)
     async refreshTaskLists() {
         const db = await TimesheetDB();
@@ -248,8 +291,11 @@ customElements.define('app-context', class extends HTMLElement {
         this.recalculateTaskTotals();
         this.recalculateTotals();
 
-        // Load task lists for different datalist components
+        // Clean up blank/timestamp-only tasks from DB
         const db = await TimesheetDB();
+        await this._cleanupBlankTasks(db);
+
+        // Load task lists for different datalist components
         this.allTasks.value = await db.getRecentTasks(500);
         this.todaysTasks.value = await db.getTodaysTasks();
         this.allTasksWithDeleted.value = await db.getAllTasksIncludingDeleted(500);
@@ -330,10 +376,11 @@ customElements.define('app-context', class extends HTMLElement {
 
     handleNewEntry({ task, annotation, start, end }) {
         this.newEntry.value = { task, annotation, start, end };
+        if (!task || !task.trim()) return;
         const currentTask = this.tasks.value.find(x => x.exid === task);
 
         if (!currentTask) {
-            const newTask = { exid: task, id: Date.now(), mostRecentEntry: new Date(), total: 0, lastModified: new Date() };
+            const newTask = { exid: task, description: task, id: Date.now(), mostRecentEntry: new Date(), total: 0, lastModified: new Date() };
             this.tasks.value = [...this.tasks.value, newTask];
             this.currentTask.value = newTask;
         } else {
@@ -393,7 +440,7 @@ customElements.define('app-context', class extends HTMLElement {
         entries = calculateGaps(entries);
 
         // Ensure task exists
-        if (!this.tasks.value.find(t => t.exid === task)) {
+        if (task && task.trim() && !this.tasks.value.find(t => t.exid === task)) {
             // Load task from database if it exists (preserve timestamp)
             const db = await TimesheetDB();
             const allTasks = await db.getAllTasks();
@@ -404,7 +451,7 @@ customElements.define('app-context', class extends HTMLElement {
                 this.tasks.value = [...this.tasks.value, existingTask];
             } else {
                 // Create new task with today's timestamp
-                this.tasks.value = [...this.tasks.value, { exid: task, lastModified: new Date() }];
+                this.tasks.value = [...this.tasks.value, { exid: task, description: task, id: Date.now(), lastModified: new Date() }];
             }
         }
 
