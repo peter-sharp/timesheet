@@ -335,6 +335,9 @@ class Timesheet extends HTMLElement {
      renderTaskdatalist(tasks) {
         this.prevTasks.innerHTML = ''
         for(const task of Array.from(tasks)) {
+            // Skip blank tasks (no exid, or numeric-only exid with no description)
+            if (!task.exid && !task.description) continue;
+            if (/^\d{10,}$/.test(String(task.exid)) && !task.description) continue;
             const opt = document.createElement('OPTION');
             opt.value = task.exid;
             const parts = [];

@@ -2,6 +2,21 @@
 
 ## Bug Fixes Applied
 
+### ✅ Blank/timestamp-only tasks pollute autocomplete (fixed in v1.7.1)
+
+**Root cause:** Three code paths in `app-context.js` created task objects without proper validation:
+1. `handleNewEntry()` created tasks even when the task input was empty, and never set a `description` field.
+2. `handleChangedEntry()` created stub tasks with only `{ exid, lastModified }` — missing `id` and `description`.
+3. `handleAddTask()` fell back to `Date.now()` as the exid when no `#exid` was provided, producing entries like `#1772846833100` with no description.
+
+These incomplete tasks were persisted to IndexedDB and appeared in both the timeline and task-list autocomplete dropdowns as meaningless timestamp IDs.
+
+**Fix:**
+- Added empty-string guards in `handleNewEntry()` and `handleChangedEntry()` to prevent creating tasks with blank names.
+- Added `description` field to task objects created in both handlers.
+- Added startup cleanup in `initialize()` that removes timestamp-only tasks from the DB (or adds a description if they have real time entries).
+- Added datalist filters in both `timeline/timesheet.js` and `tasks/task-list.js` to skip blank tasks from rendering.
+
 ### ✅ On Hold status freezes page (fixed in v1.6.3)
 
 **Root cause:** `task-status.js` `connectedCallback()` registered ~10 event listeners (on dialog
