@@ -10,7 +10,6 @@ import formatPrice from "../utils/formatPrice.js";
 import format24hour from "../utils/format24Hour.js";
 import emitEvent from "../utils/emitEvent.js";
 import shallowClone from "../utils/shallowClone.js";
-import TimesheetDB from "../timesheetDb.js";
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=timesheet>
@@ -123,9 +122,9 @@ class Timesheet extends HTMLElement {
     #tasksIndex = {};
     #durationTotal;
     #durationTotalGaps;
+    #historicalDays;
+    #noMoreEntries;
     #unsubscribe = {};
-    #oldestLoadedDate = null;
-    #noMoreEntries = false;
     constructor() {
         super();
         this.append(template.content.cloneNode(true));
@@ -143,7 +142,11 @@ class Timesheet extends HTMLElement {
         const that = this;
 
         // Load more button handler
-        this.loadMoreBtn.addEventListener('click', () => this.loadPreviousDay());
+        this.loadMoreBtn.addEventListener('click', () => {
+            this.loadMoreBtn.disabled = true;
+            this.loadMoreBtn.textContent = 'Loading...';
+            emitEvent(this, 'loadPreviousDay', {});
+        });
         this.dispatchEvent(new ContextRequestEvent('state', (state, unsubscribe) => {
             this.#settings = state.settings;
             this.#newEntry = state.newEntry;
@@ -169,6 +172,15 @@ class Timesheet extends HTMLElement {
             this.#unsubscribe.datalist = effect(
                 () => this.renderTaskdatalist(this.#allTasks?.value || []),
                 this.#allTasks
+            );
+
+            this.#historicalDays = state.historicalDays;
+            this.#noMoreEntries = state.noMoreEntries;
+
+            this.#unsubscribe.historical = effect(
+                this.renderHistorical.bind(this),
+                this.#historicalDays,
+                this.#noMoreEntries
             );
 
             this.#unsubscribe.state = unsubscribe;
@@ -230,9 +242,10 @@ class Timesheet extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.#unsubscribe.signals()
-        this.#unsubscribe.state()
-        this.#unsubscribe.indexTasks();
+        this.#unsubscribe.signals?.();
+        this.#unsubscribe.state?.();
+        this.#unsubscribe.indexTasks?.();
+        this.#unsubscribe.historical?.();
     }
 
     update() {
@@ -400,38 +413,24 @@ class Timesheet extends HTMLElement {
         return entryRow.content.cloneNode(true).querySelector('section')
     }
 
-    async loadPreviousDay() {
-        if (this.#noMoreEntries) return;
+    renderHistorical() {
+        const days = this.#historicalDays?.value || [];
+        const noMore = this.#noMoreEntries?.value || false;
 
-        this.loadMoreBtn.disabled = true;
-        this.loadMoreBtn.textContent = 'Loading...';
+        // Clear and re-render all historical day sections
+        this.historicalContainer.innerHTML = '';
+        for (const day of days) {
+            const tasksIndex = day.tasks.reduce((acc, t) => ({ ...acc, [t.exid]: t }), {});
+            this.renderHistoricalDay(day.date, day.entries, tasksIndex);
+        }
 
-        try {
-            const db = await TimesheetDB();
-            const searchFrom = this.#oldestLoadedDate || new Date();
-            const prevDate = await db.getPreviousDayWithEntries(searchFrom);
-
-            if (!prevDate) {
-                this.#noMoreEntries = true;
-                this.loadMoreBtn.textContent = 'No more entries';
-                this.loadMoreBtn.disabled = true;
-                return;
-            }
-
-            const entries = await db.getEntriesByDay(prevDate);
-            const taskExids = [...new Set(entries.map(e => e.task))];
-            const tasks = await db.getTasksByExids(taskExids);
-            const tasksIndex = tasks.reduce((acc, t) => ({ ...acc, [t.exid]: t }), {});
-
-            this.renderHistoricalDay(prevDate, entries, tasksIndex);
-            this.#oldestLoadedDate = prevDate;
-        } catch (e) {
-            console.error('Failed to load previous day:', e);
-        } finally {
-            if (!this.#noMoreEntries) {
-                this.loadMoreBtn.disabled = false;
-                this.loadMoreBtn.textContent = '\u25BC Load previous day';
-            }
+        // Update button state
+        if (noMore) {
+            this.loadMoreBtn.textContent = 'No more entries';
+            this.loadMoreBtn.disabled = true;
+        } else {
+            this.loadMoreBtn.disabled = false;
+            this.loadMoreBtn.textContent = '\u25BC Load previous day';
         }
     }
 

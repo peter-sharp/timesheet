@@ -13,7 +13,6 @@ import calcDuration, {
 import { playTripleBeep } from "../media.js";
 import formatPrice from "../utils/formatPrice.js";
 import getNetIncome from "../utils/getNetIncome.js";
-import TimesheetDB from "../timesheetDb.js";
 import round1dp from "../utils/round1dp.js";
 
 const template = document.createElement("template");
@@ -111,9 +110,9 @@ class TaskList extends HTMLElement {
   #currentTask;
   #newEntry;
   #durationTotal;
+  #historicalDays;
+  #noMoreEntries;
   #unsubscribe = {};
-  #oldestLoadedDate = null;
-  #noMoreEntries = false;
   constructor() {
     super();
     //implementation
@@ -129,7 +128,11 @@ class TaskList extends HTMLElement {
 
     // Only show load-more on the main tasks page (with actions feature)
     if (this.getAttribute("features")?.includes("actions")) {
-      this.loadMoreBtn.addEventListener("click", () => this.loadPreviousDay());
+      this.loadMoreBtn.addEventListener("click", () => {
+        this.loadMoreBtn.disabled = true;
+        this.loadMoreBtn.textContent = "Loading...";
+        emitEvent(this, "loadPreviousDay", {});
+      });
     } else {
       this.loadMoreBtn.hidden = true;
     }
@@ -165,6 +168,15 @@ class TaskList extends HTMLElement {
           this.#unsubscribe.datalist = effect(
             () => this.renderTaskDatalist(this.#allTasks?.value || []),
             this.#allTasks
+          );
+
+          this.#historicalDays = state.historicalDays;
+          this.#noMoreEntries = state.noMoreEntries;
+
+          this.#unsubscribe.historical = effect(
+            this.renderHistorical.bind(this),
+            this.#historicalDays,
+            this.#noMoreEntries
           );
 
           this.#unsubscribe.state = unsubscribe;
@@ -356,10 +368,11 @@ class TaskList extends HTMLElement {
     });
   }
 
-  diconnectedCallback() {
-    this.#unsubscribe.signals();
-    this.#unsubscribe.state();
-    this.#unsubscribe.tasksIndex();
+  disconnectedCallback() {
+    this.#unsubscribe.signals?.();
+    this.#unsubscribe.state?.();
+    this.#unsubscribe.tasksIndex?.();
+    this.#unsubscribe.historical?.();
   }
 
   update() {
@@ -531,52 +544,27 @@ class TaskList extends HTMLElement {
     $prevClients.append($frag);
   }
 
-  async loadPreviousDay() {
-    if (this.#noMoreEntries) return;
+  renderHistorical() {
+    const days = this.#historicalDays?.value || [];
+    const noMore = this.#noMoreEntries?.value || false;
 
-    this.loadMoreBtn.disabled = true;
-    this.loadMoreBtn.textContent = "Loading...";
-
-    try {
-      const db = await TimesheetDB();
-      const searchFrom = this.#oldestLoadedDate || new Date();
-      const prevDate = await db.getPreviousDayWithEntries(searchFrom);
-
-      if (!prevDate) {
-        this.#noMoreEntries = true;
-        this.loadMoreBtn.textContent = "No more entries";
-        this.loadMoreBtn.disabled = true;
-        return;
-      }
-
-      const entries = await db.getEntriesByDay(prevDate);
-      const taskExids = [...new Set(entries.map((e) => e.task))];
-      const tasks = await db.getTasksByExids(taskExids);
-
-      // Calculate totals per task for this day
-      const taskTotals = {};
-      for (const entry of entries) {
-        if (entry.start && entry.end) {
-          const dur = calcDuration({ start: new Date(entry.start), end: new Date(entry.end) });
-          taskTotals[entry.task] = (taskTotals[entry.task] || 0) + dur;
-        }
-      }
-
-      // Merge tasks with their day totals
-      const tasksWithTotals = tasks.map((t) => ({
+    // Clear and re-render all historical day sections
+    this.historicalContainer.innerHTML = "";
+    for (const day of days) {
+      const tasksWithTotals = day.tasks.map(t => ({
         ...t,
-        total: taskTotals[t.exid] || 0,
+        total: day.taskTotals[t.exid] || 0,
       }));
+      this.renderHistoricalTaskDay(day.date, tasksWithTotals, day.taskTotals);
+    }
 
-      this.renderHistoricalTaskDay(prevDate, tasksWithTotals, taskTotals);
-      this.#oldestLoadedDate = prevDate;
-    } catch (e) {
-      console.error("Failed to load previous day:", e);
-    } finally {
-      if (!this.#noMoreEntries) {
-        this.loadMoreBtn.disabled = false;
-        this.loadMoreBtn.textContent = "\u25BC Load previous day";
-      }
+    // Update button state
+    if (noMore) {
+      this.loadMoreBtn.textContent = "No more entries";
+      this.loadMoreBtn.disabled = true;
+    } else {
+      this.loadMoreBtn.disabled = false;
+      this.loadMoreBtn.textContent = "\u25BC Load previous day";
     }
   }
 

@@ -97,6 +97,23 @@ The `assets` array in serviceWorker.js should mirror the actual file structure. 
 - Icons: check.svg, delete.svg, pause.svg, play.svg, icon.svg, favicon.ico
 - manifest.json
 
+## Architecture: Signal-Based State Management
+
+**All state management flows through `app-context.js`.** Components must never access IndexedDB or `TimesheetDB` directly.
+
+### Pattern
+
+1. **Components subscribe to signals** via the Context/Provider system (`ContextRequestEvent`). They receive signal references and set up `effect()` subscriptions for reactive rendering.
+2. **Components emit events** to request state changes via `emitEvent(this, 'eventType', payload)`. These bubble up as `updateState` CustomEvents to `app-context.js`.
+3. **`app-context.js` handles events** in `handleStateEvent()`, performs DB operations, updates signals, and calls `persistState()`.
+4. **Read-only operations** (like `loadPreviousDay`) use `return` instead of `break` in the switch to skip `persistState()`.
+
+### Rules
+
+- **Never import `TimesheetDB` in component files** (`tasks/`, `timeline/`, or any custom element). Only `app-context.js` may import and use the database directly.
+- **Never store private DB-derived state in components.** Expose it as a signal from `app-context.js` and subscribe in the component.
+- **New features that need DB data** must: (1) add signals to `app-context.js`, (2) expose them in `stateProvider`, (3) add a handler method, (4) add a switch case in `handleStateEvent`, (5) have components subscribe to the new signals.
+
 ## Testing Strategy
 
 **This project uses the Trophy Testing Model** 🏆
