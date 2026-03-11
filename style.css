@@ -666,3 +666,63 @@ button[data-state="started"] {
 .text-align-right {
   text-align: right;
 }
+
+/* Day section header for historical data */
+.day-header {
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-text-muted);
+  padding: var(--space-3) 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+}
+
+/* Historical entries: slightly dimmed to visually recede */
+.day-section--historical {
+  opacity: 0.85;
+  margin-top: var(--space-5);
+}
+
+/* Read-only entry display (no form inputs) */
+.entry-readonly {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  padding: var(--space-3) 0;
+  font-size: 0.9rem;
+}
+
+.time-entry--readonly {
+  padding: var(--space-3) var(--space-5);
+}
+
+.task-item--readonly {
+  opacity: 0.9;
+}
+
+/* Load more button: unobtrusive */
+.load-more-btn {
+  width: 100%;
+  text-align: center;
+  padding: var(--space-4);
+  background: var(--color-button-subtle-bg);
+  border: 1px dashed var(--color-text-muted);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: 0.6em;
+  margin-top: var(--space-5);
+  font-size: 0.9rem;
+  transition: background-color 200ms;
+}
+
+.load-more-btn:hover:not(:disabled) {
+  background: var(--color-button-subtle-hover-bg);
+  color: var(--color-button-subtle-hover-text);
+}
+
+.load-more-btn:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

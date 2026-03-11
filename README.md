@@ -37,11 +37,18 @@ To change status: **long press** (hold 500 ms) or **right-click** the checkbox t
 - Re-adding an archived task by name automatically unarchives it and restores it to today's list
 - Archiving stops any active timer on the task
 
+#### Historical Data Browsing
+- Both the **Tasks** and **Timeline** pages include a "Load previous day" button below today's content
+- Each button press fetches one day of historical data from IndexedDB and displays it as a read-only dated section
+- Historical sections show entries/tasks grouped by day with totals, visually dimmed to distinguish from today
+- The button automatically finds the next day with data (skipping empty days) and disables when no more history exists
+- Zero impact on initial load time — historical data is fetched only on demand
+
 #### IndexedDB Implementation
 - **All tasks and entries** are stored in IndexedDB with soft delete functionality
 - Soft deletes use a `deleted` flag to preserve data and allow restoration
 - Daily loading optimizes performance by only loading today's modified items
-- Full history is preserved and accessible through the archive browser
+- Full history is preserved and accessible through the archive browser and historical day browsing
 - Modular plugin architecture for database schema management
 
 #### Data Indexes

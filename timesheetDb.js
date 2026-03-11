@@ -498,6 +498,23 @@ TimesheetDB.modules.push(function tasksDb() {
             return [...nonDeletedTasks, ...deletedTasks];
         }
 
+        // Given a list of entry-task exids, batch-fetch the corresponding tasks
+        async function getTasksByExids(exids) {
+            if (!exids || exids.length === 0) return [];
+            const transaction = db.transaction(["tasks"], "readonly");
+            const objectStore = transaction.objectStore("tasks");
+            const index = objectStore.index("exid");
+            const tasks = [];
+            for (const exid of exids) {
+                const request = index.get(exid);
+                const task = await awaitEvt(request, 'onsuccess', 'onerror');
+                if (task && !task.deleted) {
+                    tasks.push(task);
+                }
+            }
+            return tasks;
+        }
+
         return {
             addTask,
             updateTask,
@@ -513,7 +530,8 @@ TimesheetDB.modules.push(function tasksDb() {
             getAllTasks,
             getRecentTasks,
             getTodaysTasks,
-            getAllTasksIncludingDeleted
+            getAllTasksIncludingDeleted,
+            getTasksByExids
         }
     }
 
@@ -752,6 +770,50 @@ TimesheetDB.modules.push(function entriesDb() {
             return entries;
         }
 
+        // Returns non-deleted entries whose start falls within a specific calendar day
+        async function getEntriesByDay(date) {
+            const dayStart = new Date(date);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(date);
+            dayEnd.setHours(23, 59, 59, 999);
+            const transaction = db.transaction(["entries"], "readonly");
+            const objectStore = transaction.objectStore("entries");
+            const index = objectStore.index("start");
+            const range = IDBKeyRange.bound(dayStart, dayEnd);
+            const entries = [];
+            for await (const entry of awaitCursor(index.openCursor(range))) {
+                if (!entry.deleted) {
+                    entries.push(entry);
+                }
+            }
+            return entries;
+        }
+
+        // Find the date of the previous day with entries, searching backwards from beforeDate.
+        // Skips empty days. Returns null if no entries found within maxDaysBack days.
+        async function getPreviousDayWithEntries(beforeDate, maxDaysBack = 365) {
+            const endBound = new Date(beforeDate);
+            endBound.setHours(0, 0, 0, 0); // Start of beforeDate (exclusive upper bound)
+            const transaction = db.transaction(["entries"], "readonly");
+            const objectStore = transaction.objectStore("entries");
+            const index = objectStore.index("start");
+            const range = IDBKeyRange.upperBound(endBound, true); // exclusive
+            // Walk backwards (prev) to find the most recent entry before this date
+            for await (const entry of awaitCursor(index.openCursor(range, "prev"))) {
+                if (!entry.deleted && entry.start) {
+                    const entryDate = new Date(entry.start);
+                    entryDate.setHours(0, 0, 0, 0);
+                    // Check it's within maxDaysBack
+                    const daysDiff = (endBound.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
+                    if (daysDiff <= maxDaysBack) {
+                        return entryDate;
+                    }
+                    return null; // Too far back
+                }
+            }
+            return null; // No entries found
+        }
+
         return {
             addEntry,
             updateEntry,
@@ -762,7 +824,9 @@ TimesheetDB.modules.push(function entriesDb() {
             restoreEntry,
             permanentlyDeleteEntry,
             getEntriesModifiedToday,
-            getAllEntries
+            getAllEntries,
+            getEntriesByDay,
+            getPreviousDayWithEntries
         }
     }
 

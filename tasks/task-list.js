@@ -13,15 +13,20 @@ import calcDuration, {
 import { playTripleBeep } from "../media.js";
 import formatPrice from "../utils/formatPrice.js";
 import getNetIncome from "../utils/getNetIncome.js";
+import round1dp from "../utils/round1dp.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/ `
 <div>
-   
+
     <ul data-task-totals class="tasks unstyled-list stack" style="--gap: 1.6em"></ul>
     <section class="border-top-1 text-align-right">
             <span><time-duration data-duration-total></time-duration> <output class="opacity50" name="durationNetIncome"></output></span>
     </section>
+    <div data-historical-tasks>
+        <!-- Historical day sections will be appended here -->
+    </div>
+    <button type="button" class="load-more-btn" data-load-more>&#x25BC; Load previous day</button>
 </div>`;
 
 const taskForm = document.createElement("template");
@@ -79,6 +84,23 @@ taskRow.innerHTML = /*html*/ `
         </span>
 </li>`;
 
+const historicalTaskRow = document.createElement("template");
+historicalTaskRow.innerHTML = /*html*/ `
+<li class="task-item task-item--readonly">
+        <div class="task-item__complete">
+          <span data-status-icon></span>
+        </div>
+        <div class="task-item__content">
+        <p class="task-item__details opacity50">
+            <span data-task></span>
+            <span data-project></span>
+            <span data-client></span>
+        </p>
+        <p class="task-item__description" data-description></p>
+        </div>
+        <span class="row task-item__time"><time-duration data-task-total></time-duration></span>
+</li>`;
+
 class TaskList extends HTMLElement {
   #clients;
   #tasks;
@@ -88,6 +110,8 @@ class TaskList extends HTMLElement {
   #currentTask;
   #newEntry;
   #durationTotal;
+  #historicalDays;
+  #noMoreEntries;
   #unsubscribe = {};
   constructor() {
     super();
@@ -99,6 +123,19 @@ class TaskList extends HTMLElement {
     }
     this.appendChild(newtemplateItem(template));
     this.elTotals = this.querySelector("[data-task-totals]");
+    this.historicalContainer = this.querySelector("[data-historical-tasks]");
+    this.loadMoreBtn = this.querySelector("[data-load-more]");
+
+    // Only show load-more on the main tasks page (with actions feature)
+    if (this.getAttribute("features")?.includes("actions")) {
+      this.loadMoreBtn.addEventListener("click", () => {
+        this.loadMoreBtn.disabled = true;
+        this.loadMoreBtn.textContent = "Loading...";
+        emitEvent(this, "loadPreviousDay", {});
+      });
+    } else {
+      this.loadMoreBtn.hidden = true;
+    }
 
     const that = this;
     this.dispatchEvent(
@@ -131,6 +168,15 @@ class TaskList extends HTMLElement {
           this.#unsubscribe.datalist = effect(
             () => this.renderTaskDatalist(this.#allTasks?.value || []),
             this.#allTasks
+          );
+
+          this.#historicalDays = state.historicalDays;
+          this.#noMoreEntries = state.noMoreEntries;
+
+          this.#unsubscribe.historical = effect(
+            this.renderHistorical.bind(this),
+            this.#historicalDays,
+            this.#noMoreEntries
           );
 
           this.#unsubscribe.state = unsubscribe;
@@ -322,10 +368,11 @@ class TaskList extends HTMLElement {
     });
   }
 
-  diconnectedCallback() {
-    this.#unsubscribe.signals();
-    this.#unsubscribe.state();
-    this.#unsubscribe.tasksIndex();
+  disconnectedCallback() {
+    this.#unsubscribe.signals?.();
+    this.#unsubscribe.state?.();
+    this.#unsubscribe.tasksIndex?.();
+    this.#unsubscribe.historical?.();
   }
 
   update() {
@@ -495,6 +542,94 @@ class TaskList extends HTMLElement {
     }
     $prevClients.innerHTML = "";
     $prevClients.append($frag);
+  }
+
+  renderHistorical() {
+    const days = this.#historicalDays?.value || [];
+    const noMore = this.#noMoreEntries?.value || false;
+
+    // Clear and re-render all historical day sections
+    this.historicalContainer.innerHTML = "";
+    for (const day of days) {
+      const tasksWithTotals = day.tasks.map(t => ({
+        ...t,
+        total: day.taskTotals[t.exid] || 0,
+      }));
+      this.renderHistoricalTaskDay(day.date, tasksWithTotals, day.taskTotals);
+    }
+
+    // Update button state
+    if (noMore) {
+      this.loadMoreBtn.textContent = "No more entries";
+      this.loadMoreBtn.disabled = true;
+    } else {
+      this.loadMoreBtn.disabled = false;
+      this.loadMoreBtn.textContent = "\u25BC Load previous day";
+    }
+  }
+
+  renderHistoricalTaskDay(date, tasks, taskTotals) {
+    const section = document.createElement("section");
+    section.className = "day-section day-section--historical";
+    section.dataset.date = date.toISOString().slice(0, 10);
+
+    // Day header
+    const header = document.createElement("h3");
+    header.className = "day-header";
+    const dateLabel = document.createElement("span");
+    dateLabel.textContent = date.toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
+    header.appendChild(dateLabel);
+
+    const dayTotal = Object.values(taskTotals).reduce((sum, t) => sum + t, 0);
+    const totalLabel = document.createElement("span");
+    totalLabel.textContent = `${round1dp(dayTotal)}h`;
+    header.appendChild(totalLabel);
+    section.appendChild(header);
+
+    // Task list
+    const ul = document.createElement("ul");
+    ul.className = "tasks unstyled-list stack";
+    ul.style.setProperty("--gap", "1.6em");
+
+    for (const task of tasks) {
+      const item = historicalTaskRow.content.cloneNode(true).querySelector("li");
+
+      const statusIcon = item.querySelector("[data-status-icon]");
+      if (task.complete || task.status === "complete") {
+        statusIcon.textContent = "\u2713";
+      }
+
+      item.querySelector("[data-task]").textContent = task.exid || "";
+      item.querySelector("[data-project]").textContent = task.project
+        ? `+${task.project.replace(/_/g, " ")}`
+        : "";
+      item.querySelector("[data-client]").textContent = task.client
+        ? `client:${task.client}`
+        : "";
+
+      const descEl = item.querySelector("[data-description]");
+      descEl.textContent = task.description || "";
+      descEl.hidden = !task.description;
+
+      const totalEl = item.querySelector("[data-task-total]");
+      totalEl.setAttribute("hours", task.total || 0);
+
+      ul.appendChild(item);
+    }
+
+    section.appendChild(ul);
+
+    // Day total footer
+    const footer = document.createElement("section");
+    footer.className = "border-top-1 text-align-right";
+    footer.innerHTML = `<span>${round1dp(dayTotal)}h</span>`;
+    section.appendChild(footer);
+
+    this.historicalContainer.appendChild(section);
   }
 }
 

@@ -100,6 +100,8 @@ customElements.define('app-context', class extends HTMLElement {
     allTasks = signal([])
     todaysTasks = signal([])
     allTasksWithDeleted = signal([])
+    historicalDays = signal([])
+    noMoreEntries = signal(false)
 
     stateProvider = new ContextProvider(this, 'state', {
         settings: this.settings,
@@ -114,7 +116,9 @@ customElements.define('app-context', class extends HTMLElement {
         stats: this.stats,
         allTasks: this.allTasks,
         todaysTasks: this.todaysTasks,
-        allTasksWithDeleted: this.allTasksWithDeleted
+        allTasksWithDeleted: this.allTasksWithDeleted,
+        historicalDays: this.historicalDays,
+        noMoreEntries: this.noMoreEntries
     });
 
     connectedCallback() {
@@ -181,6 +185,9 @@ customElements.define('app-context', class extends HTMLElement {
         const freshState = await store.read();
         this.entries.value = [...freshState.entries];
         this.tasks.value = [...freshState.tasks];
+        // Reset historical browse state on day rollover
+        this.historicalDays.value = [];
+        this.noMoreEntries.value = false;
         await this._ensureEntryTasksLoaded();
         this.recalculateTaskTotals();
         this.recalculateTotals();
@@ -366,6 +373,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'import':
                 this.handleImport(data);
                 break;
+            case 'loadPreviousDay':
+                this.handleLoadPreviousDay();
+                return; // skip persistState — historical data is read-only browse
             default:
                 console.log('Unhandled event type:', type);
         }
@@ -830,6 +840,54 @@ customElements.define('app-context', class extends HTMLElement {
             this.entries.value = [...this.entries.value, ...newEntries];
         }
         this.recalculateTotals();
+    }
+
+    async handleLoadPreviousDay() {
+        if (this.noMoreEntries.value) return;
+
+        try {
+            const db = await TimesheetDB();
+            // Determine search start: use the oldest date from previously loaded days, or today
+            const days = this.historicalDays.value;
+            const searchFrom = days.length > 0
+                ? new Date(days[days.length - 1].date)
+                : new Date();
+
+            const prevDate = await db.getPreviousDayWithEntries(searchFrom);
+
+            if (!prevDate) {
+                this.noMoreEntries.value = true;
+                return;
+            }
+
+            const entries = await db.getEntriesByDay(prevDate);
+            const taskExids = [...new Set(entries.map(e => e.task))];
+            const tasks = await db.getTasksByExids(taskExids);
+
+            // Calculate totals per task for this day
+            const taskTotals = {};
+            let dayTotal = 0;
+            for (const entry of entries) {
+                if (entry.start && entry.end) {
+                    const dur = calcDuration({ start: new Date(entry.start), end: new Date(entry.end) });
+                    taskTotals[entry.task] = (taskTotals[entry.task] || 0) + dur;
+                    dayTotal += dur;
+                }
+            }
+
+            const dateKey = prevDate.toISOString().slice(0, 10);
+
+            this.historicalDays.value = [...this.historicalDays.value, {
+                date: prevDate,
+                dateKey,
+                entries,
+                tasks,
+                taskTotals,
+                dayTotal
+            }];
+        } catch (e) {
+            console.error('Failed to load previous day:', e);
+        }
     }
 
     recalculateTaskTotals() {
