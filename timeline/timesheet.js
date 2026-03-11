@@ -10,6 +10,7 @@ import formatPrice from "../utils/formatPrice.js";
 import format24hour from "../utils/format24Hour.js";
 import emitEvent from "../utils/emitEvent.js";
 import shallowClone from "../utils/shallowClone.js";
+import TimesheetDB from "../timesheetDb.js";
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=timesheet>
@@ -50,6 +51,13 @@ template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=t
                 <output name="durationTotal"></output> <output class="opacity50" name="durationNetIncome"></output>
             </div>
         </footer>
+    </div>
+
+<div id="historical_entries" class="padding-inline-start-5">
+        <!-- Historical day sections will be appended here -->
+    </div>
+    <div class="padding-inline-start-5">
+        <button type="button" class="load-more-btn" data-load-more>&#x25BC; Load previous day</button>
     </div>
 
 <datalist id="prevTasks"></datalist>
@@ -93,6 +101,17 @@ entryRowGap.innerHTML = /*html*/`
     <p class="gap-text"><time-duration data-gap></time-duration><span>gap</span></p>
 </section>`
 
+const historicalEntryRow = document.createElement('template');
+historicalEntryRow.innerHTML = /*html*/`
+<section class="time-entry time-entry-section time-entry--readonly">
+    <h3 class="entry-title entry-title--time-line"><time-duration></time-duration><span data-title></span></h3>
+    <div class="entry-readonly">
+        <span data-time-range></span>
+        <span data-task-name></span>
+        <span data-annotation class="opacity50"></span>
+    </div>
+</section>`
+
 const MILLISECONDS_PER_HOUR = 3600000
 class Timesheet extends HTMLElement {
 
@@ -105,11 +124,15 @@ class Timesheet extends HTMLElement {
     #durationTotal;
     #durationTotalGaps;
     #unsubscribe = {};
+    #oldestLoadedDate = null;
+    #noMoreEntries = false;
     constructor() {
         super();
         this.append(template.content.cloneNode(true));
         const el = this;
         this.entriesList = el.querySelector('#time_entries');
+        this.historicalContainer = el.querySelector('#historical_entries');
+        this.loadMoreBtn = el.querySelector('[data-load-more]');
         const form = el;
         this.prevTasks = form.querySelector(`#prevTasks`);
         this.state = {};
@@ -118,6 +141,9 @@ class Timesheet extends HTMLElement {
         })
         this.task = null;
         const that = this;
+
+        // Load more button handler
+        this.loadMoreBtn.addEventListener('click', () => this.loadPreviousDay());
         this.dispatchEvent(new ContextRequestEvent('state', (state, unsubscribe) => {
             this.#settings = state.settings;
             this.#newEntry = state.newEntry;
@@ -372,6 +398,109 @@ class Timesheet extends HTMLElement {
 
     newTimeentrySection() {
         return entryRow.content.cloneNode(true).querySelector('section')
+    }
+
+    async loadPreviousDay() {
+        if (this.#noMoreEntries) return;
+
+        this.loadMoreBtn.disabled = true;
+        this.loadMoreBtn.textContent = 'Loading...';
+
+        try {
+            const db = await TimesheetDB();
+            const searchFrom = this.#oldestLoadedDate || new Date();
+            const prevDate = await db.getPreviousDayWithEntries(searchFrom);
+
+            if (!prevDate) {
+                this.#noMoreEntries = true;
+                this.loadMoreBtn.textContent = 'No more entries';
+                this.loadMoreBtn.disabled = true;
+                return;
+            }
+
+            const entries = await db.getEntriesByDay(prevDate);
+            const taskExids = [...new Set(entries.map(e => e.task))];
+            const tasks = await db.getTasksByExids(taskExids);
+            const tasksIndex = tasks.reduce((acc, t) => ({ ...acc, [t.exid]: t }), {});
+
+            this.renderHistoricalDay(prevDate, entries, tasksIndex);
+            this.#oldestLoadedDate = prevDate;
+        } catch (e) {
+            console.error('Failed to load previous day:', e);
+        } finally {
+            if (!this.#noMoreEntries) {
+                this.loadMoreBtn.disabled = false;
+                this.loadMoreBtn.textContent = '\u25BC Load previous day';
+            }
+        }
+    }
+
+    renderHistoricalDay(date, entries, tasksIndex) {
+        const section = document.createElement('section');
+        section.className = 'day-section day-section--historical';
+        section.dataset.date = date.toISOString().slice(0, 10);
+
+        // Day header
+        const header = document.createElement('h3');
+        header.className = 'day-header';
+        const dateLabel = document.createElement('span');
+        dateLabel.textContent = date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+        header.appendChild(dateLabel);
+
+        // Calculate day total
+        const sorted = [...entries].sort((a, b) => new Date(a.start) - new Date(b.start));
+        let dayTotal = 0;
+        for (const entry of sorted) {
+            if (entry.start && entry.end) {
+                dayTotal += calcDuration({ start: new Date(entry.start), end: new Date(entry.end) });
+            }
+        }
+        const totalLabel = document.createElement('span');
+        totalLabel.textContent = `${round1dp(dayTotal)}h`;
+        header.appendChild(totalLabel);
+        section.appendChild(header);
+
+        // Entry list container (timeline style)
+        const entryContainer = document.createElement('div');
+        entryContainer.className = 'timeline-container padding-inline-start-5';
+
+        // Render entries in reverse chronological order (newest first, matching today's rendering)
+        for (const entry of [...sorted].reverse()) {
+            const row = historicalEntryRow.content.cloneNode(true).querySelector('section');
+
+            const start = new Date(entry.start);
+            const end = new Date(entry.end);
+            const duration = entry.start && entry.end ? calcDuration({ start, end }) : 0;
+            const hours = duration / 1; // already in hours
+            const sectionHeight = Math.max(hours * 2, 4);
+            row.style.setProperty('--section-height', `${sectionHeight}em`);
+
+            const timeDuration = row.querySelector('time-duration');
+            if (entry.start && entry.end) {
+                timeDuration.setAttribute('start', start);
+                timeDuration.setAttribute('end', end);
+            } else {
+                timeDuration.setAttribute('duration', 0);
+            }
+
+            const titleEl = row.querySelector('[data-title]');
+            const task = tasksIndex[entry.task];
+            titleEl.textContent = task ? `${task.description || task.exid} (${task.exid})` : entry.task || '';
+
+            const timeRange = row.querySelector('[data-time-range]');
+            timeRange.textContent = `${format24hour(start)} – ${format24hour(end)}`;
+
+            const taskName = row.querySelector('[data-task-name]');
+            taskName.textContent = entry.task || '';
+
+            const annotation = row.querySelector('[data-annotation]');
+            annotation.textContent = entry.annotation || '';
+
+            entryContainer.appendChild(row);
+        }
+
+        section.appendChild(entryContainer);
+        this.historicalContainer.appendChild(section);
     }
 
 }

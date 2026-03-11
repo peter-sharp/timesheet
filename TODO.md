@@ -1,5 +1,19 @@
 # TODO.md — File System Access API: Two-Way Sync with todo.txt / done.txt
 
+## Features Implemented
+
+### ✅ Lazy-load historical data — "Load previous day" (v1.8.0)
+
+Implemented Option A from `docs/lazy-load-design-options.md`:
+- Added "Load previous day" button to both Tasks and Timeline pages
+- Historical data loads one day at a time from IndexedDB on button press
+- Each day renders as a read-only section with date header and totals
+- Skips empty days automatically; disables when no more history exists
+- New IndexedDB queries: `getEntriesByDay`, `getPreviousDayWithEntries`, `getTasksByExids`
+- 12 new unit tests covering all new DB queries
+
+---
+
 ## Bug Fixes Applied
 
 ### ✅ Blank/timestamp-only tasks pollute autocomplete (fixed in v1.7.1)
