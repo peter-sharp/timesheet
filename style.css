@@ -669,7 +669,6 @@ button[data-state="started"] {
 
 /* Day section header for historical data */
 .day-header {
-  background: var(--color-background);
   border-bottom: 1px solid var(--color-text-muted);
   padding: var(--space-3) 0;
   font-size: 0.9rem;
