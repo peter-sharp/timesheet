@@ -1,9 +1,17 @@
 import extract from './utils/extract.js';
 
 const COMPLETION_RE = /^x\s+(\d{4}-\d{2}-\d{2})\s+/;
+// todo.txt priority: a single uppercase letter in parentheses at the start of an incomplete task
+const PRIORITY_RE = /^\(([A-Z])\)\s+/;
+// Optional creation date immediately following priority (or at line start if no priority)
+const CREATION_DATE_RE = /^(\d{4}-\d{2}-\d{2})\s+/;
 
 export function taskToLine(task) {
     const parts = [];
+    // TODO: add UI to set/clear priority (A–Z) on a task
+    if (task.priority) parts.push(`(${task.priority})`);
+    // TODO: auto-set creationDate when a task is first created
+    if (task.creationDate) parts.push(task.creationDate);
     if (task.exid) parts.push(`#${task.exid}`);
     if (task.description) parts.push(task.description);
     if (task.project) parts.push(`+${task.project}`);
@@ -31,13 +39,31 @@ export function lineToTask(line) {
 
     let complete = false;
     let completedDate = undefined;
+    let priority = undefined;
+    let creationDate = undefined;
     let remainder = trimmed;
 
-    const match = trimmed.match(COMPLETION_RE);
-    if (match) {
+    const completionMatch = trimmed.match(COMPLETION_RE);
+    if (completionMatch) {
         complete = true;
-        completedDate = match[1];
-        remainder = trimmed.slice(match[0].length);
+        completedDate = completionMatch[1];
+        remainder = trimmed.slice(completionMatch[0].length);
+    }
+
+    // Priority only applies to incomplete tasks per the todo.txt spec
+    if (!complete) {
+        const priorityMatch = remainder.match(PRIORITY_RE);
+        if (priorityMatch) {
+            priority = priorityMatch[1];
+            remainder = remainder.slice(priorityMatch[0].length);
+        }
+    }
+
+    // Creation date comes after priority (or at line start if no priority)
+    const creationDateMatch = remainder.match(CREATION_DATE_RE);
+    if (creationDateMatch) {
+        creationDate = creationDateMatch[1];
+        remainder = remainder.slice(creationDateMatch[0].length);
     }
 
     const [exid, project, context, client, due, estimate, description] = extract(
@@ -74,7 +100,9 @@ export function lineToTask(line) {
         due: due || '',
         estimate: estimate || '',
         complete,
-        completedDate
+        completedDate,
+        priority,
+        creationDate
     };
 
     // Only add metadata field if there are additional metadata entries

@@ -4,7 +4,7 @@ import newtemplateItem from "../utils/newTemplateItem.js";
 import { ContextRequestEvent } from "../utils/Context.js";
 import { effect } from "../utils/Signal.js";
 import emitEvent from "../utils/emitEvent.js";
-import sortByMostRecentEntry from "../utils/sortByMostRecentEntry.js";
+import sortByTodoTxt from "../utils/sortByTodoTxt.js";
 import timeLoop from "../utils/timeLoop.js";
 import calcDuration, {
   formatDurationDecimal,
@@ -417,7 +417,7 @@ class TaskList extends HTMLElement {
     let toRender = tasks.filter((x) => x && x.exid);
     console.log("Tasks after exid filter:", toRender);
 
-    toRender = toRender.sort(sortByMostRecentEntry);
+    toRender = toRender.sort(sortByTodoTxt);
 
     if (!toRender.length || elTotals.childNodes.length > toRender.length) {
       for (const x of [...elTotals.childNodes]) {
