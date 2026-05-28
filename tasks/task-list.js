@@ -1,6 +1,12 @@
 import "./task-status.js";
 import newtemplateItem from "../utils/newTemplateItem.js";
 
+function nextPriority(current) {
+    if (!current) return 'A';
+    if (current === 'Z') return '';
+    return String.fromCharCode(current.charCodeAt(0) + 1);
+}
+
 import { ContextRequestEvent } from "../utils/Context.js";
 import { effect } from "../utils/Signal.js";
 import emitEvent from "../utils/emitEvent.js";
@@ -62,6 +68,7 @@ taskRow.innerHTML = /*html*/ `
         <task-status class="task-item__complete">
           <input type="checkbox" name="complete" >
         </task-status>
+        <button class="task-item__priority" name="priority" type="button" aria-label="Set priority"></button>
         <div class="task-item__content">
         <p class="task-item__details opacity50">
             <span data-task></span>
@@ -357,6 +364,16 @@ class TaskList extends HTMLElement {
       emitEvent(that, "taskStatusChanged", { exid, status });
     });
 
+    this.addEventListener("click", function handlePriorityClick(ev) {
+      const btn = ev.target.closest('[name="priority"]');
+      if (!btn) return;
+      const li = btn.closest('[data-exid]');
+      if (!li) return;
+      const exid = li.dataset.exid;
+      const priority = nextPriority(btn.dataset.priority || '');
+      emitEvent(that, "taskPriorityChanged", { exid, priority });
+    });
+
     this.addEventListener("click", function handleArchiveAction(ev) {
       if (ev.target.closest("button") && ev.target.closest("[data-exid]")) {
         const btn = ev.target.closest("button");
@@ -457,6 +474,7 @@ class TaskList extends HTMLElement {
       total = 0,
       complete = false,
       status = null,
+      priority = "",
     }
   ) {
     item.dataset.exid = exid;
@@ -468,6 +486,12 @@ class TaskList extends HTMLElement {
     item.querySelector("[data-client]").innerText = client ? `client:${client}` : '';
     item.querySelector("[data-due]").innerText = due ? `due:${due}` : '';
     item.querySelector("[data-estimate]").innerText = estimate ? `estimate:${estimate}` : '';
+    const priorityBtn = item.querySelector('[name="priority"]');
+    if (priorityBtn) {
+        priorityBtn.textContent = priority || '';
+        priorityBtn.dataset.priority = priority || '';
+        priorityBtn.setAttribute('aria-label', priority ? `Priority ${priority}` : 'Set priority');
+    }
     const elDesc = item.querySelector("[data-description]");
     elDesc.innerText = description;
     elDesc.hidden = description.length == 0;

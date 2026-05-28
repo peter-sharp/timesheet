@@ -358,6 +358,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'deleteTask':
                 this.handleDeleteTask(data);
                 break;
+            case 'taskPriorityChanged':
+                this.handleTaskPriorityChanged(data);
+                break;
             case 'taskComplete':
                 this.handleTaskComplete(data);
                 break;
@@ -545,10 +548,15 @@ customElements.define('app-context', class extends HTMLElement {
     }
 
     async handleAddTask({ raw, exid: providedExid, client: providedClient }) {
+        // Extract todo.txt priority notation e.g. "(A) task description"
+        const priorityMatch = (raw || '').match(/^\(([A-Z])\)\s*/);
+        const inputPriority = priorityMatch ? priorityMatch[1] : undefined;
+        const rawWithoutPriority = priorityMatch ? (raw || '').slice(priorityMatch[0].length) : (raw || '');
+
         // Extract all known patterns from raw input
         const [exid, project, context, client, due, estimate, description] = extract(
             [/#(\w+)/, /\+(\S+)/, /@(\S+)/, /\bclient:(\w+)/, /\bdue:(\S+)/, /\bestimate:(\S+)/],
-            raw || ''
+            rawWithoutPriority
         );
         const taskExid = String(providedExid || exid || Date.now());
         const taskClient = providedClient || client;
@@ -589,6 +597,7 @@ customElements.define('app-context', class extends HTMLElement {
                         project: project || task.project,
                         context: context || task.context,
                         description: cleanDescription || task.description,
+                        ...(inputPriority !== undefined ? { priority: inputPriority } : {}),
                         ...(Object.keys(metadata).length > 0 ? { metadata: { ...task.metadata, ...metadata } } : {}),
                         lastModified: new Date()
                     }
@@ -632,6 +641,7 @@ customElements.define('app-context', class extends HTMLElement {
                     project: project || '',
                     context: context || '',
                     description: cleanDescription,
+                    ...(inputPriority !== undefined ? { priority: inputPriority } : {}),
                     ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
                     creationDate: new Date(),
                     id: Date.now(),
@@ -663,10 +673,15 @@ customElements.define('app-context', class extends HTMLElement {
         const addedClients = [];
 
         for (const { raw } of taskInputs) {
+            // Extract todo.txt priority notation e.g. "(A) task description"
+            const priorityMatch = (raw || '').match(/^\(([A-Z])\)\s*/);
+            const inputPriority = priorityMatch ? priorityMatch[1] : undefined;
+            const rawWithoutPriority = priorityMatch ? (raw || '').slice(priorityMatch[0].length) : (raw || '');
+
             // Extract all known patterns from raw input
             const [exid, project, context, client, due, estimate, description] = extract(
                 [/#(\w+)/, /\+(\S+)/, /@(\S+)/, /\bclient:(\w+)/, /\bdue:(\S+)/, /\bestimate:(\S+)/],
-                raw || ''
+                rawWithoutPriority
             );
             const taskExid = String(exid || Date.now() + newTasks.length);
             const taskClient = client || '';
@@ -702,6 +717,7 @@ customElements.define('app-context', class extends HTMLElement {
                     project: project || existingTask.project,
                     context: context || existingTask.context,
                     description: cleanDescription || existingTask.description,
+                    ...(inputPriority !== undefined ? { priority: inputPriority } : {}),
                     ...(Object.keys(metadata).length > 0 ? { metadata: { ...existingTask.metadata, ...metadata } } : {}),
                     lastModified: new Date()
                 });
@@ -713,6 +729,7 @@ customElements.define('app-context', class extends HTMLElement {
                     project: project || '',
                     context: context || '',
                     description: cleanDescription,
+                    ...(inputPriority !== undefined ? { priority: inputPriority } : {}),
                     ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
                     creationDate: new Date(),
                     id: Date.now() + newTasks.length,
@@ -790,6 +807,12 @@ customElements.define('app-context', class extends HTMLElement {
             this.allTasksWithDeleted.value = [...nonDeleted, ...deleted, deletedTask];
         }
         this.tasks.value = this.tasks.value.filter(x => x.exid !== exid);
+    }
+
+    handleTaskPriorityChanged({ exid, priority }) {
+        this.tasks.value = this.tasks.value.map(x =>
+            x.exid === exid ? { ...x, priority: priority || undefined, lastModified: new Date() } : x
+        );
     }
 
     handleTaskComplete({ exid, complete }) {
