@@ -58,6 +58,7 @@ const assets = [
   "./utils/round1dp.js",
   "./utils/shallowClone.js",
   "./utils/sortByMostRecentEntry.js",
+  "./utils/sortByTodoTxt.js",
   "./utils/subMonth.js",
   "./utils/subWeek.js",
   "./utils/timeLoop.js",
