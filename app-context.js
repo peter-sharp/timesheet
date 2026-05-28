@@ -390,7 +390,7 @@ customElements.define('app-context', class extends HTMLElement {
         const currentTask = this.tasks.value.find(x => x.exid === task);
 
         if (!currentTask) {
-            const newTask = { exid: task, description: task, id: Date.now(), mostRecentEntry: new Date(), total: 0, lastModified: new Date() };
+            const newTask = { exid: task, description: task, id: Date.now(), creationDate: new Date(), mostRecentEntry: new Date(), total: 0, lastModified: new Date() };
             this.tasks.value = [...this.tasks.value, newTask];
             this.currentTask.value = newTask;
         } else {
@@ -633,6 +633,7 @@ customElements.define('app-context', class extends HTMLElement {
                     context: context || '',
                     description: cleanDescription,
                     ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
+                    creationDate: new Date(),
                     id: Date.now(),
                     mostRecentEntry: new Date(),
                     lastModified: new Date()
@@ -713,6 +714,7 @@ customElements.define('app-context', class extends HTMLElement {
                     context: context || '',
                     description: cleanDescription,
                     ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
+                    creationDate: new Date(),
                     id: Date.now() + newTasks.length,
                     mostRecentEntry: new Date(),
                     lastModified: new Date()

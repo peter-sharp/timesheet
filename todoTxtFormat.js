@@ -10,8 +10,10 @@ export function taskToLine(task) {
     const parts = [];
     // TODO: add UI to set/clear priority (A–Z) on a task
     if (task.priority) parts.push(`(${task.priority})`);
-    // TODO: auto-set creationDate when a task is first created
-    if (task.creationDate) parts.push(task.creationDate);
+    if (task.creationDate) {
+        const d = task.creationDate instanceof Date ? task.creationDate : new Date(task.creationDate);
+        parts.push(d.toISOString().slice(0, 10));
+    }
     if (task.exid) parts.push(`#${task.exid}`);
     if (task.description) parts.push(task.description);
     if (task.project) parts.push(`+${task.project}`);
@@ -19,6 +21,11 @@ export function taskToLine(task) {
     if (task.client) parts.push(`client:${task.client}`);
     if (task.due) parts.push(`due:${task.due}`);
     if (task.estimate) parts.push(`estimate:${task.estimate}`);
+    // Append full-precision creation datetime for roundtrip fidelity
+    if (task.creationDate) {
+        const d = task.creationDate instanceof Date ? task.creationDate : new Date(task.creationDate);
+        parts.push(`creationDate:${d.toISOString().slice(0, -1)}`);
+    }
     // Add any additional metadata
     if (task.metadata && typeof task.metadata === 'object') {
         Object.entries(task.metadata).forEach(([key, value]) => {
@@ -89,6 +96,12 @@ export function lineToTask(line) {
 
         // Remove ALL key:value patterns from description (both known and unknown)
         cleanDescription = cleanDescription.replace(metaMatch[0], '');
+    }
+
+    // If the full-precision datetime was stored as metadata, restore it as a Date object
+    if (metadata.creationDate) {
+        creationDate = new Date(metadata.creationDate);
+        delete metadata.creationDate;
     }
 
     const task = {

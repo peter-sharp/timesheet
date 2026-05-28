@@ -22,16 +22,22 @@ export default function sortByTodoTxt(a, b) {
         }
     }
 
-    // TODO: within the same priority bucket, respect original list insertion order
-    //       once we persist a stable sequence number on tasks.
-
     // Secondary: creation date ascending (oldest tasks first)
-    const aTime = a.creationDate
-        ? new Date(a.creationDate).getTime()
-        : new Date(a.mostRecentEntry || 0).getTime();
-    const bTime = b.creationDate
-        ? new Date(b.creationDate).getTime()
-        : new Date(b.mostRecentEntry || 0).getTime();
+    // Normalise to YYYY-MM-DD string — creationDate may be a Date object (app-created)
+    // or a date string (imported from todo.txt); compare at day granularity per todo.txt spec
+    const toDateStr = (val) => val instanceof Date
+        ? val.toISOString().slice(0, 10)
+        : val;
 
-    return aTime - bTime;
+    const aDate = a.creationDate
+        ? toDateStr(a.creationDate)
+        : (a.mostRecentEntry ? toDateStr(new Date(a.mostRecentEntry)) : '');
+    const bDate = b.creationDate
+        ? toDateStr(b.creationDate)
+        : (b.mostRecentEntry ? toDateStr(new Date(b.mostRecentEntry)) : '');
+
+    if (aDate !== bDate) return aDate < bDate ? -1 : 1;
+
+    // Tertiary: stable insertion order by id (millisecond timestamp set at creation)
+    return (a.id || 0) - (b.id || 0);
 }
