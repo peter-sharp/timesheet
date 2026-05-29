@@ -8,11 +8,15 @@ const CREATION_DATE_RE = /^(\d{4}-\d{2}-\d{2})\s+/;
 
 export function taskToLine(task) {
     const parts = [];
-    // TODO: add UI to set/clear priority (A–Z) on a task
-    if (task.priority) parts.push(`(${task.priority})`);
-    if (task.creationDate) {
-        const d = task.creationDate instanceof Date ? task.creationDate : new Date(task.creationDate);
-        parts.push(d.toISOString().slice(0, 10));
+    // Priority and bare creation date only apply to incomplete tasks per the todo.txt spec.
+    // For completed tasks, creationDate is preserved via the creationDate: metadata key below.
+    if (!task.complete) {
+        // TODO: add UI to set/clear priority (A–Z) on a task
+        if (task.priority) parts.push(`(${task.priority})`);
+        if (task.creationDate) {
+            const d = task.creationDate instanceof Date ? task.creationDate : new Date(task.creationDate);
+            parts.push(d.toISOString().slice(0, 10));
+        }
     }
     if (task.exid) parts.push(`#${task.exid}`);
     if (task.description) parts.push(task.description);
