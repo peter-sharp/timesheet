@@ -393,7 +393,6 @@ class TaskList extends HTMLElement {
   }
 
   update() {
-    console.log("TaskList update called with tasks:", this.#tasks?.value);
     this.renderTasks({
       settings: this.#settings.value,
       tasks: this.#tasks.value,
@@ -415,39 +414,25 @@ class TaskList extends HTMLElement {
     for (const task of this.#tasks.value) {
       this.#tasksIndex[task.exid] = task;
     }
-    console.log("Indexed tasks", this.#tasksIndex);
   }
 
   renderTasks({ tasks = [], settings = {}, durationTotal = 0 }) {
     const elTotals = this.elTotals;
-    
-    console.log("Original tasks:", tasks);
-    
-    // Log tasks without exid for debugging
-    if (tasks && tasks.length) {
-      const tasksWithoutExid = tasks.filter(x => !x.exid);
-      if (tasksWithoutExid.length) {
-        console.warn("Tasks without exid:", tasksWithoutExid);
-      }
-    }
 
     let toRender = tasks.filter((x) => x && x.exid);
-    console.log("Tasks after exid filter:", toRender);
-
     toRender = toRender.sort(sortByTodoTxt);
 
-    if (!toRender.length || elTotals.childNodes.length > toRender.length) {
-      for (const x of [...elTotals.childNodes]) {
-        x.remove();
-      }
+    // Build map of existing elements by exid so we can reuse them
+    const existingItems = {};
+    for (const child of elTotals.children) {
+      if (child.dataset.exid) existingItems[child.dataset.exid] = child;
     }
 
-    for (let task of toRender) {
-      let item = elTotals.querySelector(`[data-exid="${task.exid}"]`);
+    // Clear and rebuild in sorted order, reusing existing elements
+    while (elTotals.firstChild) elTotals.removeChild(elTotals.firstChild);
 
-      if (!item) {
-        item = newtemplateItem(taskRow);
-      }
+    for (let task of toRender) {
+      const item = existingItems[task.exid] || newtemplateItem(taskRow);
       elTotals.append(item);
       this.renderTask(item, task);
     }
