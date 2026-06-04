@@ -102,6 +102,8 @@ customElements.define('app-context', class extends HTMLElement {
     allTasksWithDeleted = signal([])
     historicalDays = signal([])
     noMoreEntries = signal(false)
+    weeklyStats = signal(null)
+    monthlyStats = signal(null)
 
     stateProvider = new ContextProvider(this, 'state', {
         settings: this.settings,
@@ -118,7 +120,9 @@ customElements.define('app-context', class extends HTMLElement {
         todaysTasks: this.todaysTasks,
         allTasksWithDeleted: this.allTasksWithDeleted,
         historicalDays: this.historicalDays,
-        noMoreEntries: this.noMoreEntries
+        noMoreEntries: this.noMoreEntries,
+        weeklyStats: this.weeklyStats,
+        monthlyStats: this.monthlyStats
     });
 
     connectedCallback() {
@@ -379,6 +383,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'loadPreviousDay':
                 this.handleLoadPreviousDay();
                 return; // skip persistState — historical data is read-only browse
+            case 'loadStats':
+                this.handleLoadStats();
+                return; // skip persistState — stats are derived read-only data
             default:
                 console.log('Unhandled event type:', type);
         }
@@ -912,6 +919,71 @@ customElements.define('app-context', class extends HTMLElement {
             }];
         } catch (e) {
             console.error('Failed to load previous day:', e);
+        }
+    }
+
+    async handleLoadStats() {
+        try {
+            const db = await TimesheetDB();
+            const now = new Date();
+
+            // Month range
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            const daysInMonth = monthEnd.getDate();
+
+            // Week range (Monday-based)
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+            weekStart.setHours(0, 0, 0, 0);
+
+            // Fetch all entries for this month (indexed range scan on 'start')
+            const monthEntries = await db.getEntriesByDateRange(monthStart, monthEnd);
+
+            const sumHours = (entries) => entries.reduce((sum, e) => {
+                if (!e.start || !e.end) return sum;
+                return sum + calcDuration({ start: new Date(e.start), end: new Date(e.end) });
+            }, 0);
+
+            // Fetch tasks modified this month (indexed range scan on 'lastModified')
+            const monthTasks = await db.getTasksModifiedInRange(monthStart, monthEnd);
+            const completedTasks = monthTasks.filter(t => t.complete);
+
+            // Build daily chart data for days 1..today
+            const todayDay = now.getDate();
+            const dailyHours = [];
+            const dailyCompletions = [];
+            for (let day = 1; day <= todayDay; day++) {
+                const dayStart = new Date(now.getFullYear(), now.getMonth(), day, 0, 0, 0, 0);
+                const dayEnd   = new Date(now.getFullYear(), now.getMonth(), day, 23, 59, 59, 999);
+                const dayEntries = monthEntries.filter(e =>
+                    e.start && new Date(e.start) >= dayStart && new Date(e.start) <= dayEnd);
+                dailyHours.push({ x: day, y: Math.round(sumHours(dayEntries) * 10) / 10 });
+                const done = completedTasks.filter(t =>
+                    t.lastModified && new Date(t.lastModified) >= dayStart &&
+                    new Date(t.lastModified) <= dayEnd).length;
+                dailyCompletions.push({ x: day, y: done });
+            }
+
+            const monthlyHours = Math.round(sumHours(monthEntries) * 10) / 10;
+            const monthlyTasksDone = completedTasks.length;
+
+            const weeklyTasksDone = completedTasks.filter(t =>
+                t.lastModified && new Date(t.lastModified) >= weekStart).length;
+            const weekEntries = monthEntries.filter(e =>
+                e.start && new Date(e.start) >= weekStart);
+            const weeklyHours = Math.round(sumHours(weekEntries) * 10) / 10;
+
+            this.weeklyStats.value = { hours: weeklyHours, tasksCompleted: weeklyTasksDone };
+            this.monthlyStats.value = {
+                hours: monthlyHours,
+                tasksCompleted: monthlyTasksDone,
+                dailyHours,
+                dailyCompletions,
+                daysInMonth
+            };
+        } catch (e) {
+            console.error('Failed to load stats:', e);
         }
     }
 

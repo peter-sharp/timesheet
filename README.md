@@ -5,6 +5,14 @@ A simple time tracking app
 
 For detailed requirements and implementation tasks, see [REQUIREMENTS.md](./REQUIREMENTS.md)
 
+## Features
+
+- **Tasks** — Track tasks with priorities, statuses, and time entries
+- **Timeline** — View and edit time entries; lazy-load historical days
+- **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts
+- **Settings** — Customize theme color, focus interval, time snap, and weekly/monthly goals
+- **File Sync** — Two-way sync with todo.txt / done.txt via File System Access API
+
 ## Architecture Overview
 
 *For detailed requirements and current tasks, see [REQUIREMENTS.md](./REQUIREMENTS.md)*

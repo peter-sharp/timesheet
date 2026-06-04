@@ -515,6 +515,19 @@ TimesheetDB.modules.push(function tasksDb() {
             return tasks;
         }
 
+        // Returns non-deleted tasks whose lastModified falls within [startDate, endDate]
+        async function getTasksModifiedInRange(startDate, endDate) {
+            const transaction = db.transaction(["tasks"], "readonly");
+            const objectStore = transaction.objectStore("tasks");
+            const index = objectStore.index("lastModified");
+            const range = IDBKeyRange.bound(new Date(startDate), new Date(endDate));
+            const tasks = [];
+            for await (const task of awaitCursor(index.openCursor(range))) {
+                if (!task.deleted) tasks.push(task);
+            }
+            return tasks;
+        }
+
         return {
             addTask,
             updateTask,
@@ -531,7 +544,8 @@ TimesheetDB.modules.push(function tasksDb() {
             getRecentTasks,
             getTodaysTasks,
             getAllTasksIncludingDeleted,
-            getTasksByExids
+            getTasksByExids,
+            getTasksModifiedInRange
         }
     }
 
@@ -789,6 +803,21 @@ TimesheetDB.modules.push(function entriesDb() {
             return entries;
         }
 
+        // Returns non-deleted entries whose start falls within [startDate, endDate]
+        async function getEntriesByDateRange(startDate, endDate) {
+            const transaction = db.transaction(["entries"], "readonly");
+            const objectStore = transaction.objectStore("entries");
+            const index = objectStore.index("start");
+            const range = IDBKeyRange.bound(startDate, endDate);
+            const entries = [];
+            for await (const entry of awaitCursor(index.openCursor(range))) {
+                if (!entry.deleted) {
+                    entries.push(entry);
+                }
+            }
+            return entries;
+        }
+
         // Find the date of the previous day with entries, searching backwards from beforeDate.
         // Skips empty days. Returns null if no entries found within maxDaysBack days.
         async function getPreviousDayWithEntries(beforeDate, maxDaysBack = 365) {
@@ -826,6 +855,7 @@ TimesheetDB.modules.push(function entriesDb() {
             getEntriesModifiedToday,
             getAllEntries,
             getEntriesByDay,
+            getEntriesByDateRange,
             getPreviousDayWithEntries
         }
     }

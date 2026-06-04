@@ -49,7 +49,36 @@
   --color-chart-axis-line: rgba(255, 255, 255, 0.3);
   --color-chart-tick: rgba(255, 255, 255, 0.2);
   --color-chart-tick-label: var(--color-text-muted);
+  --color-chart-goal: rgba(255, 200, 50, 0.8);
 }
+
+/* Stats page */
+.stats-table { width: 100%; border-collapse: collapse; }
+.stats-table th, .stats-table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.stats-table thead th { color: var(--color-text-muted); font-weight: normal; font-size: 0.9em; }
+
+.stats-goals { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); list-style: none; margin: 0; padding: 0; }
+.stats-goals > div { display: flex; flex-direction: column; gap: var(--space-2); }
+.stats-goals dt { color: var(--color-text-muted); font-size: 0.85em; }
+.stats-goals dd { margin: 0; }
+.stats-goals output { display: block; margin-bottom: var(--space-2); font-size: 0.95em; }
+.stats-goals progress {
+  display: block;
+  width: 100%;
+  height: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.1);
+}
+.stats-goals progress::-webkit-progress-bar { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.stats-goals progress::-webkit-progress-value { background: var(--color-chart-primary); border-radius: 3px; }
+.stats-goals progress::-moz-progress-bar { background: var(--color-chart-primary); border-radius: 3px; }
 html {
   font-size: 112.5%;
   width: 100%;
