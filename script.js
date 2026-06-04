@@ -9,13 +9,14 @@ import "./pie-progress.js";
 import "./tasks/task-status.js";
 import "./file-sync-menu.js";
 import "./settings-form.js";
+import "./stats/stats.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
 import { offsetHue, hexToHsla } from "./utils/colorUtils.js";
 import store from "./timesheetStore.js";
 import { effect } from "./utils/Signal.js";
 
-const APP_VERSION = "1.9.3";
+const APP_VERSION = "1.9.4";
 
 (async () => {
     // Register service worker

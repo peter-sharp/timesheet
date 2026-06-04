@@ -52,6 +52,13 @@ customElements.define('settings-form', class extends HTMLElement {
                     formData.timeSnapThreshold = parseInt(formData.timeSnapThreshold, 10);
                 }
 
+                // Convert goal fields to numbers
+                for (const key of ['weeklyHoursGoal', 'monthlyHoursGoal', 'weeklyTasksGoal', 'monthlyTasksGoal']) {
+                    if (formData[key] !== undefined && formData[key] !== '') {
+                        formData[key] = parseInt(formData[key], 10) || 0;
+                    }
+                }
+
                 this.dispatchEvent(new CustomEvent('updateState', {
                     bubbles: true,
                     detail: { type: 'updateSettings', ...formData }
@@ -173,6 +180,25 @@ customElements.define('settings-form', class extends HTMLElement {
                         step="1"
                     />
                 </p>
+                <fieldset>
+                    <legend>Goals</legend>
+                    <p>
+                        <label for="settings_weekly_hours_goal">Weekly Hours Goal</label>
+                        <input id="settings_weekly_hours_goal" type="number" name="weeklyHoursGoal" min="0" step="1" />
+                    </p>
+                    <p>
+                        <label for="settings_monthly_hours_goal">Monthly Hours Goal</label>
+                        <input id="settings_monthly_hours_goal" type="number" name="monthlyHoursGoal" min="0" step="1" />
+                    </p>
+                    <p>
+                        <label for="settings_weekly_tasks_goal">Weekly Tasks Goal</label>
+                        <input id="settings_weekly_tasks_goal" type="number" name="weeklyTasksGoal" min="0" step="1" />
+                    </p>
+                    <p>
+                        <label for="settings_monthly_tasks_goal">Monthly Tasks Goal</label>
+                        <input id="settings_monthly_tasks_goal" type="number" name="monthlyTasksGoal" min="0" step="1" />
+                    </p>
+                </fieldset>
                 <button type="submit">Save</button>
             </form>
         `;

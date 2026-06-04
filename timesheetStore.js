@@ -13,7 +13,11 @@ const INITIAL_STATE = {
     settings: {
         color: "#112233",
         focusInterval: 50 / 60, // 50 minutes in hours
-        timeSnapThreshold: 6
+        timeSnapThreshold: 6,
+        weeklyHoursGoal: 40,
+        monthlyHoursGoal: 160,
+        weeklyTasksGoal: 10,
+        monthlyTasksGoal: 40
     }
 };
 
