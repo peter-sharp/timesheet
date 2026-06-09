@@ -6,6 +6,15 @@ This document contains important instructions for AI assistants (Claude) working
 
 After implementing any feature or bug fix, **ALWAYS** complete the following chores before committing:
 
+### 0. Remove Deprecated Functionality
+
+Before or alongside implementing a feature, check whether it supersedes any existing functionality:
+
+- **Identify overlap**: Does the new feature cover what an existing UI element, method, or signal already does?
+- **Remove the old code**: Delete deprecated HTML elements (inputs, datalists, buttons), their rendering methods, signal subscriptions, and private fields.
+- **Remove or update tests**: Delete test files and test cases that specifically test the deprecated functionality. Keep tests for underlying DB/utility functions only if those functions are still used.
+- **Clean up downstream**: If a signal or state property is no longer consumed by any component after the removal, remove it from `app-context.js` too.
+
 ### 1. Update Documentation
 
 - **README.md**: Update if user-facing features changed or installation steps are affected
