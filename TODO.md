@@ -2,6 +2,15 @@
 
 ## Features Implemented
 
+### ✅ Task input search/filter (v1.10.0)
+
+The main task input bar now doubles as a live search. Typing filters the task list into three sections:
+- **Today** — matches in today's task list (interact normally)
+- **Archived** — matches in historical/archived tasks, with "+ Add to today" to restore them
+- **Create** — always-visible option to create the typed text as a new task
+
+Escape clears the filter; `×` button clears inline. Batch input mode (Ctrl+Enter / paste) bypasses the filter. Filter resets on navigation away from Tasks.
+
 ### ✅ Lazy-load historical data — "Load previous day" (v1.8.0)
 
 Implemented Option A from `docs/lazy-load-design-options.md`:

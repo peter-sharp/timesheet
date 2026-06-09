@@ -104,6 +104,8 @@ customElements.define('app-context', class extends HTMLElement {
     noMoreEntries = signal(false)
     weeklyStats = signal(null)
     monthlyStats = signal(null)
+    filterQuery = signal('')
+    archivedSearchResults = signal([])
 
     stateProvider = new ContextProvider(this, 'state', {
         settings: this.settings,
@@ -122,7 +124,9 @@ customElements.define('app-context', class extends HTMLElement {
         historicalDays: this.historicalDays,
         noMoreEntries: this.noMoreEntries,
         weeklyStats: this.weeklyStats,
-        monthlyStats: this.monthlyStats
+        monthlyStats: this.monthlyStats,
+        filterQuery: this.filterQuery,
+        archivedSearchResults: this.archivedSearchResults
     });
 
     connectedCallback() {
@@ -379,6 +383,12 @@ customElements.define('app-context', class extends HTMLElement {
                 break;
             case 'import':
                 this.handleImport(data);
+                break;
+            case 'filterTasks':
+                this.handleFilterTasks(data);
+                return; // skip persistState — transient UI state
+            case 'addArchivedToToday':
+                this.handleAddArchivedToToday(data);
                 break;
             case 'loadPreviousDay':
                 this.handleLoadPreviousDay();
@@ -797,6 +807,29 @@ customElements.define('app-context', class extends HTMLElement {
         // Persist archived flag directly to DB
         const db = await TimesheetDB();
         await db.archiveTask(exid);
+    }
+
+    async handleFilterTasks({ query }) {
+        this.filterQuery.value = query || '';
+        if (!query?.trim()) {
+            this.archivedSearchResults.value = [];
+            return;
+        }
+        const db = await TimesheetDB();
+        this.archivedSearchResults.value = await db.searchArchivedTasks(query.trim(), 20);
+    }
+
+    async handleAddArchivedToToday({ exid }) {
+        const db = await TimesheetDB();
+        const allTasks = await db.getAllTasks();
+        const task = allTasks.find(t => t.exid === exid);
+        if (!task) return;
+        const restoredTask = { ...task, archived: false, lastModified: new Date() };
+        await db.updateTask(restoredTask, { preserveTimestamp: false });
+        this.tasks.value = [...this.tasks.value, restoredTask];
+        this.todaysTasks.value = [restoredTask, ...this.todaysTasks.value];
+        this.filterQuery.value = '';
+        this.archivedSearchResults.value = [];
     }
 
     handleDeleteTask({ exid }) {

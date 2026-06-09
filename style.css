@@ -226,6 +226,99 @@ label > input {
   width: 100%;
 }
 
+/* Task search input wrapper */
+.task-input-wrap {
+  position: relative;
+}
+
+.task-input-clear {
+  position: absolute;
+  right: 0.4em;
+  bottom: 0.25em;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.85em;
+  padding: 0.1em 0.3em;
+  line-height: 1;
+}
+.task-input-clear:hover {
+  color: var(--color-text);
+}
+
+/* Search results */
+.search-section-label {
+  margin: 0.8em 0 0.3em;
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+.search-section-label:first-child {
+  margin-top: 0;
+}
+
+mark.search-highlight {
+  background: rgba(255, 200, 50, 0.3);
+  color: inherit;
+  border-radius: 2px;
+}
+
+/* Archived task result row */
+.task-item--archived-result {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 0.5rem);
+  padding: 0.4em 0.6em;
+  border-radius: 0.6rem;
+  opacity: 0.75;
+}
+.task-item--archived-result:hover {
+  opacity: 1;
+}
+.task-item--archived-result .task-item__content {
+  flex: 1;
+  min-width: 0;
+}
+.task-item--archived-result .task-item__description {
+  margin: 0;
+}
+.task-item__add-to-today {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--color-text-muted);
+  border-radius: 0.4em;
+  font-size: 0.75em;
+  padding: 0.2em 0.5em;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.task-item__add-to-today:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--color-text);
+}
+
+/* Create new task row at bottom of search results */
+.search-create-row {
+  margin-top: 0.8em;
+  padding-top: 0.6em;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.search-create-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.9em;
+  padding: 0.3em 0;
+  text-align: left;
+}
+.search-create-btn:hover {
+  color: var(--color-text);
+}
+
 .batch-input-container {
   background-color: var(--color-input-bg);
   border: 1px solid var(--color-input-bg);
