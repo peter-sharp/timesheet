@@ -24,7 +24,7 @@ import round1dp from "../utils/round1dp.js";
 const template = document.createElement("template");
 template.innerHTML = /*html*/ `
 <div>
-
+    <div data-search-results hidden></div>
     <ul data-task-totals class="tasks unstyled-list stack" style="--gap: 1.6em"></ul>
     <section class="border-top-1 text-align-right">
             <span><time-duration data-duration-total></time-duration> <output class="opacity50" name="durationNetIncome"></output></span>
@@ -39,9 +39,10 @@ const taskForm = document.createElement("template");
 taskForm.innerHTML = /*html*/ `
 <form data-new-task class="margin-bottom-2">
     <div class="row">
-        <div class="input-group row__col-2">
+        <div class="input-group row__col-2 task-input-wrap">
             <label for="newTask">Task</label>
-            <input id="newTask" type="text" name="taskRaw" list="prev-tasks">
+            <input id="newTask" type="text" name="taskRaw" list="prev-tasks" autocomplete="off">
+            <button type="button" class="task-input-clear" aria-label="Clear search" hidden>&#x2715;</button>
         </div>
         <button type="submit">Add</button>
     </div>
@@ -119,6 +120,9 @@ class TaskList extends HTMLElement {
   #durationTotal;
   #historicalDays;
   #noMoreEntries;
+  #filterQuery;
+  #archivedSearchResults;
+  #searchResultsEl;
   #unsubscribe = {};
   constructor() {
     super();
@@ -130,6 +134,7 @@ class TaskList extends HTMLElement {
     }
     this.appendChild(newtemplateItem(template));
     this.elTotals = this.querySelector("[data-task-totals]");
+    this.#searchResultsEl = this.querySelector("[data-search-results]");
     this.historicalContainer = this.querySelector("[data-historical-tasks]");
     this.loadMoreBtn = this.querySelector("[data-load-more]");
 
@@ -156,6 +161,8 @@ class TaskList extends HTMLElement {
           this.#newEntry = state.newEntry;
           this.#durationTotal = state.durationTotal;
           this.#allTasks = state.allTasksWithDeleted;
+          this.#filterQuery = state.filterQuery;
+          this.#archivedSearchResults = state.archivedSearchResults;
 
           this.#unsubscribe.signals = effect(
             this.update.bind(this),
@@ -185,6 +192,15 @@ class TaskList extends HTMLElement {
             this.#historicalDays,
             this.#noMoreEntries
           );
+
+          if (this.#filterQuery && this.#archivedSearchResults) {
+            this.#unsubscribe.filter = effect(
+              this.renderFilterResults.bind(this),
+              this.#filterQuery,
+              this.#archivedSearchResults,
+              this.#tasks
+            );
+          }
 
           this.#unsubscribe.state = unsubscribe;
         },
@@ -239,6 +255,7 @@ class TaskList extends HTMLElement {
     if (this.getAttribute("features")?.includes("add")) {
       this.newTaskForm = this.querySelector("[data-new-task]");
       const primaryInput = this.newTaskForm.querySelector('input[name="taskRaw"]');
+      const clearBtn = this.newTaskForm.querySelector('.task-input-clear');
       const inputGroup = primaryInput.closest('.input-group');
 
       // Spawn a new input row below the given reference input
@@ -271,6 +288,38 @@ class TaskList extends HTMLElement {
         return newInput;
       };
 
+      const clearFilter = () => {
+        primaryInput.value = '';
+        clearBtn.hidden = true;
+        emitEvent(that, 'filterTasks', { query: '' });
+      };
+
+      // Filter as user types (disabled in batch mode)
+      primaryInput.addEventListener('input', () => {
+        const inBatchMode = !!inputGroup.querySelector('.batch-input-container');
+        if (inBatchMode) return;
+        clearBtn.hidden = !primaryInput.value;
+        emitEvent(that, 'filterTasks', { query: primaryInput.value });
+      });
+
+      // Escape clears filter
+      primaryInput.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Escape') {
+          ev.preventDefault();
+          clearFilter();
+        }
+      });
+
+      clearBtn.addEventListener('click', () => clearFilter());
+
+      // Reset filter on navigation away from tasks
+      this._handleHashChange = () => {
+        if (window.location.hash !== '#tasks' && window.location.hash !== '') {
+          clearFilter();
+        }
+      };
+      window.addEventListener('hashchange', this._handleHashChange);
+
       // Handle multi-line paste
       primaryInput.addEventListener('paste', (ev) => {
         const text = ev.clipboardData?.getData('text') || '';
@@ -279,6 +328,9 @@ class TaskList extends HTMLElement {
         const lines = text.split(/\r?\n/).filter(l => l.trim());
         if (!lines.length) return;
         primaryInput.value = lines[0];
+        // Clear filter since we're entering batch mode
+        emitEvent(that, 'filterTasks', { query: '' });
+        clearBtn.hidden = true;
         let lastInput = primaryInput;
         for (let i = 1; i < lines.length; i++) {
           lastInput = spawnRow(lastInput, lines[i]);
@@ -289,6 +341,9 @@ class TaskList extends HTMLElement {
       primaryInput.addEventListener('keydown', (ev) => {
         if (ev.ctrlKey && ev.key === 'Enter') {
           ev.preventDefault();
+          // Clear filter when entering batch mode
+          emitEvent(that, 'filterTasks', { query: '' });
+          clearBtn.hidden = true;
           const newInput = spawnRow(primaryInput);
           newInput.focus();
         }
@@ -334,6 +389,8 @@ class TaskList extends HTMLElement {
             client: elClient.value,
           });
           primaryInput.value = "";
+          clearBtn.hidden = true;
+          emitEvent(that, "filterTasks", { query: "" });
         }
         elExid.value = "";
         elClient.value = "";
@@ -377,6 +434,7 @@ class TaskList extends HTMLElement {
     this.addEventListener("click", function handleArchiveAction(ev) {
       if (ev.target.closest("button") && ev.target.closest("[data-exid]")) {
         const btn = ev.target.closest("button");
+        if (!btn.name) return; // skip anonymous buttons (e.g. add-to-today)
         emitEvent(that, btn.name + "Task", {
           exid: btn.closest("[data-exid]").dataset.exid,
         });
@@ -390,6 +448,10 @@ class TaskList extends HTMLElement {
     this.#unsubscribe.state?.();
     this.#unsubscribe.tasksIndex?.();
     this.#unsubscribe.historical?.();
+    this.#unsubscribe.filter?.();
+    if (this._handleHashChange) {
+      window.removeEventListener('hashchange', this._handleHashChange);
+    }
   }
 
   update() {
@@ -403,6 +465,146 @@ class TaskList extends HTMLElement {
       this.querySelector("#prev-clients"),
       this.#clients?.value || []
     );
+  }
+
+  highlightMatch(text, query) {
+    if (!text || !query) return document.createTextNode(text || '');
+    const idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if (idx === -1) return document.createTextNode(text);
+    const frag = document.createDocumentFragment();
+    frag.append(document.createTextNode(text.slice(0, idx)));
+    const mark = document.createElement('mark');
+    mark.className = 'search-highlight';
+    mark.textContent = text.slice(idx, idx + query.length);
+    frag.append(mark);
+    frag.append(document.createTextNode(text.slice(idx + query.length)));
+    return frag;
+  }
+
+  renderFilterResults() {
+    const query = this.#filterQuery?.value || '';
+    const archived = this.#archivedSearchResults?.value || [];
+    const tasks = this.#tasks?.value || [];
+    const q = query.trim().toLowerCase();
+
+    const isFiltering = q.length > 0;
+    const searchEl = this.#searchResultsEl;
+    if (!searchEl) return;
+
+    const hasActions = this.getAttribute('features')?.includes('actions');
+
+    // Toggle between filter view and normal view
+    searchEl.hidden = !isFiltering;
+    this.elTotals.hidden = isFiltering;
+    const totalsSection = this.elTotals.nextElementSibling;
+    if (totalsSection) totalsSection.hidden = isFiltering;
+    if (this.historicalContainer) this.historicalContainer.hidden = isFiltering;
+    // Load-more button is only relevant on the main task page (actions feature)
+    if (hasActions && this.loadMoreBtn) this.loadMoreBtn.hidden = isFiltering;
+
+    if (!isFiltering) {
+      searchEl.innerHTML = '';
+      return;
+    }
+
+    // Filter today's tasks
+    const todayMatches = tasks.filter(t => {
+      if (!t || !t.exid) return false;
+      return t.description?.toLowerCase().includes(q) ||
+        String(t.exid)?.toLowerCase().includes(q) ||
+        t.project?.toLowerCase().includes(q) ||
+        t.context?.toLowerCase().includes(q) ||
+        t.client?.toLowerCase().includes(q);
+    });
+
+    searchEl.innerHTML = '';
+
+    // TODAY section
+    if (todayMatches.length > 0) {
+      const label = document.createElement('p');
+      label.className = 'search-section-label';
+      label.textContent = 'Today';
+      searchEl.append(label);
+      const ul = document.createElement('ul');
+      ul.className = 'tasks unstyled-list stack';
+      ul.style.setProperty('--gap', '1.6em');
+      for (const task of [...todayMatches].sort(sortByTodoTxt)) {
+        const existingEl = this.elTotals.querySelector(`[data-exid="${CSS.escape(task.exid)}"]`);
+        if (existingEl) {
+          ul.append(existingEl.cloneNode(true));
+        } else {
+          const item = newtemplateItem(taskRow);
+          this.renderTask(item, task);
+          ul.append(item);
+        }
+      }
+      searchEl.append(ul);
+    }
+
+    // ARCHIVED section
+    if (archived.length > 0) {
+      const label = document.createElement('p');
+      label.className = 'search-section-label';
+      label.textContent = 'Archived';
+      searchEl.append(label);
+      const ul = document.createElement('ul');
+      ul.className = 'tasks unstyled-list stack';
+      ul.style.setProperty('--gap', '1.6em');
+      for (const task of archived) {
+        const li = document.createElement('li');
+        li.className = 'task-item task-item--archived-result';
+        li.dataset.exid = task.exid;
+
+        const desc = document.createElement('span');
+        desc.className = 'task-item__content';
+        const details = document.createElement('p');
+        details.className = 'task-item__details opacity50';
+        details.append(this.highlightMatch(task.exid || '', query));
+        if (task.project) details.append(document.createTextNode(` +${task.project.replace(/_/g, ' ')}`));
+        if (task.context) details.append(document.createTextNode(` @${task.context}`));
+        if (task.client) details.append(document.createTextNode(` client:${task.client}`));
+        desc.append(details);
+        if (task.description) {
+          const descP = document.createElement('p');
+          descP.className = 'task-item__description';
+          descP.append(this.highlightMatch(task.description, query));
+          desc.append(descP);
+        }
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'task-item__add-to-today';
+        addBtn.dataset.style = 'subtle';
+        addBtn.textContent = '+ Add to today';
+        addBtn.addEventListener('click', () => {
+          emitEvent(this, 'addArchivedToToday', { exid: task.exid });
+        });
+
+        li.append(desc, addBtn);
+        ul.append(li);
+      }
+      searchEl.append(ul);
+    }
+
+    // CREATE row — always shown at bottom
+    const createRow = document.createElement('div');
+    createRow.className = 'search-create-row';
+    const createBtn = document.createElement('button');
+    createBtn.type = 'button';
+    createBtn.className = 'search-create-btn';
+    createBtn.textContent = `+ Create "${query}" as a new task`;
+    createBtn.addEventListener('click', () => {
+      if (this.newTaskForm) {
+        const rawInput = this.newTaskForm.querySelector('input[name="taskRaw"]');
+        emitEvent(this, 'addTask', { raw: rawInput?.value || query, exid: '', client: '' });
+        if (rawInput) rawInput.value = '';
+        const clearBtn = this.newTaskForm.querySelector('.task-input-clear');
+        if (clearBtn) clearBtn.hidden = true;
+        emitEvent(this, 'filterTasks', { query: '' });
+      }
+    });
+    createRow.append(createBtn);
+    searchEl.append(createRow);
   }
 
   getTaskById(exid) {
