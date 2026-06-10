@@ -26,6 +26,11 @@ template.innerHTML = /*html*/`
                     <td><output name="monthlyHours">—</output></td>
                     <td><output name="monthlyTasks">—</output></td>
                 </tr>
+                <tr>
+                    <th>Gaps (Month)</th>
+                    <td><output name="monthlyGapHours">—</output></td>
+                    <td>—</td>
+                </tr>
             </tbody>
         </table>
     </section>
@@ -61,6 +66,20 @@ template.innerHTML = /*html*/`
                     <progress name="monthlyTasksBar" max="100" value="0"></progress>
                 </dd>
             </div>
+            <div>
+                <dt>Daily Gap</dt>
+                <dd>
+                    <output name="dailyGapText"></output>
+                    <progress name="dailyGapBar" max="100" value="0"></progress>
+                </dd>
+            </div>
+            <div>
+                <dt>Monthly Gap</dt>
+                <dd>
+                    <output name="monthlyGapText"></output>
+                    <progress name="monthlyGapBar" max="100" value="0"></progress>
+                </dd>
+            </div>
         </dl>
     </section>
 
@@ -79,6 +98,15 @@ template.innerHTML = /*html*/`
             width="600" height="200" padding="40"
             x-label="Day of Month" y-label="Tasks"
             class="daily-tasks-chart"
+        ></graph-chart>
+    </section>
+
+    <section>
+        <h3 class="h5">Daily Gaps This Month</h3>
+        <graph-chart
+            width="600" height="200" padding="40"
+            x-label="Day of Month" y-label="Hours"
+            class="daily-gaps-chart"
         ></graph-chart>
     </section>
 </div>`;
@@ -143,14 +171,17 @@ customElements.define('stats-page', class extends HTMLElement {
             weeklyHoursGoal  = 40,
             monthlyHoursGoal = 160,
             weeklyTasksGoal  = 10,
-            monthlyTasksGoal = 40
+            monthlyTasksGoal = 40,
+            dailyGapGoal     = 1,
+            monthlyGapGoal   = 20
         } = settings;
 
         // Totals
-        this.#out('weeklyHours',  weekly.hours  != null ? `${weekly.hours} h`   : '—');
-        this.#out('weeklyTasks',  weekly.tasksCompleted  != null ? weekly.tasksCompleted  : '—');
-        this.#out('monthlyHours', monthly.hours != null ? `${monthly.hours} h`  : '—');
-        this.#out('monthlyTasks', monthly.tasksCompleted != null ? monthly.tasksCompleted : '—');
+        this.#out('weeklyHours',    weekly.hours  != null ? `${weekly.hours} h`   : '—');
+        this.#out('weeklyTasks',    weekly.tasksCompleted  != null ? weekly.tasksCompleted  : '—');
+        this.#out('monthlyHours',   monthly.hours != null ? `${monthly.hours} h`  : '—');
+        this.#out('monthlyTasks',   monthly.tasksCompleted != null ? monthly.tasksCompleted : '—');
+        this.#out('monthlyGapHours', monthly.gaps != null ? `${monthly.gaps} h` : '—');
 
         // Goal progress
         this.#progress('weeklyHoursText',   'weeklyHoursBar',   weekly.hours,           weeklyHoursGoal,  'h');
@@ -158,13 +189,22 @@ customElements.define('stats-page', class extends HTMLElement {
         this.#progress('weeklyTasksText',   'weeklyTasksBar',   weekly.tasksCompleted,  weeklyTasksGoal,  '');
         this.#progress('monthlyTasksText',  'monthlyTasksBar',  monthly.tasksCompleted, monthlyTasksGoal, '');
 
-        // Charts
-        const daysInMonth = monthly.daysInMonth || 30;
-        const dailyHoursGoal  = Math.round((monthlyHoursGoal / daysInMonth) * 10) / 10;
-        const dailyTasksGoal  = Math.round((monthlyTasksGoal / daysInMonth) * 10) / 10;
+        // Gap progress — today's gap from dailyGaps, monthly total
+        const todayDayNum = new Date().getDate();
+        const todayGap = (monthly.dailyGaps || []).find(d => d.x === todayDayNum)?.y ?? 0;
+        this.#progress('dailyGapText',   'dailyGapBar',   todayGap,            dailyGapGoal,   'h');
+        this.#progress('monthlyGapText', 'monthlyGapBar', monthly.gaps ?? 0,   monthlyGapGoal, 'h');
+
+        // Charts — use workdaysInMonth for daily goal divisor
+        const workdaysInMonth = monthly.workdaysInMonth || monthly.daysInMonth || 22;
+        const dailyHoursGoal = workdaysInMonth > 0
+            ? Math.round((monthlyHoursGoal / workdaysInMonth) * 10) / 10 : 0;
+        const dailyTasksGoal = workdaysInMonth > 0
+            ? Math.round((monthlyTasksGoal / workdaysInMonth) * 10) / 10 : 0;
 
         const hoursChart = this.querySelector('.daily-hours-chart');
         const tasksChart = this.querySelector('.daily-tasks-chart');
+        const gapsChart  = this.querySelector('.daily-gaps-chart');
         if (hoursChart) {
             hoursChart.setAttribute('goal', dailyHoursGoal);
             hoursChart.data = monthly.dailyHours || [];
@@ -172,6 +212,10 @@ customElements.define('stats-page', class extends HTMLElement {
         if (tasksChart) {
             tasksChart.setAttribute('goal', dailyTasksGoal);
             tasksChart.data = monthly.dailyCompletions || [];
+        }
+        if (gapsChart) {
+            gapsChart.setAttribute('goal', dailyGapGoal);
+            gapsChart.data = monthly.dailyGaps || [];
         }
     }
 

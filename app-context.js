@@ -74,6 +74,9 @@ const mergeTasksWithTotals = (tasks, taskTotals) => {
     return Object.values(tasksByExid);
 };
 
+// Pure function: returns true if the given Date falls on a configured workday
+const isWorkday = (date, workdays) => workdays.includes(date.getDay());
+
 // Pure function: calculate duration totals
 const calculateDurationTotals = (entries) => {
     const durationTotal = reduce(reduceDuration, 0, entries);
@@ -959,6 +962,7 @@ customElements.define('app-context', class extends HTMLElement {
         try {
             const db = await TimesheetDB();
             const now = new Date();
+            const workdays = this.settings.value?.workdays ?? [1, 2, 3, 4, 5];
 
             // Month range
             const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -982,38 +986,79 @@ customElements.define('app-context', class extends HTMLElement {
             const monthTasks = await db.getTasksModifiedInRange(monthStart, monthEnd);
             const completedTasks = monthTasks.filter(t => t.complete);
 
-            // Build daily chart data for days 1..today
+            // Filter entries and tasks to workdays only for monthly/weekly totals
+            const workdayMonthEntries = monthEntries.filter(e =>
+                e.start && isWorkday(new Date(e.start), workdays));
+            const workdayCompletedTasks = completedTasks.filter(t =>
+                t.lastModified && isWorkday(new Date(t.lastModified), workdays));
+
+            const monthlyHours = Math.round(sumHours(workdayMonthEntries) * 10) / 10;
+            const monthlyTasksDone = workdayCompletedTasks.length;
+
+            const weekEntries = workdayMonthEntries.filter(e =>
+                e.start && new Date(e.start) >= weekStart);
+            const weeklyHours = Math.round(sumHours(weekEntries) * 10) / 10;
+            const weeklyTasksDone = workdayCompletedTasks.filter(t =>
+                t.lastModified && new Date(t.lastModified) >= weekStart).length;
+
+            // Count workdays in month
+            let workdaysInMonth = 0;
+            for (let d = 1; d <= daysInMonth; d++) {
+                if (isWorkday(new Date(now.getFullYear(), now.getMonth(), d), workdays)) {
+                    workdaysInMonth++;
+                }
+            }
+
+            // Build daily chart data for workdays only, days 1..today
             const todayDay = now.getDate();
             const dailyHours = [];
             const dailyCompletions = [];
+            const dailyGaps = [];
             for (let day = 1; day <= todayDay; day++) {
+                const date = new Date(now.getFullYear(), now.getMonth(), day);
+                if (!isWorkday(date, workdays)) continue;
+
                 const dayStart = new Date(now.getFullYear(), now.getMonth(), day, 0, 0, 0, 0);
                 const dayEnd   = new Date(now.getFullYear(), now.getMonth(), day, 23, 59, 59, 999);
                 const dayEntries = monthEntries.filter(e =>
                     e.start && new Date(e.start) >= dayStart && new Date(e.start) <= dayEnd);
+
                 dailyHours.push({ x: day, y: Math.round(sumHours(dayEntries) * 10) / 10 });
+
                 const done = completedTasks.filter(t =>
                     t.lastModified && new Date(t.lastModified) >= dayStart &&
                     new Date(t.lastModified) <= dayEnd).length;
                 dailyCompletions.push({ x: day, y: done });
+
+                // Calculate gaps: sum of intervals between consecutive entries
+                const sorted = [...dayEntries]
+                    .filter(e => e.start && e.end)
+                    .sort((a, b) => new Date(a.start) - new Date(b.start));
+                let dayGap = 0;
+                for (let i = 1; i < sorted.length; i++) {
+                    const gapHours = calcDuration({
+                        start: new Date(sorted[i - 1].end),
+                        end: new Date(sorted[i].start)
+                    });
+                    if (gapHours > 0) dayGap += gapHours;
+                }
+                dailyGaps.push({ x: day, y: Math.round(dayGap * 10) / 10 });
             }
 
-            const monthlyHours = Math.round(sumHours(monthEntries) * 10) / 10;
-            const monthlyTasksDone = completedTasks.length;
-
-            const weeklyTasksDone = completedTasks.filter(t =>
-                t.lastModified && new Date(t.lastModified) >= weekStart).length;
-            const weekEntries = monthEntries.filter(e =>
-                e.start && new Date(e.start) >= weekStart);
-            const weeklyHours = Math.round(sumHours(weekEntries) * 10) / 10;
+            const monthlyGaps = Math.round(
+                dailyGaps.reduce((sum, d) => sum + d.y, 0) * 10
+            ) / 10;
 
             this.weeklyStats.value = { hours: weeklyHours, tasksCompleted: weeklyTasksDone };
             this.monthlyStats.value = {
                 hours: monthlyHours,
                 tasksCompleted: monthlyTasksDone,
+                gaps: monthlyGaps,
                 dailyHours,
                 dailyCompletions,
-                daysInMonth
+                dailyGaps,
+                daysInMonth,
+                workdaysInMonth
             };
         } catch (e) {
             console.error('Failed to load stats:', e);

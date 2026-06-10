@@ -17,7 +17,10 @@ const INITIAL_STATE = {
         weeklyHoursGoal: 40,
         monthlyHoursGoal: 160,
         weeklyTasksGoal: 10,
-        monthlyTasksGoal: 40
+        monthlyTasksGoal: 40,
+        dailyGapGoal: 1,
+        monthlyGapGoal: 20,
+        workdays: [1, 2, 3, 4, 5]
     }
 };
 

@@ -59,6 +59,15 @@ customElements.define('settings-form', class extends HTMLElement {
                     }
                 }
 
+                // Convert gap goal fields to numbers (allow decimals)
+                for (const key of ['dailyGapGoal', 'monthlyGapGoal']) {
+                    if (formData[key] !== undefined && formData[key] !== '') {
+                        formData[key] = parseFloat(formData[key]) || 0;
+                    }
+                }
+
+                // workdays is already an array of numbers from getFormData
+
                 this.dispatchEvent(new CustomEvent('updateState', {
                     bubbles: true,
                     detail: { type: 'updateSettings', ...formData }
@@ -132,29 +141,55 @@ customElements.define('settings-form', class extends HTMLElement {
 
     getFormData(form) {
         const data = {};
+        const checkboxGroups = {};
         for (const element of form.elements) {
-            if (!(element instanceof HTMLButtonElement) && element.name) {
+            if (element instanceof HTMLButtonElement || !element.name) continue;
+            if (element.type === 'checkbox') {
+                if (!checkboxGroups[element.name]) checkboxGroups[element.name] = [];
+                if (element.checked) checkboxGroups[element.name].push(Number(element.value));
+            } else {
                 data[element.name] = element.value;
             }
+        }
+        for (const [name, values] of Object.entries(checkboxGroups)) {
+            data[name] = values;
         }
         return data;
     }
 
     setFormData(form, data) {
         for (const element of form.elements) {
-            if (!(element instanceof HTMLButtonElement) && element.name) {
-                // Special handling for focusInterval - convert decimal hours to hh:mm
-                if (element.name === 'focusInterval') {
-                    element.value = data[element.name] !== undefined ? this.hoursToDuration(data[element.name]) : '';
-                } else {
-                    element.value = data[element.name] === undefined ? '' : data[element.name];
-                }
+            if (element instanceof HTMLButtonElement || !element.name) continue;
+            if (element.name === 'focusInterval') {
+                element.value = data[element.name] !== undefined ? this.hoursToDuration(data[element.name]) : '';
+            } else if (element.type === 'checkbox') {
+                const arr = Array.isArray(data[element.name]) ? data[element.name] : [];
+                element.checked = arr.includes(Number(element.value));
+            } else {
+                element.value = data[element.name] === undefined ? '' : data[element.name];
             }
         }
     }
 
     render() {
         this.innerHTML = `
+            <style>
+                .workdays-row { display: flex; gap: 0.25rem; flex-wrap: wrap; margin-top: 0.5rem; }
+                .day-toggle { position: relative; }
+                .day-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+                .day-toggle span {
+                    display: inline-block; width: 2rem; height: 2rem; line-height: 2rem;
+                    text-align: center; border: 1px solid currentColor; border-radius: 4px;
+                    cursor: pointer; user-select: none; font-weight: bold; font-size: 0.85rem;
+                    opacity: 0.35;
+                }
+                .day-toggle input:checked + span {
+                    opacity: 1;
+                    background: var(--color-accent, currentColor);
+                    color: var(--color-bg, white);
+                }
+                .day-toggle input:focus-visible + span { outline: 2px solid currentColor; outline-offset: 2px; }
+            </style>
             <form class="stack" id="settings">
                 <p>
                     <label for="settings_color">Color</label>
@@ -181,6 +216,18 @@ customElements.define('settings-form', class extends HTMLElement {
                     />
                 </p>
                 <fieldset>
+                    <legend>Workdays</legend>
+                    <div class="workdays-row">
+                        <label class="day-toggle"><input type="checkbox" name="workdays" value="1" /><span>M</span></label>
+                        <label class="day-toggle"><input type="checkbox" name="workdays" value="2" /><span>T</span></label>
+                        <label class="day-toggle"><input type="checkbox" name="workdays" value="3" /><span>W</span></label>
+                        <label class="day-toggle"><input type="checkbox" name="workdays" value="4" /><span>T</span></label>
+                        <label class="day-toggle"><input type="checkbox" name="workdays" value="5" /><span>F</span></label>
+                        <label class="day-toggle"><input type="checkbox" name="workdays" value="6" /><span>S</span></label>
+                        <label class="day-toggle"><input type="checkbox" name="workdays" value="0" /><span>S</span></label>
+                    </div>
+                </fieldset>
+                <fieldset>
                     <legend>Goals</legend>
                     <p>
                         <label for="settings_weekly_hours_goal">Weekly Hours Goal</label>
@@ -197,6 +244,14 @@ customElements.define('settings-form', class extends HTMLElement {
                     <p>
                         <label for="settings_monthly_tasks_goal">Monthly Tasks Goal</label>
                         <input id="settings_monthly_tasks_goal" type="number" name="monthlyTasksGoal" min="0" step="1" />
+                    </p>
+                    <p>
+                        <label for="settings_daily_gap_goal">Daily Gap Goal (hours)</label>
+                        <input id="settings_daily_gap_goal" type="number" name="dailyGapGoal" min="0" step="0.5" />
+                    </p>
+                    <p>
+                        <label for="settings_monthly_gap_goal">Monthly Gap Goal (hours)</label>
+                        <input id="settings_monthly_gap_goal" type="number" name="monthlyGapGoal" min="0" step="1" />
                     </p>
                 </fieldset>
                 <button type="submit">Save</button>
