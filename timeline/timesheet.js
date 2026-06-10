@@ -23,7 +23,7 @@ template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=t
                 </div>
                 <div class="input-group">
                     <label for="newTask">Task: </label>
-                    <input id="newTask" type="text" name="task" list="prevTasks">
+                    <input id="newTask" type="text" name="task">
                 </div>
                 <div class="input-group">
                     <label for="newStart">Time Start: </label>
@@ -59,7 +59,6 @@ template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=t
         <button type="button" class="load-more-btn" data-load-more>&#x25BC; Load previous day</button>
     </div>
 
-<datalist id="prevTasks"></datalist>
 <!-- TODO add hidden button to save data -->
 
 </div>`
@@ -75,7 +74,7 @@ entryRow.innerHTML = /*html*/`
         </div>
         <div class="input-group">
             <label for="entryTask">Task: </label>
-            <input id="entryTask" type="text" name="task" class="context-reveal__input" list="prevTasks">
+            <input id="entryTask" type="text" name="task" class="context-reveal__input">
         </div>
         <div class="input-group">
             <label for="entryStart">Time Start: </label>
@@ -118,7 +117,6 @@ class Timesheet extends HTMLElement {
     #newEntry;
     #entries;
     #tasks;
-    #allTasks;
     #tasksIndex = {};
     #durationTotal;
     #durationTotalGaps;
@@ -133,7 +131,6 @@ class Timesheet extends HTMLElement {
         this.historicalContainer = el.querySelector('#historical_entries');
         this.loadMoreBtn = el.querySelector('[data-load-more]');
         const form = el;
-        this.prevTasks = form.querySelector(`#prevTasks`);
         this.state = {};
         timeLoop(1000, () => {
             this.renderNewEntryDuration({ newEntry: this.#newEntry?.value });
@@ -152,7 +149,7 @@ class Timesheet extends HTMLElement {
             this.#newEntry = state.newEntry;
             this.#entries = state.entries;
             this.#tasks = state.tasks;
-            this.#allTasks = state.todaysTasks;
+
             this.#durationTotal = state.durationTotal;
             this.#durationTotalGaps = state.durationTotalGaps;
 
@@ -168,10 +165,6 @@ class Timesheet extends HTMLElement {
             this.#unsubscribe.indexTasks = effect(
                 this.indexTasks.bind(this),
                 this.#tasks
-            );
-            this.#unsubscribe.datalist = effect(
-                () => this.renderTaskdatalist(this.#allTasks?.value || []),
-                this.#allTasks
             );
 
             this.#historicalDays = state.historicalDays;
@@ -370,24 +363,6 @@ class Timesheet extends HTMLElement {
         return sectionGroup
     }
 
-
-     renderTaskdatalist(tasks) {
-        this.prevTasks.innerHTML = ''
-        for(const task of Array.from(tasks)) {
-            // Skip blank tasks (no exid, or numeric-only exid with no description)
-            if (!task.exid && !task.description) continue;
-            if (/^\d{10,}$/.test(String(task.exid)) && !task.description) continue;
-            const opt = document.createElement('OPTION');
-            opt.value = task.exid;
-            const parts = [];
-            if (task.exid) parts.push(`#${task.exid}`);
-            if (task.description) parts.push(task.description);
-            if (task.project) parts.push(`+${task.project}`);
-            if (task.client) parts.push(`client:${task.client}`);
-            opt.innerText = parts.join(' ');
-            this.prevTasks.append(opt)
-        }
-    }
 
     renderNewEntryDuration({ newEntry }) {
         if(!newEntry || !newEntry.start) return;

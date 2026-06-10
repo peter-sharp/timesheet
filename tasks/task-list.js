@@ -41,7 +41,7 @@ taskForm.innerHTML = /*html*/ `
     <div class="row">
         <div class="input-group row__col-2 task-input-wrap">
             <label for="newTask">Task</label>
-            <input id="newTask" type="text" name="taskRaw" list="prev-tasks" autocomplete="off">
+            <input id="newTask" type="text" name="taskRaw" autocomplete="off">
             <button type="button" class="task-input-clear" aria-label="Clear search" hidden>&#x2715;</button>
         </div>
         <button type="submit">Add</button>
@@ -55,12 +55,10 @@ taskForm.innerHTML = /*html*/ `
         </div>
         <div class="input-group">
             <label for="newTask">client</label>
-            <input id="newTask" type="text" name="client" list="prev-clients">
+            <input id="newTask" type="text" name="client">
         </div>
       </div>
-      <datalist id="prev-clients"></datalist>
     </details>
-    <datalist id="prev-tasks"></datalist>
 </form>`;
 
 const taskRow = document.createElement("template");
@@ -112,7 +110,6 @@ historicalTaskRow.innerHTML = /*html*/ `
 class TaskList extends HTMLElement {
   #clients;
   #tasks;
-  #allTasks;
   #tasksIndex = {};
   #settings;
   #currentTask;
@@ -160,7 +157,6 @@ class TaskList extends HTMLElement {
           this.#currentTask = state.currentTask;
           this.#newEntry = state.newEntry;
           this.#durationTotal = state.durationTotal;
-          this.#allTasks = state.allTasksWithDeleted;
           this.#filterQuery = state.filterQuery;
           this.#archivedSearchResults = state.archivedSearchResults;
 
@@ -177,11 +173,6 @@ class TaskList extends HTMLElement {
           this.#unsubscribe.tasksIndex = effect(
             this.indexTasks.bind(this),
             this.#tasks
-          );
-
-          this.#unsubscribe.datalist = effect(
-            () => this.renderTaskDatalist(this.#allTasks?.value || []),
-            this.#allTasks
           );
 
           this.#historicalDays = state.historicalDays;
@@ -272,7 +263,6 @@ class TaskList extends HTMLElement {
         newInput.type = 'text';
         newInput.name = 'taskRawExtra';
         newInput.value = value;
-        newInput.setAttribute('list', 'prev-tasks');
         // Remove row when emptied
         newInput.addEventListener('input', () => {
           if (!newInput.value && container.children.length > 1) {
@@ -461,10 +451,6 @@ class TaskList extends HTMLElement {
       durationTotal: this.#durationTotal.value,
     });
 
-    this.renderPrevClientDatalist(
-      this.querySelector("#prev-clients"),
-      this.#clients?.value || []
-    );
   }
 
   highlightMatch(text, query) {
@@ -709,50 +695,6 @@ class TaskList extends HTMLElement {
     const elDuration = el.querySelector("[data-task-total]");
     elDuration.setAttribute("duration", hoursToMilliseconds(total) + duration);
     elDuration.dataset.state = start ? "started" : "stopped";
-  }
-
-  renderTaskDatalist(tasks) {
-    const datalist = this.querySelector("#prev-tasks");
-    if (!datalist) return;
-    const $frag = document.createDocumentFragment();
-    for (const task of tasks) {
-      // Skip blank tasks (no exid, or numeric-only exid with no description)
-      if (!task.exid && !task.description) continue;
-      if (/^\d{10,}$/.test(String(task.exid)) && !task.description) continue;
-      const opt = document.createElement("OPTION");
-      const parts = [];
-      if (task.exid) parts.push(`#${task.exid}`);
-      if (task.description) parts.push(task.description);
-      if (task.project) parts.push(`+${task.project.replace(/_/g, ' ')}`);
-      if (task.context) parts.push(`@${task.context}`);
-      if (task.client) parts.push(`client:${task.client}`);
-      if (task.due) parts.push(`due:${task.due}`);
-      if (task.estimate) parts.push(`estimate:${task.estimate}`);
-      // Add any additional metadata
-      if (task.metadata && typeof task.metadata === 'object') {
-        Object.entries(task.metadata).forEach(([key, value]) => {
-          if (value) parts.push(`${key}:${value}`);
-        });
-      }
-      if (task.deleted) parts.push('(deleted)');
-      opt.value = parts.join(' ');
-      $frag.append(opt);
-    }
-    datalist.innerHTML = "";
-    datalist.append($frag);
-  }
-
-  renderPrevClientDatalist($prevClients, clients) {
-    if (!$prevClients) return;
-    const $frag = document.createDocumentFragment();
-    for (const client of clients) {
-      const opt = document.createElement("OPTION");
-      opt.value = client.name;
-      opt.innerText = client.name;
-      $frag.append(opt);
-    }
-    $prevClients.innerHTML = "";
-    $prevClients.append($frag);
   }
 
   renderHistorical() {
