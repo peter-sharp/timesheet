@@ -93,6 +93,7 @@ async function runTests() {
     await import('./lazy-load.test.js');
     await import('./sort-by-todo-txt.test.js');
     await import('./stats.test.js');
+    await import('./gaps-workdays.test.js');
     await import('./search-archived-tasks.test.js');
 
     // Wait a bit for tests to register and async operations to complete

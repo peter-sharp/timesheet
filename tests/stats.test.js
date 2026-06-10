@@ -294,12 +294,24 @@ TestRunner.test('handleLoadStats: builds dailyHours array up to today', async ()
 
     const monthly = appContext.monthlyStats.value;
     TestRunner.assert(Array.isArray(monthly.dailyHours), 'dailyHours should be an array');
-    TestRunner.assertEquals(monthly.dailyHours.length, now.getDate(),
-        'dailyHours should have one entry per day up to today');
 
-    const todayEntry = monthly.dailyHours.find(d => d.x === now.getDate());
-    TestRunner.assert(todayEntry !== undefined, 'Should have an entry for today');
-    TestRunner.assertEquals(todayEntry.y, 2.5, 'Today should show 2.5 hours');
+    // With workday filtering (default Mon-Fri), length = workdays elapsed this month up to today
+    const defaultWorkdays = [1, 2, 3, 4, 5];
+    let expectedDays = 0;
+    for (let d = 1; d <= now.getDate(); d++) {
+        if (defaultWorkdays.includes(new Date(now.getFullYear(), now.getMonth(), d).getDay())) {
+            expectedDays++;
+        }
+    }
+    TestRunner.assertEquals(monthly.dailyHours.length, expectedDays,
+        'dailyHours should have one entry per workday up to today');
+
+    // If today is a workday, check the hours entry is present
+    if (defaultWorkdays.includes(now.getDay())) {
+        const todayEntry = monthly.dailyHours.find(d => d.x === now.getDate());
+        TestRunner.assert(todayEntry !== undefined, 'Should have an entry for today (workday)');
+        TestRunner.assertEquals(todayEntry.y, 2.5, 'Today should show 2.5 hours');
+    }
 });
 
 TestRunner.test('handleLoadStats: weekly hours are subset of monthly hours', async () => {
