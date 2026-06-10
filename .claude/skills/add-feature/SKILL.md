@@ -1,3 +1,8 @@
+---
+name: add-feature
+description: Add a new feature to the timesheet project with tests. Drives the full workflow — understand, classify tests (Trophy Model), write tests first, implement, verify, commit. Use whenever a new feature or significant behaviour change is requested.
+---
+
 # Add Feature (Timesheet Project)
 
 Implement a new feature following the project's Signal-based architecture and Trophy Testing Model. Tests are written before or alongside implementation — never after the commit.
