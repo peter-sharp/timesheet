@@ -2,6 +2,10 @@
 
 ## Features Implemented
 
+### ✅ Auto-set status to In Progress when timer starts (v1.12.0)
+
+When the user starts time tracking on a task, the task status is automatically set to "In Progress" — unless the task is already "Complete", in which case the status is left unchanged. This applies to tasks in any non-terminal state: not-started, on-hold, or already in-progress. The `currentTask` signal is also updated to reflect the new status immediately.
+
 ### ✅ Task input search/filter (v1.10.0)
 
 The main task input bar now doubles as a live search. Typing filters the task list into three sections:
