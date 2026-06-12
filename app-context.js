@@ -521,11 +521,14 @@ customElements.define('app-context', class extends HTMLElement {
             end: null
         };
 
+        this.tasks.value = this.tasks.value.map(x => {
+            if (x.exid !== exid) return { ...x, timingState: "stop" };
+            const statusUpdate = x.status !== "complete"
+                ? { status: "in-progress", lastModified: new Date() }
+                : {};
+            return { ...x, timingState: "start", ...statusUpdate };
+        });
         this.currentTask.value = this.tasks.value.find(x => x.exid === exid) || {};
-        this.tasks.value = this.tasks.value.map(x => ({
-            ...x,
-            timingState: x.exid === exid ? "start" : "stop"
-        }));
     }
 
     handleStopTask({ exid }) {
