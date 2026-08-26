@@ -79,6 +79,17 @@
 .stats-goals progress::-webkit-progress-bar { background: rgba(255,255,255,0.1); border-radius: 3px; }
 .stats-goals progress::-webkit-progress-value { background: var(--color-chart-primary); border-radius: 3px; }
 .stats-goals progress::-moz-progress-bar { background: var(--color-chart-primary); border-radius: 3px; }
+
+.stats-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+.stats-nav-group { display: flex; align-items: center; gap: var(--space-2); }
+.stats-nav-group span { font-size: 0.9em; color: var(--color-text-muted); min-width: 8em; text-align: center; }
+.stats-nav-group button { padding: 0.3em 0.7em; line-height: 1; }
 html {
   font-size: 112.5%;
   width: 100%;

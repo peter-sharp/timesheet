@@ -397,7 +397,7 @@ customElements.define('app-context', class extends HTMLElement {
                 this.handleLoadPreviousDay();
                 return; // skip persistState — historical data is read-only browse
             case 'loadStats':
-                this.handleLoadStats();
+                this.handleLoadStats(data);
                 return; // skip persistState — stats are derived read-only data
             default:
                 console.log('Unhandled event type:', type);
@@ -961,68 +961,86 @@ customElements.define('app-context', class extends HTMLElement {
         }
     }
 
-    async handleLoadStats() {
+    async handleLoadStats({ weekOffset = 0, monthOffset = 0 } = {}) {
         try {
             const db = await TimesheetDB();
             const now = new Date();
             const workdays = this.settings.value?.workdays ?? [1, 2, 3, 4, 5];
-
-            // Month range
-            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-            const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-            const daysInMonth = monthEnd.getDate();
-
-            // Week range (Monday-based)
-            const weekStart = new Date(now);
-            weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-            weekStart.setHours(0, 0, 0, 0);
-
-            // Fetch all entries for this month (indexed range scan on 'start')
-            const monthEntries = await db.getEntriesByDateRange(monthStart, monthEnd);
 
             const sumHours = (entries) => entries.reduce((sum, e) => {
                 if (!e.start || !e.end) return sum;
                 return sum + calcDuration({ start: new Date(e.start), end: new Date(e.end) });
             }, 0);
 
-            // Fetch tasks modified this month (indexed range scan on 'lastModified')
-            const monthTasks = await db.getTasksModifiedInRange(monthStart, monthEnd);
+            // Month range, shifted by monthOffset (0 = current month, -1 = previous month, ...)
+            const isCurrentMonth = monthOffset === 0;
+            const monthDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+            const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+            const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999);
+            const daysInMonth = monthEnd.getDate();
+            const monthLabel = monthStart.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+            // Week range (Monday-based), shifted by weekOffset weeks
+            const isCurrentWeek = weekOffset === 0;
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7) + weekOffset * 7);
+            weekStart.setHours(0, 0, 0, 0);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+            weekEnd.setHours(23, 59, 59, 999);
+            const weekLabel =
+                `${weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ` +
+                `${weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+            // Week and month are independent periods, so fetch each separately
+            // (rather than deriving the week from the month's data, which only
+            // worked because the current week always falls inside the current month).
+            const [monthEntries, monthTasks, weekEntries, weekTasks] = await Promise.all([
+                db.getEntriesByDateRange(monthStart, monthEnd),
+                db.getTasksModifiedInRange(monthStart, monthEnd),
+                db.getEntriesByDateRange(weekStart, weekEnd),
+                db.getTasksModifiedInRange(weekStart, weekEnd)
+            ]);
+
             const completedTasks = monthTasks.filter(t => t.complete);
+            const completedWeekTasks = weekTasks.filter(t => t.complete);
 
             // Filter entries and tasks to workdays only for monthly/weekly totals
             const workdayMonthEntries = monthEntries.filter(e =>
                 e.start && isWorkday(new Date(e.start), workdays));
             const workdayCompletedTasks = completedTasks.filter(t =>
                 t.lastModified && isWorkday(new Date(t.lastModified), workdays));
+            const workdayWeekEntries = weekEntries.filter(e =>
+                e.start && isWorkday(new Date(e.start), workdays));
+            const workdayCompletedWeekTasks = completedWeekTasks.filter(t =>
+                t.lastModified && isWorkday(new Date(t.lastModified), workdays));
 
             const monthlyHours = Math.round(sumHours(workdayMonthEntries) * 10) / 10;
             const monthlyTasksDone = workdayCompletedTasks.length;
 
-            const weekEntries = workdayMonthEntries.filter(e =>
-                e.start && new Date(e.start) >= weekStart);
-            const weeklyHours = Math.round(sumHours(weekEntries) * 10) / 10;
-            const weeklyTasksDone = workdayCompletedTasks.filter(t =>
-                t.lastModified && new Date(t.lastModified) >= weekStart).length;
+            const weeklyHours = Math.round(sumHours(workdayWeekEntries) * 10) / 10;
+            const weeklyTasksDone = workdayCompletedWeekTasks.length;
 
             // Count workdays in month
             let workdaysInMonth = 0;
             for (let d = 1; d <= daysInMonth; d++) {
-                if (isWorkday(new Date(now.getFullYear(), now.getMonth(), d), workdays)) {
+                if (isWorkday(new Date(monthStart.getFullYear(), monthStart.getMonth(), d), workdays)) {
                     workdaysInMonth++;
                 }
             }
 
-            // Build daily chart data for workdays only, days 1..today
-            const todayDay = now.getDate();
+            // Build daily chart data for workdays only. For the current month, only
+            // up to today; for a past month, the full month.
+            const lastChartDay = isCurrentMonth ? now.getDate() : daysInMonth;
             const dailyHours = [];
             const dailyCompletions = [];
             const dailyGaps = [];
-            for (let day = 1; day <= todayDay; day++) {
-                const date = new Date(now.getFullYear(), now.getMonth(), day);
+            for (let day = 1; day <= lastChartDay; day++) {
+                const date = new Date(monthStart.getFullYear(), monthStart.getMonth(), day);
                 if (!isWorkday(date, workdays)) continue;
 
-                const dayStart = new Date(now.getFullYear(), now.getMonth(), day, 0, 0, 0, 0);
-                const dayEnd   = new Date(now.getFullYear(), now.getMonth(), day, 23, 59, 59, 999);
+                const dayStart = new Date(monthStart.getFullYear(), monthStart.getMonth(), day, 0, 0, 0, 0);
+                const dayEnd   = new Date(monthStart.getFullYear(), monthStart.getMonth(), day, 23, 59, 59, 999);
                 const dayEntries = monthEntries.filter(e =>
                     e.start && new Date(e.start) >= dayStart && new Date(e.start) <= dayEnd);
 
@@ -1052,7 +1070,13 @@ customElements.define('app-context', class extends HTMLElement {
                 dailyGaps.reduce((sum, d) => sum + d.y, 0) * 10
             ) / 10;
 
-            this.weeklyStats.value = { hours: weeklyHours, tasksCompleted: weeklyTasksDone };
+            this.weeklyStats.value = {
+                hours: weeklyHours,
+                tasksCompleted: weeklyTasksDone,
+                weekOffset,
+                isCurrentWeek,
+                weekLabel
+            };
             this.monthlyStats.value = {
                 hours: monthlyHours,
                 tasksCompleted: monthlyTasksDone,
@@ -1061,7 +1085,10 @@ customElements.define('app-context', class extends HTMLElement {
                 dailyCompletions,
                 dailyGaps,
                 daysInMonth,
-                workdaysInMonth
+                workdaysInMonth,
+                monthOffset,
+                isCurrentMonth,
+                monthLabel
             };
         } catch (e) {
             console.error('Failed to load stats:', e);

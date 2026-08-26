@@ -7,6 +7,18 @@ template.innerHTML = /*html*/`
 <div class="stack">
     <section>
         <h3 class="h5">Totals</h3>
+        <div class="stats-nav">
+            <div class="stats-nav-group">
+                <button type="button" data-style="subtle" data-action="prev-week" aria-label="Previous week">‹</button>
+                <span data-label="weekRangeLabel">This Week</span>
+                <button type="button" data-style="subtle" data-action="next-week" aria-label="Next week" disabled>›</button>
+            </div>
+            <div class="stats-nav-group">
+                <button type="button" data-style="subtle" data-action="prev-month" aria-label="Previous month">‹</button>
+                <span data-label="monthRangeLabel">This Month</span>
+                <button type="button" data-style="subtle" data-action="next-month" aria-label="Next month" disabled>›</button>
+            </div>
+        </div>
         <table class="stats-table">
             <thead>
                 <tr>
@@ -84,7 +96,7 @@ template.innerHTML = /*html*/`
     </section>
 
     <section>
-        <h3 class="h5">Daily Hours This Month</h3>
+        <h3 class="h5">Daily Hours <span data-label="hoursChartMonthLabel">This Month</span></h3>
         <graph-chart
             width="600" height="200" padding="40"
             x-label="Day of Month" y-label="Hours"
@@ -93,7 +105,7 @@ template.innerHTML = /*html*/`
     </section>
 
     <section>
-        <h3 class="h5">Completed Tasks This Month</h3>
+        <h3 class="h5">Completed Tasks <span data-label="tasksChartMonthLabel">This Month</span></h3>
         <graph-chart
             width="600" height="200" padding="40"
             x-label="Day of Month" y-label="Tasks"
@@ -102,7 +114,7 @@ template.innerHTML = /*html*/`
     </section>
 
     <section>
-        <h3 class="h5">Daily Gaps This Month</h3>
+        <h3 class="h5">Daily Gaps <span data-label="gapsChartMonthLabel">This Month</span></h3>
         <graph-chart
             width="600" height="200" padding="40"
             x-label="Day of Month" y-label="Hours"
@@ -137,6 +149,23 @@ customElements.define('stats-page', class extends HTMLElement {
             }, true)
         );
 
+        this.querySelector('[data-action="prev-week"]').addEventListener('click', () => {
+            const weekOffset = (this.#weeklyStats?.value?.weekOffset ?? 0) - 1;
+            this.#loadStats(weekOffset, this.#monthlyStats?.value?.monthOffset ?? 0);
+        });
+        this.querySelector('[data-action="next-week"]').addEventListener('click', () => {
+            const weekOffset = Math.min(0, (this.#weeklyStats?.value?.weekOffset ?? 0) + 1);
+            this.#loadStats(weekOffset, this.#monthlyStats?.value?.monthOffset ?? 0);
+        });
+        this.querySelector('[data-action="prev-month"]').addEventListener('click', () => {
+            const monthOffset = (this.#monthlyStats?.value?.monthOffset ?? 0) - 1;
+            this.#loadStats(this.#weeklyStats?.value?.weekOffset ?? 0, monthOffset);
+        });
+        this.querySelector('[data-action="next-month"]').addEventListener('click', () => {
+            const monthOffset = Math.min(0, (this.#monthlyStats?.value?.monthOffset ?? 0) + 1);
+            this.#loadStats(this.#weeklyStats?.value?.weekOffset ?? 0, monthOffset);
+        });
+
         this._onHashChange = () => {
             if (window.location.hash === '#stats') {
                 this.#loadStats();
@@ -155,10 +184,10 @@ customElements.define('stats-page', class extends HTMLElement {
         window.removeEventListener('hashchange', this._onHashChange);
     }
 
-    #loadStats() {
+    #loadStats(weekOffset = 0, monthOffset = 0) {
         this.dispatchEvent(new CustomEvent('updateState', {
             bubbles: true,
-            detail: { type: 'loadStats' }
+            detail: { type: 'loadStats', weekOffset, monthOffset }
         }));
     }
 
@@ -176,6 +205,23 @@ customElements.define('stats-page', class extends HTMLElement {
             monthlyGapGoal   = 20
         } = settings;
 
+        // Period navigation labels and Next-button state
+        const weekLabelEl = this.querySelector('[data-label="weekRangeLabel"]');
+        if (weekLabelEl) weekLabelEl.textContent = weekly.isCurrentWeek === false ? weekly.weekLabel : 'This Week';
+        const monthLabelEl = this.querySelector('[data-label="monthRangeLabel"]');
+        if (monthLabelEl) monthLabelEl.textContent = monthly.isCurrentMonth === false ? monthly.monthLabel : 'This Month';
+
+        const nextWeekBtn = this.querySelector('[data-action="next-week"]');
+        if (nextWeekBtn) nextWeekBtn.disabled = weekly.isCurrentWeek !== false;
+        const nextMonthBtn = this.querySelector('[data-action="next-month"]');
+        if (nextMonthBtn) nextMonthBtn.disabled = monthly.isCurrentMonth !== false;
+
+        const monthChartLabel = monthly.isCurrentMonth === false ? monthly.monthLabel : 'This Month';
+        for (const name of ['hoursChartMonthLabel', 'tasksChartMonthLabel', 'gapsChartMonthLabel']) {
+            const el = this.querySelector(`[data-label="${name}"]`);
+            if (el) el.textContent = monthChartLabel;
+        }
+
         // Totals
         this.#out('weeklyHours',    weekly.hours  != null ? `${weekly.hours} h`   : '—');
         this.#out('weeklyTasks',    weekly.tasksCompleted  != null ? weekly.tasksCompleted  : '—');
@@ -189,10 +235,16 @@ customElements.define('stats-page', class extends HTMLElement {
         this.#progress('weeklyTasksText',   'weeklyTasksBar',   weekly.tasksCompleted,  weeklyTasksGoal,  '');
         this.#progress('monthlyTasksText',  'monthlyTasksBar',  monthly.tasksCompleted, monthlyTasksGoal, '');
 
-        // Gap progress — today's gap from dailyGaps, monthly total
-        const todayDayNum = new Date().getDate();
-        const todayGap = (monthly.dailyGaps || []).find(d => d.x === todayDayNum)?.y ?? 0;
-        this.#progress('dailyGapText',   'dailyGapBar',   todayGap,            dailyGapGoal,   'h');
+        // Daily gap goal only makes sense for "today", which only exists in the current month
+        if (monthly.isCurrentMonth === false) {
+            this.#out('dailyGapText', '—');
+            const dailyGapBar = this.querySelector('progress[name="dailyGapBar"]');
+            if (dailyGapBar) dailyGapBar.value = 0;
+        } else {
+            const todayDayNum = new Date().getDate();
+            const todayGap = (monthly.dailyGaps || []).find(d => d.x === todayDayNum)?.y ?? 0;
+            this.#progress('dailyGapText', 'dailyGapBar', todayGap, dailyGapGoal, 'h');
+        }
         this.#progress('monthlyGapText', 'monthlyGapBar', monthly.gaps ?? 0,   monthlyGapGoal, 'h');
 
         // Charts — use workdaysInMonth for daily goal divisor
