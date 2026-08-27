@@ -9,7 +9,7 @@ For detailed requirements and implementation tasks, see [REQUIREMENTS.md](./REQU
 
 - **Tasks** — Track tasks with priorities, statuses, and time entries
 - **Timeline** — View and edit time entries; lazy-load historical days
-- **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts
+- **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts; navigate to previous weeks/months with Prev/Next controls
 - **Settings** — Customize theme color, focus interval, time snap, and weekly/monthly goals
 - **File Sync** — Two-way sync with todo.txt / done.txt via File System Access API
 

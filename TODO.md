@@ -2,6 +2,21 @@
 
 ## Features Implemented
 
+### ✅ Stats page: previous week/month navigation (v1.13.0)
+
+The status page's Totals/Goals/charts previously only showed the current week and
+current month. Added independent Prev/Next navigation for each:
+- `handleLoadStats({ weekOffset, monthOffset })` in `app-context.js` now accepts
+  navigation offsets (`0` = current, negative = past periods) and fetches weekly and
+  monthly data via independent DB range queries, fixing a latent bug where weekly
+  totals were derived by filtering the month's data (only worked because the current
+  week always fell inside the current month).
+- `weeklyStats`/`monthlyStats` now carry `weekOffset`/`monthOffset`,
+  `isCurrentWeek`/`isCurrentMonth`, and human-readable `weekLabel`/`monthLabel`.
+- Daily charts show the full month when viewing a past month, instead of "up to today".
+- "Next" is disabled at the current period; re-entering `#stats` resets to current.
+- 5 new unit tests covering offset navigation and independence between week/month.
+
 ### ✅ Auto-set status to In Progress when timer starts (v1.12.0)
 
 When the user starts time tracking on a task, the task status is automatically set to "In Progress" — unless the task is already "Complete", in which case the status is left unchanged. This applies to tasks in any non-terminal state: not-started, on-hold, or already in-progress. The `currentTask` signal is also updated to reflect the new status immediately.

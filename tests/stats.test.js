@@ -40,6 +40,26 @@ function thisMonthDay(day, hours = 9, minutes = 0) {
     return d;
 }
 
+// Returns a date within the Monday-based week at `weekOffset` (0 = this week,
+// -1 = last week, ...), on the given day-of-week offset from that week's Monday
+// (default 2 = Wednesday, always a workday under the default Mon-Fri settings).
+function weekOffsetDate(weekOffset, weekdayOffset = 2, hours = 9, minutes = 0) {
+    const d = new Date();
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + weekOffset * 7 + weekdayOffset);
+    d.setHours(hours, minutes, 0, 0);
+    return d;
+}
+
+// Returns a date in the calendar month at `monthOffset` (0 = this month, -1 = last
+// month, ...), nudged forward from `day` until it lands on a Mon-Fri workday, so
+// tests aren't flaky against whatever weekday `day` happens to be this run.
+function monthOffsetWorkday(monthOffset, day = 10, hours = 9, minutes = 0) {
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() + monthOffset, day, hours, minutes, 0, 0);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    return d;
+}
+
 // ── getEntriesByDateRange ─────────────────────────────────────────────────────
 
 TestRunner.test('getEntriesByDateRange: returns entries within range', async () => {
@@ -214,8 +234,14 @@ TestRunner.test('handleLoadStats: computes weekly and monthly hours from entries
     const todayStart = new Date(now); todayStart.setHours(9, 0, 0, 0);
     const todayEnd   = new Date(now); todayEnd.setHours(11, 0, 0, 0); // 2 h
 
-    // Pick a day safely inside this month but before today
-    const dayInMonth = now.getDate() > 3 ? 2 : null;
+    // Pick a workday earlier in the month than today (default settings filter to
+    // Mon-Fri, so an arbitrary earlier day like "2" can land on a weekend and get
+    // silently excluded — search for one that's guaranteed to count).
+    let dayInMonth = null;
+    for (let day = 1; day < now.getDate(); day++) {
+        const dow = new Date(now.getFullYear(), now.getMonth(), day).getDay();
+        if (dow >= 1 && dow <= 5) { dayInMonth = day; break; }
+    }
     const entries = [
         { id: 'st_e1', task: 'T1', start: todayStart, end: todayEnd,
           lastModified: now, deleted: false }
@@ -337,4 +363,123 @@ TestRunner.test('handleLoadStats: weekly hours are subset of monthly hours', asy
         'Weekly hours should never exceed monthly hours');
     TestRunner.assert(weekly.hours >= 0, 'Weekly hours should be non-negative');
     TestRunner.assert(monthly.hours >= 0, 'Monthly hours should be non-negative');
+});
+
+// ── Week/month offset navigation ─────────────────────────────────────────────
+
+TestRunner.test('handleLoadStats: weekOffset -1 returns only last week\'s hours', async () => {
+    const lastWeekStart = weekOffsetDate(-1, 2, 9, 0);
+    const lastWeekEnd   = weekOffsetDate(-1, 2, 11, 0); // 2 h
+    const thisWeekStart = weekOffsetDate(0, 2, 9, 0);
+    const thisWeekEnd   = weekOffsetDate(0, 2, 10, 0); // 1 h
+
+    await seedData({
+        tasks: [{ exid: 'T1', description: 'Task', lastModified: new Date(), deleted: false }],
+        entries: [
+            { id: 'pw_e1', task: 'T1', start: lastWeekStart, end: lastWeekEnd,
+              lastModified: lastWeekStart, deleted: false },
+            { id: 'pw_e2', task: 'T1', start: thisWeekStart, end: thisWeekEnd,
+              lastModified: thisWeekStart, deleted: false }
+        ]
+    });
+
+    const appContext = document.querySelector('app-context');
+    await appContext.handleLoadStats({ weekOffset: -1 });
+
+    const weekly = appContext.weeklyStats.value;
+    TestRunner.assertEquals(weekly.hours, 2, 'Should include only last week\'s 2h entry');
+    TestRunner.assertEquals(weekly.isCurrentWeek, false, 'isCurrentWeek should be false for weekOffset -1');
+    TestRunner.assert(typeof weekly.weekLabel === 'string' && weekly.weekLabel.length > 0,
+        'weekLabel should be a non-empty string');
+});
+
+TestRunner.test('handleLoadStats: monthOffset -1 isolates last month\'s hours/tasks and spans the full month', async () => {
+    const prevStart = monthOffsetWorkday(-1, 10, 9, 0);
+    const prevEnd   = monthOffsetWorkday(-1, 10, 12, 0); // 3 h, same workday-adjusted date as prevStart
+    const completedPrevMonth = monthOffsetWorkday(-1, 15, 8, 0);
+
+    const now = new Date();
+    const thisMonthStart = new Date(now); thisMonthStart.setHours(9, 0, 0, 0);
+    const thisMonthEnd   = new Date(now); thisMonthEnd.setHours(10, 0, 0, 0); // 1 h, should be excluded
+
+    await seedData({
+        tasks: [
+            { exid: 'PM1', description: 'Completed last month', complete: true,
+              lastModified: completedPrevMonth, deleted: false },
+            { exid: 'T1', description: 'Task', lastModified: now, deleted: false }
+        ],
+        entries: [
+            { id: 'pm_e1', task: 'PM1', start: prevStart, end: prevEnd,
+              lastModified: prevStart, deleted: false },
+            { id: 'pm_e2', task: 'T1', start: thisMonthStart, end: thisMonthEnd,
+              lastModified: thisMonthStart, deleted: false }
+        ]
+    });
+
+    const appContext = document.querySelector('app-context');
+    await appContext.handleLoadStats({ monthOffset: -1 });
+
+    const monthly = appContext.monthlyStats.value;
+    TestRunner.assertEquals(monthly.isCurrentMonth, false, 'isCurrentMonth should be false for monthOffset -1');
+    TestRunner.assertEquals(monthly.hours, 3, 'Should include only last month\'s 3h entry');
+    TestRunner.assertEquals(monthly.tasksCompleted, 1, 'Should count only the task completed last month');
+    TestRunner.assert(typeof monthly.monthLabel === 'string' && monthly.monthLabel.length > 0,
+        'monthLabel should be a non-empty string');
+
+    // Daily chart arrays should span the *entire* previous month, not "up to today"
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const daysInPrevMonth = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1, 0).getDate();
+    let expectedWorkdays = 0;
+    for (let d = 1; d <= daysInPrevMonth; d++) {
+        if ([1, 2, 3, 4, 5].includes(new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth(), d).getDay())) {
+            expectedWorkdays++;
+        }
+    }
+    TestRunner.assertEquals(monthly.dailyHours.length, expectedWorkdays,
+        'dailyHours should cover every workday of the previous month, not just up to today');
+});
+
+TestRunner.test('handleLoadStats: weekOffset and monthOffset operate independently', async () => {
+    const thisWeekStart = weekOffsetDate(0, 2, 9, 0);
+    const thisWeekEnd   = weekOffsetDate(0, 2, 10, 0); // 1 h
+    const lastWeekStart = weekOffsetDate(-1, 2, 9, 0);
+    const lastWeekEnd   = weekOffsetDate(-1, 2, 11, 0); // 2 h
+
+    await seedData({
+        tasks: [{ exid: 'T1', description: 'Task', lastModified: new Date(), deleted: false }],
+        entries: [
+            { id: 'ind_e1', task: 'T1', start: thisWeekStart, end: thisWeekEnd,
+              lastModified: thisWeekStart, deleted: false },
+            { id: 'ind_e2', task: 'T1', start: lastWeekStart, end: lastWeekEnd,
+              lastModified: lastWeekStart, deleted: false }
+        ]
+    });
+
+    const appContext = document.querySelector('app-context');
+
+    await appContext.handleLoadStats({ weekOffset: -1, monthOffset: 0 });
+    TestRunner.assertEquals(appContext.weeklyStats.value.hours, 2,
+        'Weekly hours should reflect last week\'s entry regardless of monthOffset');
+
+    await appContext.handleLoadStats({ weekOffset: 0, monthOffset: 0 });
+    TestRunner.assertEquals(appContext.weeklyStats.value.hours, 1,
+        'Weekly hours should reflect this week\'s entry once weekOffset resets to 0');
+});
+
+TestRunner.test('handleLoadStats: defaults to the current week/month when called with no args', async () => {
+    await seedData({ tasks: [], entries: [] });
+
+    const appContext = document.querySelector('app-context');
+    await appContext.handleLoadStats();
+
+    TestRunner.assertEquals(appContext.weeklyStats.value.isCurrentWeek, true,
+        'No-arg call should mark isCurrentWeek true');
+    TestRunner.assertEquals(appContext.monthlyStats.value.isCurrentMonth, true,
+        'No-arg call should mark isCurrentMonth true');
+
+    await appContext.handleLoadStats({ weekOffset: -2, monthOffset: -3 });
+    TestRunner.assertEquals(appContext.weeklyStats.value.isCurrentWeek, false,
+        'weekOffset -2 should mark isCurrentWeek false');
+    TestRunner.assertEquals(appContext.monthlyStats.value.isCurrentMonth, false,
+        'monthOffset -3 should mark isCurrentMonth false');
 });
