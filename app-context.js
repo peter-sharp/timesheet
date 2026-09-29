@@ -862,8 +862,10 @@ customElements.define('app-context', class extends HTMLElement {
     }
 
     handleTaskComplete({ exid, complete }) {
+        // Keep status in sync with complete, otherwise a stale status (e.g. in-progress) wins on render
+        const status = complete ? "complete" : "not-started";
         this.tasks.value = this.tasks.value.map(x =>
-            x.exid === exid ? { ...x, complete, synced: complete, lastModified: new Date() } : x
+            x.exid === exid ? { ...x, complete, status, synced: complete, lastModified: new Date() } : x
         );
         this.entries.value = this.entries.value.map(x =>
             x.task === exid ? { ...x, synced: complete } : x

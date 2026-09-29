@@ -17,6 +17,15 @@ current month. Added independent Prev/Next navigation for each:
 - "Next" is disabled at the current period; re-entering `#stats` resets to current.
 - 5 new unit tests covering offset navigation and independence between week/month.
 
+### ✅ Clicking in-progress task completes it but icon stays "play" (fixed in v1.13.1)
+
+**Root cause:** `handleTaskComplete` in `app-context.js` set `complete` but left `status` as
+`in-progress`. On re-render `task-list.js` sets the `task-status` `status` attribute from
+`status` first, so the stale in-progress icon came back while the task was complete.
+
+**Fix:** `handleTaskComplete` now sets `status` to `complete` / `not-started` alongside `complete`.
+Covered by `tests/complete-in-progress-status.test.js`.
+
 ### ✅ Auto-set status to In Progress when timer starts (v1.12.0)
 
 When the user starts time tracking on a task, the task status is automatically set to "In Progress" — unless the task is already "Complete", in which case the status is left unchanged. This applies to tasks in any non-terminal state: not-started, on-hold, or already in-progress. The `currentTask` signal is also updated to reflect the new status immediately.
