@@ -39,6 +39,13 @@ template.innerHTML = /*html*/`
                     <td><output name="monthlyTasks">—</output></td>
                 </tr>
                 <tr>
+                    <th>Estimates Met</th>
+                    <td colspan="2">
+                        Week <output name="weeklyEstimatesMet">—</output> ·
+                        Month <output name="monthlyEstimatesMet">—</output>
+                    </td>
+                </tr>
+                <tr>
                     <th>Gaps (Month)</th>
                     <td><output name="monthlyGapHours">—</output></td>
                     <td>—</td>
@@ -110,6 +117,15 @@ template.innerHTML = /*html*/`
             width="600" height="200" padding="40"
             x-label="Day of Month" y-label="Tasks"
             class="daily-tasks-chart"
+        ></graph-chart>
+    </section>
+
+    <section>
+        <h3 class="h5">Estimates Met <span data-label="estimatesChartMonthLabel">This Month</span></h3>
+        <graph-chart
+            width="600" height="200" padding="40"
+            x-label="Day of Month" y-label="% Met"
+            class="daily-estimates-chart"
         ></graph-chart>
     </section>
 
@@ -217,7 +233,7 @@ customElements.define('stats-page', class extends HTMLElement {
         if (nextMonthBtn) nextMonthBtn.disabled = monthly.isCurrentMonth !== false;
 
         const monthChartLabel = monthly.isCurrentMonth === false ? monthly.monthLabel : 'This Month';
-        for (const name of ['hoursChartMonthLabel', 'tasksChartMonthLabel', 'gapsChartMonthLabel']) {
+        for (const name of ['hoursChartMonthLabel', 'tasksChartMonthLabel', 'estimatesChartMonthLabel', 'gapsChartMonthLabel']) {
             const el = this.querySelector(`[data-label="${name}"]`);
             if (el) el.textContent = monthChartLabel;
         }
@@ -227,6 +243,8 @@ customElements.define('stats-page', class extends HTMLElement {
         this.#out('weeklyTasks',    weekly.tasksCompleted  != null ? weekly.tasksCompleted  : '—');
         this.#out('monthlyHours',   monthly.hours != null ? `${monthly.hours} h`  : '—');
         this.#out('monthlyTasks',   monthly.tasksCompleted != null ? monthly.tasksCompleted : '—');
+        this.#out('weeklyEstimatesMet',  this.#estimateRate(weekly));
+        this.#out('monthlyEstimatesMet', this.#estimateRate(monthly));
         this.#out('monthlyGapHours', monthly.gaps != null ? `${monthly.gaps} h` : '—');
 
         // Goal progress
@@ -265,10 +283,20 @@ customElements.define('stats-page', class extends HTMLElement {
             tasksChart.setAttribute('goal', dailyTasksGoal);
             tasksChart.data = monthly.dailyCompletions || [];
         }
+        const estimatesChart = this.querySelector('.daily-estimates-chart');
+        if (estimatesChart) {
+            estimatesChart.data = monthly.dailyEstimateRate || [];
+        }
         if (gapsChart) {
             gapsChart.setAttribute('goal', dailyGapGoal);
             gapsChart.data = monthly.dailyGaps || [];
         }
+    }
+
+    #estimateRate({ estimatesMet, tasksCompleted } = {}) {
+        if (estimatesMet == null) return '—';
+        const pct = tasksCompleted > 0 ? Math.round((estimatesMet / tasksCompleted) * 100) : 0;
+        return `${estimatesMet}/${tasksCompleted} (${pct}%)`;
     }
 
     #out(name, value) {

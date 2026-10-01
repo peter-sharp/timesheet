@@ -97,6 +97,7 @@ async function runTests() {
     await import('./search-archived-tasks.test.js');
     await import('./start-task-status.test.js');
     await import('./complete-in-progress-status.test.js');
+    await import('./estimate.test.js');
 
     // Wait a bit for tests to register and async operations to complete
     await new Promise(resolve => setTimeout(resolve, 200));

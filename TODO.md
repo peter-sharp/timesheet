@@ -2,6 +2,15 @@
 
 ## Features Implemented
 
+### ✅ Task estimates (v1.14.0)
+
+- `estimate:` add-on (hours) is now stored on tasks (was parsed then dropped by `handleAddTask`/`handleAddTasks`).
+- **More info** gets an estimate field; implicit default 0.8h (`utils/estimate.js`), not written to todo.txt.
+- Status bar (`current-task.js`) shows all-time task hours vs estimate, live. Previous-day hours come from
+  new `taskPastTotals` signal, loaded via new `db.getEntriesByTasks(exids)` when the timed task changes.
+- Stats: "Estimates Met" row (week/month) + daily % met chart.
+- Possible follow-up: inline edit of estimate on existing tasks (currently re-add `#exid estimate:N`).
+
 ### ✅ Stats page: previous week/month navigation (v1.13.0)
 
 The status page's Totals/Goals/charts previously only showed the current week and

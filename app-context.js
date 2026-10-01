@@ -9,6 +9,7 @@ import extract from './utils/extract.js';
 import first from './utils/first.js';
 import last from './utils/last.js';
 import { syncOutbound, syncInbound } from './syncEngine.js';
+import { isEstimateMet } from './utils/estimate.js';
 
 // Pure function: calculate gaps between entries
 const calculateGaps = (entries) => entries.map((entry, i, arr) => {
@@ -109,6 +110,9 @@ customElements.define('app-context', class extends HTMLElement {
     monthlyStats = signal(null)
     filterQuery = signal('')
     archivedSearchResults = signal([])
+    // Hours per task from entries NOT in the in-memory `entries` (i.e. previous days),
+    // used with today's totals to compare all-time task time against its estimate
+    taskPastTotals = signal({})
 
     stateProvider = new ContextProvider(this, 'state', {
         settings: this.settings,
@@ -129,7 +133,8 @@ customElements.define('app-context', class extends HTMLElement {
         weeklyStats: this.weeklyStats,
         monthlyStats: this.monthlyStats,
         filterQuery: this.filterQuery,
-        archivedSearchResults: this.archivedSearchResults
+        archivedSearchResults: this.archivedSearchResults,
+        taskPastTotals: this.taskPastTotals
     });
 
     connectedCallback() {
@@ -203,6 +208,19 @@ customElements.define('app-context', class extends HTMLElement {
         this.recalculateTaskTotals();
         this.recalculateTotals();
         await this.refreshTaskLists();
+        await this.refreshTaskPastTotals(this.newEntry.value?.task);
+    }
+
+    // Loads previous-days hours for a task into taskPastTotals. Entries already held
+    // in memory (today's) are excluded so they aren't double counted with task.total.
+    async refreshTaskPastTotals(exid) {
+        if (!exid) return;
+        const db = await TimesheetDB();
+        const todaysIds = new Set(this.entries.value.map(e => e.id));
+        const pastHours = (await db.getEntriesByTasks([exid]))
+            .filter(e => !todaysIds.has(e.id) && e.start && e.end)
+            .reduce((sum, e) => sum + calcDuration({ start: new Date(e.start), end: new Date(e.end) }), 0);
+        this.taskPastTotals.value = { ...this.taskPastTotals.value, [exid]: pastHours };
     }
 
     // Loads full task data for tasks referenced by today's entries but missing from
@@ -312,6 +330,15 @@ customElements.define('app-context', class extends HTMLElement {
         // Clean up blank/timestamp-only tasks from DB
         const db = await TimesheetDB();
         await this._cleanupBlankTasks(db);
+
+        // Keep previous-days totals loaded for whichever task is being timed
+        let pastTotalsTask;
+        this.newEntry.effect(() => {
+            const exid = this.newEntry.value?.task;
+            if (exid === pastTotalsTask) return;
+            pastTotalsTask = exid;
+            this.refreshTaskPastTotals(exid).catch(e => console.warn('Failed to load task past totals:', e));
+        });
 
         // Load task lists for different datalist components
         this.allTasks.value = await db.getRecentTasks(500);
@@ -570,7 +597,7 @@ customElements.define('app-context', class extends HTMLElement {
         this.recalculateTotals();
     }
 
-    async handleAddTask({ raw, exid: providedExid, client: providedClient }) {
+    async handleAddTask({ raw, exid: providedExid, client: providedClient, estimate: providedEstimate }) {
         // Extract todo.txt priority notation e.g. "(A) task description"
         const priorityMatch = (raw || '').match(/^\(([A-Z])\)\s*/);
         const inputPriority = priorityMatch ? priorityMatch[1] : undefined;
@@ -583,6 +610,7 @@ customElements.define('app-context', class extends HTMLElement {
         );
         const taskExid = String(providedExid || exid || Date.now());
         const taskClient = providedClient || client;
+        const taskEstimate = String(providedEstimate || estimate || '');
 
         // Extract any additional key:value metadata and clean description
         const metadata = {};
@@ -619,6 +647,7 @@ customElements.define('app-context', class extends HTMLElement {
                         client: taskClient || task.client,
                         project: project || task.project,
                         context: context || task.context,
+                        estimate: taskEstimate || task.estimate || '',
                         description: cleanDescription || task.description,
                         ...(inputPriority !== undefined ? { priority: inputPriority } : {}),
                         ...(Object.keys(metadata).length > 0 ? { metadata: { ...task.metadata, ...metadata } } : {}),
@@ -650,6 +679,7 @@ customElements.define('app-context', class extends HTMLElement {
                     client: taskClient || archivedTask.client,
                     project: project || archivedTask.project,
                     context: context || archivedTask.context,
+                    estimate: taskEstimate || archivedTask.estimate || '',
                     description: cleanDescription || archivedTask.description,
                     ...(Object.keys(metadata).length > 0 ? { metadata: { ...archivedTask.metadata, ...metadata } } : {}),
                     lastModified: new Date()
@@ -663,6 +693,7 @@ customElements.define('app-context', class extends HTMLElement {
                     client: taskClient,
                     project: project || '',
                     context: context || '',
+                    estimate: taskEstimate,
                     description: cleanDescription,
                     ...(inputPriority !== undefined ? { priority: inputPriority } : {}),
                     ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
@@ -739,6 +770,7 @@ customElements.define('app-context', class extends HTMLElement {
                     client: taskClient || existingTask.client,
                     project: project || existingTask.project,
                     context: context || existingTask.context,
+                    estimate: estimate || existingTask.estimate || '',
                     description: cleanDescription || existingTask.description,
                     ...(inputPriority !== undefined ? { priority: inputPriority } : {}),
                     ...(Object.keys(metadata).length > 0 ? { metadata: { ...existingTask.metadata, ...metadata } } : {}),
@@ -751,6 +783,7 @@ customElements.define('app-context', class extends HTMLElement {
                     client: taskClient,
                     project: project || '',
                     context: context || '',
+                    estimate: estimate || '',
                     description: cleanDescription,
                     ...(inputPriority !== undefined ? { priority: inputPriority } : {}),
                     ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
@@ -1017,6 +1050,16 @@ customElements.define('app-context', class extends HTMLElement {
             const workdayCompletedWeekTasks = completedWeekTasks.filter(t =>
                 t.lastModified && isWorkday(new Date(t.lastModified), workdays));
 
+            // All-time hours for each completed task, to check it against its estimate
+            const completedExids = [...workdayCompletedTasks, ...workdayCompletedWeekTasks].map(t => t.exid);
+            const allTimeHours = (await db.getEntriesByTasks(completedExids)).reduce((totals, e) => {
+                if (!e.start || !e.end) return totals;
+                totals[e.task] = (totals[e.task] || 0) + calcDuration({ start: new Date(e.start), end: new Date(e.end) });
+                return totals;
+            }, {});
+            const countEstimatesMet = (tasks) =>
+                tasks.filter(t => isEstimateMet(allTimeHours[t.exid] || 0, t)).length;
+
             const monthlyHours = Math.round(sumHours(workdayMonthEntries) * 10) / 10;
             const monthlyTasksDone = workdayCompletedTasks.length;
 
@@ -1037,6 +1080,7 @@ customElements.define('app-context', class extends HTMLElement {
             const dailyHours = [];
             const dailyCompletions = [];
             const dailyGaps = [];
+            const dailyEstimateRate = [];
             for (let day = 1; day <= lastChartDay; day++) {
                 const date = new Date(monthStart.getFullYear(), monthStart.getMonth(), day);
                 if (!isWorkday(date, workdays)) continue;
@@ -1050,8 +1094,13 @@ customElements.define('app-context', class extends HTMLElement {
 
                 const done = completedTasks.filter(t =>
                     t.lastModified && new Date(t.lastModified) >= dayStart &&
-                    new Date(t.lastModified) <= dayEnd).length;
-                dailyCompletions.push({ x: day, y: done });
+                    new Date(t.lastModified) <= dayEnd);
+                dailyCompletions.push({ x: day, y: done.length });
+
+                // Percent of tasks completed that day which came in on/under estimate
+                if (done.length) {
+                    dailyEstimateRate.push({ x: day, y: Math.round(countEstimatesMet(done) / done.length * 100) });
+                }
 
                 // Calculate gaps: sum of intervals between consecutive entries
                 const sorted = [...dayEntries]
@@ -1075,6 +1124,7 @@ customElements.define('app-context', class extends HTMLElement {
             this.weeklyStats.value = {
                 hours: weeklyHours,
                 tasksCompleted: weeklyTasksDone,
+                estimatesMet: countEstimatesMet(workdayCompletedWeekTasks),
                 weekOffset,
                 isCurrentWeek,
                 weekLabel
@@ -1082,6 +1132,8 @@ customElements.define('app-context', class extends HTMLElement {
             this.monthlyStats.value = {
                 hours: monthlyHours,
                 tasksCompleted: monthlyTasksDone,
+                estimatesMet: countEstimatesMet(workdayCompletedTasks),
+                dailyEstimateRate,
                 gaps: monthlyGaps,
                 dailyHours,
                 dailyCompletions,

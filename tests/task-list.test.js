@@ -7,8 +7,9 @@ TestRunner.test('task-list emits addTask event with form values', async () => {
   return new Promise(resolve => {
     const component = document.querySelector('task-list');
     // Listen for the updateState event (emitEvent dispatches updateState, not addTask)
-    component.addEventListener('updateState', (ev) => {
+    component.addEventListener('updateState', function onAddTask(ev) {
       if (ev.detail.type === 'addTask') {
+        component.removeEventListener('updateState', onAddTask);
         TestRunner.assertEquals(ev.detail.raw, 'MyTask', 'raw field should match input');
         TestRunner.assertEquals(ev.detail.exid, '123', 'exid field should match input');
         TestRunner.assertEquals(ev.detail.client, 'ClientA', 'client field should match input');

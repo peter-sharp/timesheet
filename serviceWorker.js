@@ -41,6 +41,7 @@ const assets = [
   "./utils/apply.js",
   "./utils/calcDuration.js",
   "./utils/calculateGaps.js",
+  "./utils/estimate.js",
   "./utils/colorUtils.js",
   "./utils/emitEvent.js",
   "./utils/extract.js",
