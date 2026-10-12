@@ -9,7 +9,7 @@ For detailed requirements and implementation tasks, see [REQUIREMENTS.md](./REQU
 
 - **Tasks** — Track tasks with priorities, statuses, and time entries
 - **Timeline** — View and edit time entries; lazy-load historical days
-- **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts; navigate to previous weeks/months with Prev/Next controls
+- **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts (incl. % of completed tasks meeting their estimate); navigate to previous weeks/months with Prev/Next controls
 - **Settings** — Customize theme color, focus interval, time snap, and weekly/monthly goals
 - **File Sync** — Two-way sync with todo.txt / done.txt via File System Access API
 
@@ -44,6 +44,12 @@ To change status: **long press** (hold 500 ms) or **right-click** the checkbox t
 - Archived tasks remain in the database and appear in the add-task autocomplete
 - Re-adding an archived task by name automatically unarchives it and restores it to today's list
 - Archiving stops any active timer on the task
+
+#### Task Estimates
+- Add an estimate (hours) with the todo.txt add-on `estimate:0.4`, or via the **More info → estimate** field
+- Tasks without an estimate use an implicit default of **0.8h** (not written to todo.txt)
+- The status bar shows the timed task's **all-time** hours vs its estimate (e.g. `1.20h / 0.80h (+0.40h over)`), updating live while recording
+- A completed task "meets" its estimate when its all-time hours ≤ estimate; Stats shows the week/month rate and a daily % chart
 
 #### Historical Data Browsing
 - Both the **Tasks** and **Timeline** pages include a "Load previous day" button below today's content

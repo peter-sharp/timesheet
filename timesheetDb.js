@@ -847,6 +847,19 @@ TimesheetDB.modules.push(function entriesDb() {
             return entries;
         }
 
+        // Returns non-deleted entries (any date) belonging to any of the given task exids
+        async function getEntriesByTasks(exids) {
+            const entries = [];
+            for (const exid of new Set(exids)) {
+                // One transaction per exid: a transaction can auto-commit between awaited cursors
+                const index = db.transaction(["entries"], "readonly").objectStore("entries").index("task");
+                for await (const entry of awaitCursor(index.openCursor(IDBKeyRange.only(exid)))) {
+                    if (!entry.deleted) entries.push(entry);
+                }
+            }
+            return entries;
+        }
+
         // Find the date of the previous day with entries, searching backwards from beforeDate.
         // Skips empty days. Returns null if no entries found within maxDaysBack days.
         async function getPreviousDayWithEntries(beforeDate, maxDaysBack = 365) {
@@ -885,6 +898,7 @@ TimesheetDB.modules.push(function entriesDb() {
             getAllEntries,
             getEntriesByDay,
             getEntriesByDateRange,
+            getEntriesByTasks,
             getPreviousDayWithEntries
         }
     }

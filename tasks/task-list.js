@@ -50,12 +50,16 @@ taskForm.innerHTML = /*html*/ `
       <summary>More info</summary>
       <div class="row">
         <div class="input-group">
-            <label for="newTask">ID</label>
-            <input id="newTask" type="text" name="exid">
+            <label for="newTaskExid">ID</label>
+            <input id="newTaskExid" type="text" name="exid">
         </div>
         <div class="input-group">
-            <label for="newTask">client</label>
-            <input id="newTask" type="text" name="client">
+            <label for="newTaskClient">client</label>
+            <input id="newTaskClient" type="text" name="client">
+        </div>
+        <div class="input-group">
+            <label for="newTaskEstimate">estimate (h)</label>
+            <input id="newTaskEstimate" type="number" name="estimate" step="0.1" min="0" placeholder="0.8">
         </div>
       </div>
     </details>
@@ -352,6 +356,7 @@ class TaskList extends HTMLElement {
         ev.preventDefault();
         const elExid = ev.target.elements.exid;
         const elClient = ev.target.elements.client;
+        const elEstimate = ev.target.elements.estimate;
         const container = inputGroup.querySelector('.batch-input-container');
         const extraInputs = container
           ? Array.from(container.querySelectorAll('input[name="taskRawExtra"]'))
@@ -377,6 +382,7 @@ class TaskList extends HTMLElement {
             raw: primaryInput.value,
             exid: elExid.value,
             client: elClient.value,
+            estimate: elEstimate.value,
           });
           primaryInput.value = "";
           clearBtn.hidden = true;
@@ -384,6 +390,7 @@ class TaskList extends HTMLElement {
         }
         elExid.value = "";
         elClient.value = "";
+        elEstimate.value = "";
 
         // Close the details element
         const detailsElement = ev.target.querySelector('details');

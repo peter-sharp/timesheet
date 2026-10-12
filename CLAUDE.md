@@ -25,8 +25,8 @@ Before or alongside implementing a feature, check whether it supersedes any exis
 
 Update the following version numbers (increment patch version for bug fixes, minor version for features):
 
-- **script.js**: Update `APP_VERSION` constant (currently "1.8.0")
-- **package.json**: Update `version` field (currently "1.8.0")
+- **script.js**: Update `APP_VERSION` constant (currently "1.14.0")
+- **package.json**: Update `version` field (currently "1.14.0")
 - **⚠️ IMPORTANT**: script.js and package.json versions **MUST match**
 - **timesheetStore.js**: Update `APP_VERSION` constant (currently "2.0") - only if storage schema changes
 

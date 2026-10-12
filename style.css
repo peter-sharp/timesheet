@@ -889,3 +889,12 @@ button[data-state="started"] {
   cursor: default;
   opacity: 0.5;
 }
+
+.current-task__estimate {
+  color: var(--color-text-muted);
+  font-size: 0.85em;
+}
+
+.current-task__estimate[data-over] {
+  color: var(--color-table-focus);
+}
