@@ -94,3 +94,36 @@ TestRunner.test('task detail: drill-down form loads task and saves edits', async
     detail.remove();
     window.location.hash = '';
 });
+
+TestRunner.test('task detail: router slides forward into detail and back to list', async () => {
+    await import('../hash-router.js');
+    window.location.hash = '#tasks';
+    const router = document.createElement('hash-router');
+    router.setAttribute('default', 'tasks');
+    router.innerHTML = '<section id="tasks"></section><section id="task"></section><section id="stats"></section>';
+    document.body.append(router);
+    await wait(10);
+    const root = document.documentElement;
+
+    window.location.hash = '#task/TD5';
+    window.dispatchEvent(new Event('hashchange'));
+    TestRunner.assertEquals(root.dataset.pageTransition, 'forward', 'list -> detail slides forward');
+    TestRunner.assert(!router.querySelector('#task').hidden, 'detail page shown');
+    TestRunner.assert(router.querySelector('#tasks').hidden, 'list page hidden');
+    await wait(600);
+    TestRunner.assertEquals(root.dataset.pageTransition, undefined, 'transition flag cleared');
+
+    window.location.hash = '#tasks';
+    window.dispatchEvent(new Event('hashchange'));
+    TestRunner.assertEquals(root.dataset.pageTransition, 'back', 'detail -> list slides back');
+    TestRunner.assert(!router.querySelector('#tasks').hidden, 'list page shown');
+    await wait(600);
+
+    window.location.hash = '#stats';
+    window.dispatchEvent(new Event('hashchange'));
+    TestRunner.assertEquals(root.dataset.pageTransition, undefined, 'same-level tab switch does not slide');
+    TestRunner.assert(!router.querySelector('#stats').hidden, 'stats page shown');
+
+    router.remove();
+    window.location.hash = '';
+});

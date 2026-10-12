@@ -945,3 +945,54 @@ task-detail a:visited {
 .current-task__estimate[data-over] {
   color: var(--color-table-focus);
 }
+
+/* Drill-down page slide (task list <-> task detail). Direction set by hash-router.js */
+hash-router {
+  display: block;
+  view-transition-name: page;
+}
+/* Footer gets its own layer (after page in DOM order) so sliding pages pass beneath it */
+.app-footer {
+  view-transition-name: app-footer;
+}
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(app-footer),
+::view-transition-old(app-footer),
+::view-transition-new(app-footer) {
+  animation: none;
+}
+::view-transition-old(page),
+::view-transition-new(page) {
+  animation-duration: 250ms;
+  animation-timing-function: ease-out;
+}
+:root[data-page-transition="forward"]::view-transition-old(page) { animation-name: page-slide-to-left; }
+:root[data-page-transition="forward"]::view-transition-new(page) { animation-name: page-slide-from-right; }
+:root[data-page-transition="back"]::view-transition-old(page) { animation-name: page-slide-to-right; }
+:root[data-page-transition="back"]::view-transition-new(page) { animation-name: page-slide-from-left; }
+
+/* Browsers without view transitions: slide the incoming page only */
+@supports not (view-transition-name: none) {
+  :root[data-page-transition] hash-router {
+    overflow-x: clip;
+  }
+  :root[data-page-transition="forward"] hash-router > :not([hidden]) {
+    animation: page-slide-from-right 250ms ease-out;
+  }
+  :root[data-page-transition="back"] hash-router > :not([hidden]) {
+    animation: page-slide-from-left 250ms ease-out;
+  }
+}
+
+@keyframes page-slide-from-right { from { transform: translateX(100%); } }
+@keyframes page-slide-from-left { from { transform: translateX(-100%); } }
+@keyframes page-slide-to-left { to { transform: translateX(-100%); } }
+@keyframes page-slide-to-right { to { transform: translateX(100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(page),
+  ::view-transition-new(page) {
+    animation: none;
+  }
+}

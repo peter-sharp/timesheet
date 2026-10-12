@@ -2,6 +2,13 @@
 
 ## Features Implemented
 
+### ✅ Slide transition between task list and task detail (v1.16.0)
+
+- `hash-router.js` tracks route depth (`#tasks` = 0, `#task/X` = 1): deeper slides forward (from right),
+  shallower slides back (from left). Same-level tab switches stay instant.
+- Uses the View Transitions API when available; otherwise CSS keyframes slide the incoming page only.
+- Skipped under `prefers-reduced-motion`. Footer has its own transition layer so pages slide beneath it.
+
 ### ✅ Task detail / edit screen (v1.15.0)
 
 - Chevron link (`<a name="details" href="#task/<exid>">`) is the right-most task action; always visible

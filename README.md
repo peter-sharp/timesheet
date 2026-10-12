@@ -48,6 +48,7 @@ To change status: **long press** (hold 500 ms) or **right-click** the checkbox t
 #### Editing Tasks
 - Each task row ends with a chevron (›), always the right-most icon; it opens the **Edit task** screen (`#task/<id>`)
 - Edit description, project, context, client, priority, due date and estimate; **Save** returns to the task list
+- The edit screen slides in from the right and slides back out on return (off when reduced motion is preferred)
 - Blank fields clear the property; the task ID is read-only
 
 #### Task Estimates
