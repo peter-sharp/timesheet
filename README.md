@@ -45,6 +45,12 @@ To change status: **long press** (hold 500 ms) or **right-click** the checkbox t
 - Re-adding an archived task by name automatically unarchives it and restores it to today's list
 - Archiving stops any active timer on the task
 
+#### Editing Tasks
+- Each task row ends with a chevron (›), always the right-most icon; it opens the **Edit task** screen (`#task/<id>`)
+- Edit description, project, context, client, priority, due date and estimate; **Save** returns to the task list
+- The edit screen slides in from the right and slides back out on return (off when reduced motion is preferred)
+- Blank fields clear the property; the task ID is read-only
+
 #### Task Estimates
 - Add an estimate (hours) with the todo.txt add-on `estimate:0.4`, or via the **More info → estimate** field
 - Tasks without an estimate use an implicit default of **0.8h** (not written to todo.txt)

@@ -91,6 +91,8 @@ taskRow.innerHTML = /*html*/ `
             <!-- <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button> -->
             <button name="start" type="button" data-style="subtle"><span class="sr-only" data-label>Start</span><svg width=16 height=16><title>play</title><use href="#icon-play"></use></svg></button>
             <button name="stop" class="pulseOpacity" data-state="started" hidden type="button" data-style="subtle"><span class="sr-only" data-label>Stop</span><svg width=16 height=16><title>pause</title><use href="#icon-pause"></use></svg><pie-progress></pie-progress></pie-progress></button>
+            <!-- Chevron must stay the right-most action -->
+            <a name="details" href="#task/" class="task-item__details-link" data-style="subtle"><span class="sr-only">Edit task</span><svg width=16 height=16><title>edit task</title><use href="#icon-chevron-right"></use></svg></a>
         </span>
 </li>`;
 
@@ -672,6 +674,7 @@ class TaskList extends HTMLElement {
         priorityBtn.dataset.priority = priority || '';
         priorityBtn.setAttribute('aria-label', priority ? `Priority ${priority}` : 'Set priority');
     }
+    item.querySelector('[name="details"]').href = `#task/${encodeURIComponent(exid)}`;
     const elDesc = item.querySelector("[data-description]");
     elDesc.innerText = description;
     elDesc.hidden = description.length == 0;

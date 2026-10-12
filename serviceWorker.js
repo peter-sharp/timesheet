@@ -24,6 +24,7 @@ const assets = [
   "./components/graph-chart.js",
   "./store.js",
   "./style.css",
+  "./tasks/task-detail.js",
   "./tasks/task-list.js",
   "./tasks/task-status.js",
   "./tasks/tasks.js",
