@@ -593,6 +593,53 @@ button[data-state="started"] {
   justify-content: flex-end;
   grid-area: actions;
 }
+.task-item__details-link {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: content-box;
+  font-size: 13.3333px; /* match browser default button font size */
+  line-height: 0.7;
+  padding: 0.6em 0.9em;
+  border: 0.1em solid transparent;
+  border-radius: 0.6em;
+  color: var(--color-text);
+  background-color: var(--color-button-subtle-bg);
+  transition: background-color 100ms;
+}
+.task-item__details-link:focus,
+.task-item__details-link:hover {
+  background-color: var(--color-button-subtle-hover-bg);
+  color: var(--color-button-subtle-hover-text);
+}
+/* Chevron is always visible, unlike the hover-revealed actions */
+.context-reveal__item:has(.task-item__details-link) {
+  opacity: 1;
+}
+.context-reveal__item > :not(.task-item__details-link) {
+  transition: opacity 600ms ease;
+  opacity: 0;
+}
+.context-reveal:where(:hover,:focus-within, :target, [data-state="active"]) .context-reveal__item > * {
+  opacity: 1;
+}
+.task-detail__form .row {
+  flex-wrap: wrap;
+}
+task-detail a:link,
+task-detail a:visited {
+  color: var(--color-text);
+}
+
+/* Narrow screens: actions drop to their own row so the chevron stays visible */
+@media (max-width: 36em) {
+  .task-item {
+    grid-template-areas:
+    "complete priority content time"
+    ". . actions actions";
+    grid-template-columns: auto auto 1fr min-content;
+  }
+}
+
 .task-item__details,
 .task-item__description {
   margin: 0;

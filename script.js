@@ -5,6 +5,7 @@ import "./hash-router.js";
 import "./hash-nav.js";
 import "./current-task.js";
 import "./tasks/task-list.js";
+import "./tasks/task-detail.js";
 import "./pie-progress.js";
 import "./tasks/task-status.js";
 import "./file-sync-menu.js";
@@ -16,7 +17,7 @@ import { offsetHue, hexToHsla } from "./utils/colorUtils.js";
 import store from "./timesheetStore.js";
 import { effect } from "./utils/Signal.js";
 
-const APP_VERSION = "1.14.0";
+const APP_VERSION = "1.15.0";
 
 (async () => {
     // Register service worker

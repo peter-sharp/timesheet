@@ -399,6 +399,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'taskPriorityChanged':
                 this.handleTaskPriorityChanged(data);
                 break;
+            case 'updateTask':
+                this.handleUpdateTask(data);
+                break;
             case 'taskComplete':
                 this.handleTaskComplete(data);
                 break;
@@ -892,6 +895,29 @@ customElements.define('app-context', class extends HTMLElement {
         this.tasks.value = this.tasks.value.map(x =>
             x.exid === exid ? { ...x, priority: priority || undefined, lastModified: new Date() } : x
         );
+    }
+
+    // Edit task properties from the task detail screen. Blank values clear the field.
+    handleUpdateTask({ exid, description, project, context, client, due, estimate, priority }) {
+        const clean = (value, sigil) => String(value ?? '').trim().replace(sigil, '');
+        const changes = {
+            description: clean(description),
+            project: clean(project, /^\+/).replace(/\s+/g, '_'),
+            context: clean(context, /^@/).replace(/\s+/g, '_'),
+            client: clean(client).replace(/\s+/g, '_'),
+            due: clean(due),
+            estimate: clean(estimate),
+            priority: clean(priority).toUpperCase().slice(0, 1) || undefined,
+            lastModified: new Date()
+        };
+        const applyChanges = t => t.exid === exid ? { ...t, ...changes } : t;
+        this.tasks.value = this.tasks.value.map(applyChanges);
+        this.todaysTasks.value = this.todaysTasks.value.map(applyChanges);
+        this.allTasksWithDeleted.value = this.allTasksWithDeleted.value.map(applyChanges);
+
+        if (changes.client && !this.clients.value.some(c => c.name === changes.client)) {
+            this.clients.value = [...this.clients.value, { name: changes.client }];
+        }
     }
 
     handleTaskComplete({ exid, complete }) {

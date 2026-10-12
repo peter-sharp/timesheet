@@ -2,6 +2,15 @@
 
 ## Features Implemented
 
+### ✅ Task detail / edit screen (v1.15.0)
+
+- Chevron link (`<a name="details" href="#task/<exid>">`) is the right-most task action; always visible
+  (other actions stay hover-revealed). On narrow screens actions wrap to their own row.
+- New `tasks/task-detail.js` (`<task-detail>`) in a `#task` section edits description, project, context,
+  client, priority, due, estimate. Emits `updateTask` → `handleUpdateTask` in `app-context.js`.
+- `hash-router.js` resolves sub-routes (`#task/X` → section `#task`); unknown hashes fall back to default.
+- Possible follow-ups: rename exid (needs entry re-keying), edit archived tasks from search results.
+
 ### ✅ Task estimates (v1.14.0)
 
 - `estimate:` add-on (hours) is now stored on tasks (was parsed then dropped by `handleAddTask`/`handleAddTasks`).
@@ -9,7 +18,7 @@
 - Status bar (`current-task.js`) shows all-time task hours vs estimate, live. Previous-day hours come from
   new `taskPastTotals` signal, loaded via new `db.getEntriesByTasks(exids)` when the timed task changes.
 - Stats: "Estimates Met" row (week/month) + daily % met chart.
-- Possible follow-up: inline edit of estimate on existing tasks (currently re-add `#exid estimate:N`).
+- ~~Possible follow-up: inline edit of estimate on existing tasks~~ — done via task detail screen (v1.15.0).
 
 ### ✅ Stats page: previous week/month navigation (v1.13.0)
 
