@@ -95,6 +95,44 @@ TestRunner.test('task detail: drill-down form loads task and saves edits', async
     window.location.hash = '';
 });
 
+TestRunner.test('task detail: play/pause button times the task and % of estimate shown', async () => {
+    const detail = document.createElement('task-detail');
+    appContext.append(detail);
+    appContext.newEntry.value = {};
+    appContext.taskPastTotals.value = { TD6: 0.5 };
+    appContext.tasks.value = [{ exid: 'TD6', description: 'Time me', estimate: '2', total: 0.5 }];
+    window.location.hash = '#task/TD6';
+    window.dispatchEvent(new Event('hashchange'));
+    await wait();
+
+    const form = detail.querySelector('form');
+    const play = form.querySelector('[name="start"]');
+    const pause = form.querySelector('[name="stop"]');
+    const taken = form.elements.estimateTaken;
+    TestRunner.assert(!play.hidden && pause.hidden, 'play shown when not timing');
+    TestRunner.assertEquals(taken.value, '50% taken', '1h of 2h estimate');
+    TestRunner.assert(!taken.hasAttribute('data-over'), 'not over estimate');
+
+    form.elements.estimate.value = '0.5';
+    form.elements.estimate.dispatchEvent(new Event('input', { bubbles: true }));
+    TestRunner.assertEquals(taken.value, '200% taken', 'recalculated from typed estimate');
+    TestRunner.assert(taken.hasAttribute('data-over'), 'flagged over estimate');
+
+    play.click();
+    await wait();
+    TestRunner.assertEquals(appContext.newEntry.value.task, 'TD6', 'task started');
+    TestRunner.assert(play.hidden && !pause.hidden, 'pause shown while timing');
+    TestRunner.assertEquals(form.elements.estimate.value, '0.5', 'in-progress edit kept on start');
+
+    pause.click();
+    await wait();
+    TestRunner.assert(!appContext.newEntry.value.start, 'task stopped');
+    TestRunner.assert(!play.hidden && pause.hidden, 'play shown after stop');
+
+    detail.remove();
+    window.location.hash = '';
+});
+
 TestRunner.test('task detail: router slides forward into detail and back to list', async () => {
     await import('../hash-router.js');
     window.location.hash = '#tasks';

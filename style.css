@@ -625,6 +625,18 @@ button[data-state="started"] {
 .task-detail__form .row {
   flex-wrap: wrap;
 }
+.task-detail__header {
+  align-items: center;
+}
+.task-detail__estimate-taken {
+  align-self: center;
+  color: var(--color-text-muted);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.task-detail__estimate-taken[data-over] {
+  color: var(--color-table-focus);
+}
 task-detail a:link,
 task-detail a:visited {
   color: var(--color-text);

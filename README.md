@@ -50,6 +50,8 @@ To change status: **long press** (hold 500 ms) or **right-click** the checkbox t
 - Edit description, project, context, client, priority, due date and estimate; **Save** returns to the task list
 - The edit screen slides in from the right and slides back out on return (off when reduced motion is preferred)
 - Blank fields clear the property; the task ID is read-only
+- Play/pause button next to the task ID starts/stops timing the task without leaving the screen
+- Next to the estimate field, shows the % of the estimate taken so far (all-time hours incl. a running timer; recalculates as you type; highlighted over 100%)
 
 #### Task Estimates
 - Add an estimate (hours) with the todo.txt add-on `estimate:0.4`, or via the **More info → estimate** field

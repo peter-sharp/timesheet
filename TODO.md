@@ -2,6 +2,12 @@
 
 ## Features Implemented
 
+### ✅ Task detail: play/pause and % of estimate taken (v1.17.0)
+
+- Play/pause button in the task detail header emits `startTask`/`stopTask`; toggles with `newEntry`.
+- `% taken` output beside the estimate input: (past days + today + running) / estimate (default 0.8h if blank),
+  live via `timeLoop`, recalculated on estimate input; `data-over` when > 100%.
+
 ### ✅ Slide transition between task list and task detail (v1.16.0)
 
 - `hash-router.js` tracks route depth (`#tasks` = 0, `#task/X` = 1): deeper slides forward (from right),
