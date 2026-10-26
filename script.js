@@ -17,7 +17,7 @@ import { offsetHue, hexToHsla } from "./utils/colorUtils.js";
 import store from "./timesheetStore.js";
 import { effect } from "./utils/Signal.js";
 
-const APP_VERSION = "1.16.0";
+const APP_VERSION = "1.17.0";
 
 (async () => {
     // Register service worker
