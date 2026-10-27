@@ -25,3 +25,14 @@ TestRunner.test('task-list emits addTask event with form values', async () => {
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
   });
 });
+
+TestRunner.test('task-list highlightMatch handles numeric exids from archived search results', async () => {
+  await new Promise(r => requestAnimationFrame(r));
+  const component = document.querySelector('task-list');
+  const container = document.createElement('p');
+  container.append(component.highlightMatch(663287, 'azbom'));
+  TestRunner.assertEquals(container.textContent, '663287', 'Numeric exid should render as text without throwing');
+  const matched = document.createElement('p');
+  matched.append(component.highlightMatch(663287, '32'));
+  TestRunner.assertEquals(matched.querySelector('mark')?.textContent, '32', 'Numeric exid match should be highlighted');
+});

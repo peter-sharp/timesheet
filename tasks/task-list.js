@@ -462,8 +462,10 @@ class TaskList extends HTMLElement {
 
   }
 
-  highlightMatch(text, query) {
-    if (!text || !query) return document.createTextNode(text || '');
+  highlightMatch(value, query) {
+    // exids parsed from todo.txt / imports can be numbers
+    const text = value == null ? '' : String(value);
+    if (!text || !query) return document.createTextNode(text);
     const idx = text.toLowerCase().indexOf(query.toLowerCase());
     if (idx === -1) return document.createTextNode(text);
     const frag = document.createDocumentFragment();
@@ -554,7 +556,7 @@ class TaskList extends HTMLElement {
         desc.className = 'task-item__content';
         const details = document.createElement('p');
         details.className = 'task-item__details opacity50';
-        details.append(this.highlightMatch(task.exid || '', query));
+        details.append(this.highlightMatch(task.exid ?? '', query));
         if (task.project) details.append(document.createTextNode(` +${task.project.replace(/_/g, ' ')}`));
         if (task.context) details.append(document.createTextNode(` @${task.context}`));
         if (task.client) details.append(document.createTextNode(` client:${task.client}`));
