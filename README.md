@@ -11,7 +11,7 @@ For detailed requirements and implementation tasks, see [REQUIREMENTS.md](./REQU
 - **Timeline** — View and edit time entries; lazy-load historical days
 - **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts (incl. % of completed tasks meeting their estimate); navigate to previous weeks/months with Prev/Next controls
 - **Settings** — Customize theme color, focus interval, time snap, and weekly/monthly goals
-- **File Sync** — Two-way sync with todo.txt / done.txt via File System Access API
+- **File Sync** — Two-way sync with todo.txt / done.txt via File System Access API. Edits made in another editor are picked up within seconds (window focus + 5s polling) and merged line-by-line against the last-synced copy, so app writes never overwrite them. Deleting a line archives the task; lines typed without a `#exid` get one. After a reload use **Allow access** in the `...` menu if the browser asks again for file permission.
 
 ## Architecture Overview
 
