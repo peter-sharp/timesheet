@@ -2,6 +2,10 @@
 
 ## Features Implemented
 
+### ✅ Estimate total at the bottom of the task list (v1.18.0)
+
+- Sums all listed tasks' estimates (default 0.8h if blank) beside the duration total.
+
 ### ✅ Task detail: play/pause and % of estimate taken (v1.17.0)
 
 - Play/pause button in the task detail header emits `startTask`/`stopTask`; toggles with `newEntry`.
