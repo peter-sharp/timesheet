@@ -2,9 +2,28 @@
 
 ## Features Implemented
 
-### ✅ Estimate total at the bottom of the task list (v1.18.0)
+### ✅ Estimate total at the bottom of the task list (v1.19.0)
 
 - Sums all listed tasks' estimates (default 0.8h if blank) beside the duration total.
+
+### ✅ Smarter todo.txt sync: external edits picked up, no clobbering (v1.18.0)
+
+**Problems:** inbound sync only ran on load/tab visibility, so edits in a side-by-side editor never
+showed up. Outbound wrote only today's in-memory tasks, so a refresh (or any change) erased every
+other line in todo.txt, and the idle write could race ahead of the inbound read.
+
+**Fix (`syncEngine.js`, `app-context.js` `syncFiles`):**
+- Each file's last-synced content is stored as a base (`fileHandles.base`). One serialised sync
+  does a three-way merge: only lines that differ from the base are applied (file wins for text
+  fields), lines removed since the base archive the task, unknown lines become tasks (exid assigned).
+- Files are then rendered from lines already in them (kept in order, refreshed from the app copy)
+  plus today's tasks; archived/deleted tasks drop out, lines the app doesn't know are kept verbatim.
+- Writes are skipped if unchanged and aborted (then re-synced) if the file changed since it was read.
+- Triggers: load, `persistState`, visibility, window focus, 5s `lastModified` poll while visible.
+- Background syncs only query permission; `file-sync-menu` shows **Allow access** to re-grant.
+- Rollover guard kept: edits to tasks outside today's view update the DB with timestamps preserved.
+- Without done.txt linked, completed tasks stay in todo.txt as `x` lines.
+- Possible follow-up: use `FileSystemObserver` instead of polling once it ships unflagged.
 
 ### ✅ Task detail: play/pause and % of estimate taken (v1.17.0)
 
@@ -118,21 +137,7 @@ exponentially growing cascade that froze the page.
 only once in the component's lifetime. Subsequent `connectedCallback` calls (from DOM moves) still
 re-initialize visual state from the `status` attribute but skip listener registration entirely.
 
-### ✅ File sync bypasses daily rollover (fixed in v1.6.2)
-
-**Root cause:** `syncInbound` called `mergeTasks(appTasks, fileTasks)` without filtering. After
-a daily rollover `appTasks = []`, so every file task fell into the `!existing` path of
-`mergeTasks` and received `lastModified: new Date()`. Those tasks were then placed directly
-into `this.tasks.value`, making all old file tasks reappear in today's view.
-
-**Fix (syncEngine.js):** Before calling `mergeTasks`, `syncInbound` now queries all DB task
-exids and filters `fileTasks` to only pass through:
-1. File tasks already in today's `appTasks` (metadata updates for today's work)
-2. File tasks genuinely new — not present in the DB at all
-
-Old tasks from a previous day that exist in the DB but aren't in today's view are skipped.
-A new exported helper `filterRelevantFileTasks(fileTasks, appTaskExids, dbTaskExids)` encapsulates
-this logic and is unit-tested in `tests/rollover-timestamp.test.js`.
+### ✅ File sync bypasses daily rollover (fixed in v1.6.2, superseded by v1.18.0 three-way merge)
 
 ---
 
@@ -140,7 +145,7 @@ this logic and is unit-tested in `tests/rollover-timestamp.test.js`.
 
 The timesheet PWA manages tasks in IndexedDB but has no way to sync with external files. Users want to maintain a local `todo.txt` and `done.txt` (the [todo.txt standard](https://github.com/todotxt/todo.txt)) so tasks are editable from any text editor. The File System Access API (`showOpenFilePicker`, `FileSystemFileHandle.createWritable`) works on GitHub Pages — it only needs HTTPS (no special COOP/COEP headers). Browser support is Chromium-only (Chrome, Edge).
 
-**Sync behaviour:** Two-way, on every change — but **only when the app is idle**. Outbound writes are scheduled via `requestIdleCallback` (the same pattern used by `_scheduleRolloverCheck` in `app-context.js`) so they never block user interaction. Inbound reads happen on `visibilitychange` (tab refocus) and initial load.
+**Sync behaviour:** Two-way, on every change — but **only when the app is idle**. Syncs are scheduled via `requestIdleCallback` so they never block user interaction, and run on load, every change, tab refocus, window focus and a 5s file-timestamp poll (see v1.18.0 above).
 
 **Format:** The app's existing `#exid description +project client:name` format is valid todo.txt (everything after optional priority/date is free-form description). Completed tasks get the standard `x YYYY-MM-DD` prefix and live in `done.txt`.
 

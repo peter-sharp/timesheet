@@ -1,5 +1,4 @@
-import { isSupported, pickFile, storeHandle, removeHandle, retrieveHandle, verifyPermission } from './fileSync.js';
-import { syncInbound } from './syncEngine.js';
+import { pickFile, storeHandle, removeHandle, retrieveHandle, verifyPermission } from './fileSync.js';
 import emitEvent from './utils/emitEvent.js';
 
 const template = document.createElement('template');
@@ -9,6 +8,7 @@ template.innerHTML = /*html*/ `
     <button name="linkTodo">Link todo.txt</button>
     <span data-todo-linked hidden>
       <span data-file-name></span>
+      <button name="grantTodo" hidden>Allow access</button>
       <button name="unlinkTodo">Unlink</button>
     </span>
   </li>
@@ -16,6 +16,7 @@ template.innerHTML = /*html*/ `
     <button name="linkDone">Link done.txt</button>
     <span data-done-linked hidden>
       <span data-file-name></span>
+      <button name="grantDone" hidden>Allow access</button>
       <button name="unlinkDone">Unlink</button>
     </span>
   </li>
@@ -34,6 +35,8 @@ customElements.define('file-sync-menu', class extends HTMLElement {
 
         this.querySelector('[name="linkTodo"]').addEventListener('click', () => this._link('todoFile', 'todo.txt'));
         this.querySelector('[name="linkDone"]').addEventListener('click', () => this._link('doneFile', 'done.txt'));
+        this.querySelector('[name="grantTodo"]').addEventListener('click', () => this._grant('todoFile'));
+        this.querySelector('[name="grantDone"]').addEventListener('click', () => this._grant('doneFile'));
         this.querySelector('[name="unlinkTodo"]').addEventListener('click', () => this._unlink('todoFile'));
         this.querySelector('[name="unlinkDone"]').addEventListener('click', () => this._unlink('doneFile'));
 
@@ -41,11 +44,11 @@ customElements.define('file-sync-menu', class extends HTMLElement {
     }
 
     async _refreshStatus() {
-        await this._updateRow('todoFile', '[data-todo-row]', '[data-todo-linked]', '[name="linkTodo"]');
-        await this._updateRow('doneFile', '[data-done-row]', '[data-done-linked]', '[name="linkDone"]');
+        await this._updateRow('todoFile', '[data-todo-linked]', '[name="linkTodo"]', '[name="grantTodo"]');
+        await this._updateRow('doneFile', '[data-done-linked]', '[name="linkDone"]', '[name="grantDone"]');
     }
 
-    async _updateRow(key, rowSel, linkedSel, btnSel) {
+    async _updateRow(key, linkedSel, btnSel, grantSel) {
         const record = await retrieveHandle(key);
         const linkedEl = this.querySelector(linkedSel);
         const btnEl = this.querySelector(btnSel);
@@ -53,6 +56,8 @@ customElements.define('file-sync-menu', class extends HTMLElement {
         if (record) {
             linkedEl.hidden = false;
             linkedEl.querySelector('[data-file-name]').textContent = record.fileName || key;
+            // Browsers drop file permission on reload; re-granting needs a click
+            this.querySelector(grantSel).hidden = await verifyPermission(record.handle);
             btnEl.hidden = true;
         } else {
             linkedEl.hidden = true;
@@ -65,9 +70,18 @@ customElements.define('file-sync-menu', class extends HTMLElement {
             const handle = await pickFile(description);
             const file = await handle.getFile();
             await storeHandle(key, handle, file.name);
-            this._refreshStatus();
+            await this._refreshStatus();
+            emitEvent(this, 'syncFiles');
         } catch (e) {
             if (e.name !== 'AbortError') console.warn('File link failed:', e);
+        }
+    }
+
+    async _grant(key) {
+        const record = await retrieveHandle(key);
+        if (record && await verifyPermission(record.handle, { request: true })) {
+            await this._refreshStatus();
+            emitEvent(this, 'syncFiles');
         }
     }
 

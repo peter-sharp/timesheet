@@ -8,7 +8,9 @@ import reduceDuration from './utils/reduceDuration.js';
 import extract from './utils/extract.js';
 import first from './utils/first.js';
 import last from './utils/last.js';
-import { syncOutbound, syncInbound } from './syncEngine.js';
+import { readLinkedFiles, linkedFilesChanged, parseFiles, parseBase, filesChangedExternally, assignMissingExids, planInbound, renderFiles, writeLinkedFiles } from './syncEngine.js';
+
+const FILE_POLL_MS = 5000;
 import { isEstimateMet } from './utils/estimate.js';
 
 // Pure function: calculate gaps between entries
@@ -161,26 +163,30 @@ customElements.define('app-context', class extends HTMLElement {
                     return; // _reloadTodayData handles sync as well
                 }
 
-                requestIdleCallback(async () => {
-                    try {
-                        const merged = await syncInbound(this.tasks.value);
-                        if (merged) {
-                            this.tasks.value = merged;
-                            this.recalculateTaskTotals();
-                            this.persistState();
-                        }
-                    } catch (e) {
-                        console.warn('File sync inbound failed:', e);
-                    }
-                });
+                this.scheduleFileSync();
             }
         };
         document.addEventListener('visibilitychange', this._handleVisibilityChange);
+
+        // Editing todo.txt in a side-by-side editor doesn't change visibility, so
+        // also sync on window focus and poll file timestamps while visible
+        this._handleFocus = () => this.scheduleFileSync();
+        window.addEventListener('focus', this._handleFocus);
+        this._filePoll = setInterval(async () => {
+            if (document.visibilityState !== 'visible') return;
+            try {
+                if (await linkedFilesChanged()) this.scheduleFileSync();
+            } catch (e) {
+                console.warn('File sync poll failed:', e);
+            }
+        }, FILE_POLL_MS);
     }
 
     disconnectedCallback() {
         this.removeEventListener('updateState', this._handleStateEvent);
         document.removeEventListener('visibilitychange', this._handleVisibilityChange);
+        window.removeEventListener('focus', this._handleFocus);
+        clearInterval(this._filePoll);
     }
 
     // Check if the date has rolled over (app left open past midnight)
@@ -209,6 +215,7 @@ customElements.define('app-context', class extends HTMLElement {
         this.recalculateTotals();
         await this.refreshTaskLists();
         await this.refreshTaskPastTotals(this.newEntry.value?.task);
+        this.scheduleFileSync();
     }
 
     // Loads previous-days hours for a task into taskPastTotals. Entries already held
@@ -346,18 +353,98 @@ customElements.define('app-context', class extends HTMLElement {
         this.allTasksWithDeleted.value = await db.getAllTasksIncludingDeleted(500);
 
         // Initial file sync when app loads (idle)
-        requestIdleCallback(async () => {
-            try {
-                const merged = await syncInbound(this.tasks.value);
-                if (merged) {
-                    this.tasks.value = merged;
-                    this.recalculateTaskTotals();
-                    this.persistState();
-                }
-            } catch (e) {
-                console.warn('File sync initial inbound failed:', e);
-            }
+        this.scheduleFileSync();
+    }
+
+    // Coalesce sync requests into one idle callback
+    scheduleFileSync() {
+        if (this._pendingFileSync) return;
+        this._pendingFileSync = requestIdleCallback(() => {
+            this._pendingFileSync = null;
+            this.syncFiles();
         });
+    }
+
+    // Serialised two-way sync with linked todo.txt/done.txt. A request made
+    // while a sync is running triggers exactly one more pass afterwards.
+    syncFiles() {
+        if (this._fileSync) {
+            this._fileSyncAgain = true;
+            return this._fileSync;
+        }
+        this._fileSync = (async () => {
+            do {
+                this._fileSyncAgain = false;
+                try {
+                    if (!await this._syncFilesOnce()) this._fileSyncAgain = true;
+                } catch (e) {
+                    console.warn('File sync failed:', e);
+                }
+            } while (this._fileSyncAgain);
+        })().finally(() => { this._fileSync = null; });
+        return this._fileSync;
+    }
+
+    // Returns false if a file changed mid-sync and another pass is needed
+    async _syncFilesOnce() {
+        const files = await readLinkedFiles();
+        if (!files.todo && !files.done) return true;
+
+        const db = await TimesheetDB();
+        const fileTasks = assignMissingExids(parseFiles(files));
+
+        if (filesChangedExternally(files)) {
+            const plan = planInbound({
+                baseTasks: parseBase(files),
+                fileTasks,
+                dbTasks: await db.getAllTasksIncludingDeleted(Infinity)
+            });
+            await this._applyInbound(db, plan);
+        }
+
+        const content = renderFiles({
+            fileTasks,
+            viewTasks: this.tasks.value,
+            dbTasks: await db.getAllTasksIncludingDeleted(Infinity),
+            doneLinked: !!files.done
+        });
+        return writeLinkedFiles(files, content);
+    }
+
+    // Apply external file edits. Tasks outside today's view are updated in the DB
+    // with their timestamp preserved so they don't bypass the daily rollover.
+    async _applyInbound(db, { updates, additions, removals }) {
+        if (!updates.length && !additions.length && !removals.length) return;
+
+        const viewExids = new Set(this.tasks.value.map(t => String(t.exid)));
+        const viewChanges = new Map();
+        for (const { exid, changes } of updates) {
+            if (viewExids.has(String(exid))) {
+                viewChanges.set(String(exid), changes);
+                continue;
+            }
+            const [current] = await db.getTasksByExids([exid]);
+            if (current) await db.updateTask({ ...current, ...changes }, { preserveTimestamp: true });
+        }
+
+        const withStatus = (task, changes) => {
+            if (changes.complete === undefined || changes.complete === !!task.complete) return { ...task, ...changes };
+            return { ...task, ...changes, status: changes.complete ? 'complete' : 'not-started' };
+        };
+        const now = Date.now();
+        this.tasks.value = [
+            ...this.tasks.value.map(t => {
+                const changes = viewChanges.get(String(t.exid));
+                return changes ? { ...withStatus(t, changes), lastModified: new Date() } : t;
+            }),
+            ...additions.map((t, i) => ({ ...t, id: now + i, deleted: false, lastModified: new Date() }))
+        ];
+
+        for (const exid of removals) await this.handleArchiveTask({ exid });
+
+        this.recalculateTaskTotals();
+        await this.persistState({ fileSync: false });
+        await this.refreshTaskLists();
     }
 
     // Main event handler - processes all state change events
@@ -417,6 +504,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'import':
                 this.handleImport(data);
                 break;
+            case 'syncFiles':
+                this.syncFiles();
+                return; // sync persists its own changes
             case 'filterTasks':
                 this.handleFilterTasks(data);
                 return; // skip persistState — transient UI state
@@ -1187,7 +1277,7 @@ customElements.define('app-context', class extends HTMLElement {
     }
 
     // Persist state to storage
-    async persistState() {
+    async persistState({ fileSync = true } = {}) {
         await store.write({
             settings: this.settings.value,
             newEntry: this.newEntry.value,
@@ -1198,7 +1288,7 @@ customElements.define('app-context', class extends HTMLElement {
             deleted: this.deleted.value,
             deletedTasks: this.deletedTasks.value
         });
-        // Outbound file sync (idle, coalesced)
-        syncOutbound(this.tasks.value);
+        // Two-way file sync (idle, coalesced) — merges external edits before writing
+        if (fileSync) this.scheduleFileSync();
     }
 });

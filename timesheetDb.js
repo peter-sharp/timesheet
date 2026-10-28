@@ -941,7 +941,16 @@ TimesheetDB.modules.push(function fileHandlesDb() {
             return await awaitEvt(request, 'onsuccess', 'onerror');
         }
 
-        return { putFileHandle, getFileHandle, deleteFileHandle };
+        // Store the file content as last synced, used as the base for three-way merges
+        async function setFileSyncBase(key, base) {
+            const transaction = db.transaction(["fileHandles"], "readwrite");
+            const store = transaction.objectStore("fileHandles");
+            const record = await awaitEvt(store.get(key), 'onsuccess', 'onerror');
+            if (!record) return;
+            return await awaitEvt(store.put({ ...record, base }), 'onsuccess', 'onerror');
+        }
+
+        return { putFileHandle, getFileHandle, deleteFileHandle, setFileSyncBase };
     }
 
     return { init, upgrade };
