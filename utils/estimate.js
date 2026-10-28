@@ -10,3 +10,8 @@ export function taskEstimate(task) {
 export function isEstimateMet(totalHours, task) {
     return totalHours <= taskEstimate(task);
 }
+
+// Hours of estimate left: estimate minus all-time hours (today's total + previous days), never below 0
+export function remainingEstimate(task, pastHours = 0) {
+    return Math.max(0, taskEstimate(task) - (task?.total || 0) - (pastHours || 0));
+}

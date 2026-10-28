@@ -2,6 +2,12 @@
 
 ## Features Implemented
 
+### ✅ Remaining estimate at the bottom of the task list (v1.20.0)
+
+- Total now shows estimate remaining: per task `max(0, estimate − (today + previous days))` (`remainingEstimate` in `utils/estimate.js`).
+- `app-context.js` loads `taskPastTotals` for every listed task (was only the timed task); refreshes all on day rollover.
+- Updates when a timer stops (running time not counted live).
+
 ### ✅ Estimate total at the bottom of the task list (v1.19.0)
 
 - Sums all listed tasks' estimates (default 0.8h if blank) beside the duration total.

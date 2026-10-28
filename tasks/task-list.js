@@ -20,7 +20,7 @@ import { playTripleBeep } from "../media.js";
 import formatPrice from "../utils/formatPrice.js";
 import getNetIncome from "../utils/getNetIncome.js";
 import round1dp from "../utils/round1dp.js";
-import { taskEstimate } from "../utils/estimate.js";
+import { remainingEstimate } from "../utils/estimate.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/ `
@@ -28,7 +28,7 @@ template.innerHTML = /*html*/ `
     <div data-search-results hidden></div>
     <ul data-task-totals class="tasks unstyled-list stack" style="--gap: 1.6em"></ul>
     <section class="border-top-1 text-align-right">
-            <span class="opacity50">estimate <time-duration data-estimate-total></time-duration></span>
+            <span class="opacity50">estimate remaining <time-duration data-estimate-total></time-duration></span>
             <span><time-duration data-duration-total></time-duration> <output class="opacity50" name="durationNetIncome"></output></span>
     </section>
     <div data-historical-tasks>
@@ -127,6 +127,7 @@ class TaskList extends HTMLElement {
   #noMoreEntries;
   #filterQuery;
   #archivedSearchResults;
+  #taskPastTotals;
   #searchResultsEl;
   #unsubscribe = {};
   constructor() {
@@ -167,6 +168,7 @@ class TaskList extends HTMLElement {
           this.#durationTotal = state.durationTotal;
           this.#filterQuery = state.filterQuery;
           this.#archivedSearchResults = state.archivedSearchResults;
+          this.#taskPastTotals = state.taskPastTotals;
 
           this.#unsubscribe.signals = effect(
             this.update.bind(this),
@@ -175,7 +177,8 @@ class TaskList extends HTMLElement {
             this.#clients,
             this.#currentTask,
             this.#newEntry,
-            this.#durationTotal
+            this.#durationTotal,
+            this.#taskPastTotals
           );
 
           this.#unsubscribe.tasksIndex = effect(
@@ -460,6 +463,7 @@ class TaskList extends HTMLElement {
       settings: this.#settings.value,
       tasks: this.#tasks.value,
       durationTotal: this.#durationTotal.value,
+      pastTotals: this.#taskPastTotals.value,
     });
 
   }
@@ -617,7 +621,7 @@ class TaskList extends HTMLElement {
     }
   }
 
-  renderTasks({ tasks = [], settings = {}, durationTotal = 0 }) {
+  renderTasks({ tasks = [], settings = {}, durationTotal = 0, pastTotals = {} }) {
     const elTotals = this.elTotals;
 
     let toRender = tasks.filter((x) => x && x.exid);
@@ -638,8 +642,8 @@ class TaskList extends HTMLElement {
       this.renderTask(item, task);
     }
     const el = this;
-    const estimateTotal = toRender.reduce((sum, task) => sum + taskEstimate(task), 0);
-    el.querySelector("[data-estimate-total]").setAttribute("hours", Math.round(estimateTotal * 100) / 100);
+    const estimateRemaining = toRender.reduce((sum, task) => sum + remainingEstimate(task, pastTotals[task.exid]), 0);
+    el.querySelector("[data-estimate-total]").setAttribute("hours", Math.round(estimateRemaining * 100) / 100);
     // TODO: convert to component
     const elDurationTotal = el.querySelector("[data-duration-total]");
     elDurationTotal.setAttribute("hours", durationTotal);
