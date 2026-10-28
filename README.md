@@ -56,7 +56,7 @@ To change status: **long press** (hold 500 ms) or **right-click** the checkbox t
 #### Task Estimates
 - Add an estimate (hours) with the todo.txt add-on `estimate:0.4`, or via the **More info → estimate** field
 - Tasks without an estimate use an implicit default of **0.8h** (not written to todo.txt)
-- The bottom of the task list shows the total estimate of all listed tasks
+- The bottom of the task list shows the **remaining** estimate of all listed tasks (each task's estimate minus its all-time hours, floored at 0)
 - The status bar shows the timed task's **all-time** hours vs its estimate (e.g. `1.20h / 0.80h (+0.40h over)`), updating live while recording
 - A completed task "meets" its estimate when its all-time hours ≤ estimate; Stats shows the week/month rate and a daily % chart
 

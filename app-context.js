@@ -214,20 +214,25 @@ customElements.define('app-context', class extends HTMLElement {
         this.recalculateTaskTotals();
         this.recalculateTotals();
         await this.refreshTaskLists();
-        await this.refreshTaskPastTotals(this.newEntry.value?.task);
+        // Day rolled over: yesterday's hours are now past hours
+        await this.refreshTaskPastTotals(this.tasks.value.map(t => t.exid));
         this.scheduleFileSync();
     }
 
-    // Loads previous-days hours for a task into taskPastTotals. Entries already held
+    // Loads previous-days hours for the given task(s) into taskPastTotals. Entries already held
     // in memory (today's) are excluded so they aren't double counted with task.total.
-    async refreshTaskPastTotals(exid) {
-        if (!exid) return;
+    async refreshTaskPastTotals(exids) {
+        const ids = [...new Set([].concat(exids).filter(Boolean))];
+        if (!ids.length) return;
         const db = await TimesheetDB();
         const todaysIds = new Set(this.entries.value.map(e => e.id));
-        const pastHours = (await db.getEntriesByTasks([exid]))
+        const pastHours = (await db.getEntriesByTasks(ids))
             .filter(e => !todaysIds.has(e.id) && e.start && e.end)
-            .reduce((sum, e) => sum + calcDuration({ start: new Date(e.start), end: new Date(e.end) }), 0);
-        this.taskPastTotals.value = { ...this.taskPastTotals.value, [exid]: pastHours };
+            .reduce((totals, e) => ({
+                ...totals,
+                [e.task]: (totals[e.task] || 0) + calcDuration({ start: new Date(e.start), end: new Date(e.end) })
+            }), Object.fromEntries(ids.map(id => [id, 0])));
+        this.taskPastTotals.value = { ...this.taskPastTotals.value, ...pastHours };
     }
 
     // Loads full task data for tasks referenced by today's entries but missing from
@@ -338,13 +343,10 @@ customElements.define('app-context', class extends HTMLElement {
         const db = await TimesheetDB();
         await this._cleanupBlankTasks(db);
 
-        // Keep previous-days totals loaded for whichever task is being timed
-        let pastTotalsTask;
-        this.newEntry.effect(() => {
-            const exid = this.newEntry.value?.task;
-            if (exid === pastTotalsTask) return;
-            pastTotalsTask = exid;
-            this.refreshTaskPastTotals(exid).catch(e => console.warn('Failed to load task past totals:', e));
+        // Keep previous-days totals loaded for every listed task (for remaining estimates)
+        this.tasks.effect(() => {
+            const missing = this.tasks.value.map(t => t.exid).filter(exid => exid && !(exid in this.taskPastTotals.value));
+            this.refreshTaskPastTotals(missing).catch(e => console.warn('Failed to load task past totals:', e));
         });
 
         // Load task lists for different datalist components
