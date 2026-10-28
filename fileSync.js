@@ -23,18 +23,16 @@ export async function writeFile(handle, content) {
     await writable.close();
 }
 
-export async function verifyPermission(handle) {
+// requestPermission needs a user gesture, so background syncs only query
+export async function verifyPermission(handle, { request = false } = {}) {
     const opts = { mode: 'readwrite' };
     if (await handle.queryPermission(opts) === 'granted') return true;
-    if (await handle.requestPermission(opts) === 'granted') return true;
+    if (request && await handle.requestPermission(opts) === 'granted') return true;
     return false;
 }
 
-let _db;
-async function getDb() {
-    if (!_db) _db = await TimesheetDB();
-    return _db;
-}
+// Not cached, matching app-context, so DB modules registered later take effect
+const getDb = () => TimesheetDB();
 
 export async function storeHandle(key, handle, fileName) {
     const db = await getDb();
@@ -51,6 +49,11 @@ export async function removeHandle(key) {
     return db.deleteFileHandle(key);
 }
 
+export async function setFileBase(key, base) {
+    const db = await getDb();
+    return db.setFileSyncBase(key, base);
+}
+
 export async function getLinkedFiles() {
     const db = await getDb();
     const todo = await db.getFileHandle('todoFile');
@@ -58,7 +61,9 @@ export async function getLinkedFiles() {
     return {
         todoHandle: todo?.handle || null,
         todoFileName: todo?.fileName || null,
+        todoBase: todo?.base ?? null,
         doneHandle: done?.handle || null,
-        doneFileName: done?.fileName || null
+        doneFileName: done?.fileName || null,
+        doneBase: done?.base ?? null
     };
 }
