@@ -2,6 +2,10 @@
 
 ## Features Implemented
 
+### ✅ Estimate total at the bottom of the task list (v1.19.0)
+
+- Sums all listed tasks' estimates (default 0.8h if blank) beside the duration total.
+
 ### ✅ Smarter todo.txt sync: external edits picked up, no clobbering (v1.18.0)
 
 **Problems:** inbound sync only ran on load/tab visibility, so edits in a side-by-side editor never

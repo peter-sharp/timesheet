@@ -20,6 +20,7 @@ import { playTripleBeep } from "../media.js";
 import formatPrice from "../utils/formatPrice.js";
 import getNetIncome from "../utils/getNetIncome.js";
 import round1dp from "../utils/round1dp.js";
+import { taskEstimate } from "../utils/estimate.js";
 
 const template = document.createElement("template");
 template.innerHTML = /*html*/ `
@@ -27,6 +28,7 @@ template.innerHTML = /*html*/ `
     <div data-search-results hidden></div>
     <ul data-task-totals class="tasks unstyled-list stack" style="--gap: 1.6em"></ul>
     <section class="border-top-1 text-align-right">
+            <span class="opacity50">estimate <time-duration data-estimate-total></time-duration></span>
             <span><time-duration data-duration-total></time-duration> <output class="opacity50" name="durationNetIncome"></output></span>
     </section>
     <div data-historical-tasks>
@@ -636,6 +638,8 @@ class TaskList extends HTMLElement {
       this.renderTask(item, task);
     }
     const el = this;
+    const estimateTotal = toRender.reduce((sum, task) => sum + taskEstimate(task), 0);
+    el.querySelector("[data-estimate-total]").setAttribute("hours", Math.round(estimateTotal * 100) / 100);
     // TODO: convert to component
     const elDurationTotal = el.querySelector("[data-duration-total]");
     elDurationTotal.setAttribute("hours", durationTotal);
