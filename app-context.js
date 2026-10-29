@@ -11,6 +11,8 @@ import last from './utils/last.js';
 import { readLinkedFiles, linkedFilesChanged, parseFiles, parseBase, filesChangedExternally, assignMissingExids, planInbound, renderFiles, writeLinkedFiles } from './syncEngine.js';
 
 const FILE_POLL_MS = 5000;
+// Unfinished tasks carry over while they have time logged within this many previous days with entries
+const CARRY_OVER_DAYS = 3;
 import { isEstimateMet } from './utils/estimate.js';
 
 // Pure function: calculate gaps between entries
@@ -264,16 +266,25 @@ customElements.define('app-context', class extends HTMLElement {
         }
     }
 
-    // Carries unfinished tasks with entries on the most recent previous day with entries
+    // Carries unfinished tasks with entries in the last CARRY_OVER_DAYS days with entries
     // (skips weekends/gaps) into today's list. Touches lastModified so they stay on reload.
     async _carryOverPreviousDayTasks() {
         const db = await TimesheetDB();
         const today = new Date();
-        const prevDay = await db.getPreviousDayWithEntries(today);
-        if (!prevDay) return;
+        const todayStart = new Date(today);
+        todayStart.setHours(0, 0, 0, 0);
+
+        let oldest = null;
+        for (let i = 0, day = todayStart; i < CARRY_OVER_DAYS; i++) {
+            day = await db.getPreviousDayWithEntries(day);
+            if (!day) break;
+            oldest = day;
+        }
+        if (!oldest) return;
 
         const listed = new Set(this.tasks.value.map(t => String(t.exid)));
-        const exids = [...new Set((await db.getEntriesByDay(prevDay)).map(e => e.task))]
+        const recentEntries = await db.getEntriesByDateRange(oldest, new Date(todayStart.getTime() - 1));
+        const exids = [...new Set(recentEntries.map(e => e.task))]
             .filter(exid => exid && !listed.has(String(exid)));
         const carried = (await db.getTasksByExids(exids))
             .filter(t => !t.complete && t.status !== 'complete' && !t.archived)

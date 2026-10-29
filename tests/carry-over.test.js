@@ -42,15 +42,17 @@ TestRunner.test('carry-over: completed and archived tasks are not carried', asyn
   TestRunner.assert(!listed('CO3'), 'archived task should not be carried');
 });
 
-TestRunner.test('carry-over: skips empty days (e.g. weekend) back to last worked day', async () => {
+TestRunner.test('carry-over: keeps tasks worked within the last 3 worked days, skipping empty days', async () => {
+  // Worked days: 2, 4, 7 (within the last 3) and 9 (too old); empty days in between are skipped
   await seedData({
-    tasks: [task('CO4', 3), task('CO5', 5)],
-    entries: [entry('co-e4', 'CO4', 3), entry('co-e5', 'CO5', 5)]
+    tasks: [task('CO4', 2), task('CO5', 7), task('CO7', 9)],
+    entries: [entry('co-e4', 'CO4', 2), entry('co-e4b', 'CO4', 4), entry('co-e5', 'CO5', 7), entry('co-e7', 'CO7', 9)]
   });
   await appContext._reloadTodayData();
 
-  TestRunner.assert(listed('CO4'), 'task from last worked day should be carried');
-  TestRunner.assert(!listed('CO5'), 'task from an earlier day should not be carried');
+  TestRunner.assert(listed('CO4'), 'task from the last worked day should be carried');
+  TestRunner.assert(listed('CO5'), 'task worked 3 worked days ago should still be carried, though not worked since');
+  TestRunner.assert(!listed('CO7'), 'task not worked in the last 3 worked days should drop off');
 });
 
 TestRunner.test('carry-over: task already listed today is not duplicated', async () => {
