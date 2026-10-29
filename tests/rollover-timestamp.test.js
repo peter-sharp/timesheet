@@ -34,6 +34,12 @@ function yesterdayAt(hours, minutes) {
   return d;
 }
 
+function daysAgoAt(days, hours, minutes) {
+  const d = yesterdayAt(hours, minutes);
+  d.setDate(d.getDate() - (days - 1));
+  return d;
+}
+
 function todayAt(hours, minutes) {
   const d = new Date();
   d.setHours(hours, minutes, 0, 0);
@@ -521,13 +527,20 @@ TestRunner.test('ensure-entry-tasks: task with yesterday lastModified but today 
   );
 });
 
-TestRunner.test('ensure-entry-tasks: task with yesterday lastModified and no today entries does NOT appear', async () => {
+TestRunner.test('ensure-entry-tasks: task not worked in the last 3 worked days and no today entries does NOT appear', async () => {
   await seedData({
     tasks: [
       {
         exid: 'OLD_TASK',
-        description: 'Task only worked on yesterday',
+        description: 'Task last worked 4 days ago',
+        lastModified: daysAgoAt(4, 16, 0),
+        deleted: false
+      },
+      {
+        exid: 'YEST_OTHER',
+        description: 'Different task worked yesterday',
         lastModified: yesterdayAt(16, 0),
+        complete: true,
         deleted: false
       }
     ],
@@ -535,12 +548,20 @@ TestRunner.test('ensure-entry-tasks: task with yesterday lastModified and no tod
       {
         id: 'old_entry1',
         task: 'OLD_TASK',
-        annotation: 'Yesterday work',
-        start: yesterdayAt(14, 0),
-        end: yesterdayAt(15, 0),
-        lastModified: yesterdayAt(15, 0),
+        annotation: 'Earlier work',
+        start: daysAgoAt(4, 14, 0),
+        end: daysAgoAt(4, 15, 0),
+        lastModified: daysAgoAt(4, 15, 0),
         deleted: false
-      }
+      },
+      ...[1, 2, 3].map(days => ({
+        id: `yest_other_entry${days}`,
+        task: 'YEST_OTHER',
+        start: daysAgoAt(days, 14, 0),
+        end: daysAgoAt(days, 15, 0),
+        lastModified: daysAgoAt(days, 15, 0),
+        deleted: false
+      }))
     ]
   });
 
@@ -559,7 +580,7 @@ TestRunner.test('ensure-entry-tasks: task with yesterday lastModified and no tod
 
   await new Promise(r => setTimeout(r, 100));
 
-  // Task should NOT appear - it has no entries today
+  // Task should NOT appear - no entries today and not worked in the last 3 worked days (carry-over)
   const loadedTask = appContext.tasks.value.find(t => t.exid === 'OLD_TASK');
   TestRunner.assert(!loadedTask, 'Task with no entries today should NOT appear after rollover');
 });

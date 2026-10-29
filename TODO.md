@@ -2,6 +2,18 @@
 
 ## Features Implemented
 
+### ✅ Carry-over keeps tasks for 3 worked days (v1.21.1)
+
+- Previously a carried task not worked on that day dropped off the next. Now unfinished tasks carry over while they
+  have entries in the last `CARRY_OVER_DAYS` (3) days with entries, so empty days (weekends/leave) don't count.
+
+### ✅ Carry over yesterday's unfinished tasks (v1.21.0)
+
+- On load and day rollover, `app-context.js` `_carryOverPreviousDayTasks` lists tasks with entries on the most recent
+  previous day with entries (`getPreviousDayWithEntries`, so weekends/gaps are skipped), excluding complete/archived.
+- Touches `lastModified` so they stay on reload and are written to todo.txt like any listed task.
+- Possible follow-up: settings toggle to disable; todo.txt `t:`/`due:` marker to pull in tasks explicitly.
+
 ### ✅ Remaining estimate at the bottom of the task list (v1.20.0)
 
 - Total now shows estimate remaining: per task `max(0, estimate − (today + previous days))` (`remainingEstimate` in `utils/estimate.js`).

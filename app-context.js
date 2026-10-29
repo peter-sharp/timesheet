@@ -11,6 +11,8 @@ import last from './utils/last.js';
 import { readLinkedFiles, linkedFilesChanged, parseFiles, parseBase, filesChangedExternally, assignMissingExids, planInbound, renderFiles, writeLinkedFiles } from './syncEngine.js';
 
 const FILE_POLL_MS = 5000;
+// Unfinished tasks carry over while they have time logged within this many previous days with entries
+const CARRY_OVER_DAYS = 3;
 import { isEstimateMet } from './utils/estimate.js';
 
 // Pure function: calculate gaps between entries
@@ -211,6 +213,7 @@ customElements.define('app-context', class extends HTMLElement {
         this.historicalDays.value = [];
         this.noMoreEntries.value = false;
         await this._ensureEntryTasksLoaded();
+        await this._carryOverPreviousDayTasks();
         this.recalculateTaskTotals();
         this.recalculateTotals();
         await this.refreshTaskLists();
@@ -261,6 +264,35 @@ customElements.define('app-context', class extends HTMLElement {
         if (loadedTasks.length > 0) {
             this.tasks.value = [...this.tasks.value, ...loadedTasks];
         }
+    }
+
+    // Carries unfinished tasks with entries in the last CARRY_OVER_DAYS days with entries
+    // (skips weekends/gaps) into today's list. Touches lastModified so they stay on reload.
+    async _carryOverPreviousDayTasks() {
+        const db = await TimesheetDB();
+        const today = new Date();
+        const todayStart = new Date(today);
+        todayStart.setHours(0, 0, 0, 0);
+
+        let oldest = null;
+        for (let i = 0, day = todayStart; i < CARRY_OVER_DAYS; i++) {
+            day = await db.getPreviousDayWithEntries(day);
+            if (!day) break;
+            oldest = day;
+        }
+        if (!oldest) return;
+
+        const listed = new Set(this.tasks.value.map(t => String(t.exid)));
+        const recentEntries = await db.getEntriesByDateRange(oldest, new Date(todayStart.getTime() - 1));
+        const exids = [...new Set(recentEntries.map(e => e.task))]
+            .filter(exid => exid && !listed.has(String(exid)));
+        const carried = (await db.getTasksByExids(exids))
+            .filter(t => !t.complete && t.status !== 'complete' && !t.archived)
+            .map(t => ({ ...t, lastModified: today }));
+        if (!carried.length) return;
+
+        for (const task of carried) await db.updateTask(task, { preserveTimestamp: false });
+        this.tasks.value = [...this.tasks.value, ...carried];
     }
 
     // Remove blank or timestamp-only tasks from the database.
@@ -334,6 +366,9 @@ customElements.define('app-context', class extends HTMLElement {
         // Load full task data for any tasks referenced by today's entries but not in
         // today's task list (e.g. task lastModified is from a prior day)
         await this._ensureEntryTasksLoaded();
+
+        // Bring unfinished tasks worked on the previous workday into today's list
+        await this._carryOverPreviousDayTasks();
 
         // Calculate initial totals
         this.recalculateTaskTotals();
