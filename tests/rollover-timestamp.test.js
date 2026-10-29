@@ -34,6 +34,12 @@ function yesterdayAt(hours, minutes) {
   return d;
 }
 
+function twoDaysAgo(hours, minutes) {
+  const d = yesterdayAt(hours, minutes);
+  d.setDate(d.getDate() - 1);
+  return d;
+}
+
 function todayAt(hours, minutes) {
   const d = new Date();
   d.setHours(hours, minutes, 0, 0);
@@ -521,13 +527,20 @@ TestRunner.test('ensure-entry-tasks: task with yesterday lastModified but today 
   );
 });
 
-TestRunner.test('ensure-entry-tasks: task with yesterday lastModified and no today entries does NOT appear', async () => {
+TestRunner.test('ensure-entry-tasks: task not worked on the last worked day and no today entries does NOT appear', async () => {
   await seedData({
     tasks: [
       {
         exid: 'OLD_TASK',
-        description: 'Task only worked on yesterday',
+        description: 'Task only worked on two days ago',
+        lastModified: twoDaysAgo(16, 0),
+        deleted: false
+      },
+      {
+        exid: 'YEST_OTHER',
+        description: 'Different task worked yesterday',
         lastModified: yesterdayAt(16, 0),
+        complete: true,
         deleted: false
       }
     ],
@@ -535,7 +548,15 @@ TestRunner.test('ensure-entry-tasks: task with yesterday lastModified and no tod
       {
         id: 'old_entry1',
         task: 'OLD_TASK',
-        annotation: 'Yesterday work',
+        annotation: 'Earlier work',
+        start: twoDaysAgo(14, 0),
+        end: twoDaysAgo(15, 0),
+        lastModified: twoDaysAgo(15, 0),
+        deleted: false
+      },
+      {
+        id: 'yest_other_entry',
+        task: 'YEST_OTHER',
         start: yesterdayAt(14, 0),
         end: yesterdayAt(15, 0),
         lastModified: yesterdayAt(15, 0),
@@ -559,7 +580,7 @@ TestRunner.test('ensure-entry-tasks: task with yesterday lastModified and no tod
 
   await new Promise(r => setTimeout(r, 100));
 
-  // Task should NOT appear - it has no entries today
+  // Task should NOT appear - no entries today and not worked on the last worked day (carry-over)
   const loadedTask = appContext.tasks.value.find(t => t.exid === 'OLD_TASK');
   TestRunner.assert(!loadedTask, 'Task with no entries today should NOT appear after rollover');
 });

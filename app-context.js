@@ -211,6 +211,7 @@ customElements.define('app-context', class extends HTMLElement {
         this.historicalDays.value = [];
         this.noMoreEntries.value = false;
         await this._ensureEntryTasksLoaded();
+        await this._carryOverPreviousDayTasks();
         this.recalculateTaskTotals();
         this.recalculateTotals();
         await this.refreshTaskLists();
@@ -261,6 +262,26 @@ customElements.define('app-context', class extends HTMLElement {
         if (loadedTasks.length > 0) {
             this.tasks.value = [...this.tasks.value, ...loadedTasks];
         }
+    }
+
+    // Carries unfinished tasks with entries on the most recent previous day with entries
+    // (skips weekends/gaps) into today's list. Touches lastModified so they stay on reload.
+    async _carryOverPreviousDayTasks() {
+        const db = await TimesheetDB();
+        const today = new Date();
+        const prevDay = await db.getPreviousDayWithEntries(today);
+        if (!prevDay) return;
+
+        const listed = new Set(this.tasks.value.map(t => String(t.exid)));
+        const exids = [...new Set((await db.getEntriesByDay(prevDay)).map(e => e.task))]
+            .filter(exid => exid && !listed.has(String(exid)));
+        const carried = (await db.getTasksByExids(exids))
+            .filter(t => !t.complete && t.status !== 'complete' && !t.archived)
+            .map(t => ({ ...t, lastModified: today }));
+        if (!carried.length) return;
+
+        for (const task of carried) await db.updateTask(task, { preserveTimestamp: false });
+        this.tasks.value = [...this.tasks.value, ...carried];
     }
 
     // Remove blank or timestamp-only tasks from the database.
@@ -334,6 +355,9 @@ customElements.define('app-context', class extends HTMLElement {
         // Load full task data for any tasks referenced by today's entries but not in
         // today's task list (e.g. task lastModified is from a prior day)
         await this._ensureEntryTasksLoaded();
+
+        // Bring unfinished tasks worked on the previous workday into today's list
+        await this._carryOverPreviousDayTasks();
 
         // Calculate initial totals
         this.recalculateTaskTotals();

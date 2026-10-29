@@ -7,7 +7,7 @@ For detailed requirements and implementation tasks, see [REQUIREMENTS.md](./REQU
 
 ## Features
 
-- **Tasks** — Track tasks with priorities, statuses, and time entries
+- **Tasks** — Track tasks with priorities, statuses, and time entries. Unfinished tasks worked on the previous workday carry over to today's list automatically (weekends/gaps skipped)
 - **Timeline** — View and edit time entries; lazy-load historical days
 - **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts (incl. % of completed tasks meeting their estimate); navigate to previous weeks/months with Prev/Next controls
 - **Settings** — Customize theme color, focus interval, time snap, and weekly/monthly goals
