@@ -57,7 +57,7 @@ async function seedTasks(tasks) {
 
 const linesOf = text => parseTodoTxt(text).map(t => `${t.exid} ${t.description}`);
 
-TestRunner.test('file sync: first sync keeps lines not in today\'s view and respects rollover', async () => {
+TestRunner.test('file sync: first sync keeps lines not in today\'s view and lists open file tasks today', async () => {
   const oldModified = yesterday();
   const db = await seedTasks([
     { exid: 'FSOLD', description: 'Old task', lastModified: oldModified },
@@ -72,11 +72,34 @@ TestRunner.test('file sync: first sync keeps lines not in today\'s view and resp
   TestRunner.assert(lines.includes('FSOLD Old task edited'), `old task line must survive, got ${todo.text}`);
   TestRunner.assert(lines.includes('FSEXT Typed in editor'), 'externally added line must survive');
   TestRunner.assert(appContext.tasks.value.some(t => t.exid === 'FSEXT'), 'new file task appears in today\'s view');
-  TestRunner.assert(!appContext.tasks.value.some(t => t.exid === 'FSOLD'), 'old task stays out of today\'s view');
+  TestRunner.assert(appContext.tasks.value.some(t => t.exid === 'FSOLD'), 'open task in todo.txt joins today\'s view');
 
   const [old] = await db.getTasksByExids(['FSOLD']);
   TestRunner.assertEquals(old.description, 'Old task edited', 'old task updated in DB');
-  TestRunner.assertEquals(new Date(old.lastModified).toISOString(), oldModified.toISOString(), 'old task timestamp preserved');
+  TestRunner.assertEquals(new Date(old.lastModified).toDateString(), new Date().toDateString(), 'old task touched so it stays on reload');
+});
+
+TestRunner.test('file sync: open todo.txt tasks show today however long since last worked on', async () => {
+  const longAgo = new Date();
+  longAgo.setDate(longAgo.getDate() - 10);
+  const db = await seedTasks([
+    { exid: 'FSSTALE', description: 'Stale open task', lastModified: longAgo },
+    { exid: 'FSFIN', description: 'Finished task', lastModified: longAgo, complete: true, status: 'complete' },
+    { exid: 'FSGONE', description: 'Deleted task', lastModified: longAgo, deleted: true }
+  ]);
+  await db.addEntry({ task: 'FSSTALE', start: longAgo, end: new Date(longAgo.getTime() + 3600000) });
+  appContext.tasks.value = [];
+
+  const todo = fakeFile('#FSSTALE Stale open task\nx 2026-10-01 #FSFIN Finished task\n#FSGONE Deleted task');
+  todo.base = todo.text; // already synced: no external edits, only inclusion is under test
+  await withLinkedFiles({ todoFile: todo }, () => appContext.syncFiles());
+
+  const listed = exid => appContext.tasks.value.some(t => t.exid === exid);
+  TestRunner.assert(listed('FSSTALE'), 'open task last worked 10 days ago is listed today');
+  TestRunner.assert(!listed('FSFIN'), 'completed line is not listed');
+  TestRunner.assert(!listed('FSGONE'), 'task deleted in the app is not listed');
+  const [stale] = await db.getTasksByExids(['FSSTALE']);
+  TestRunner.assertEquals(new Date(stale.lastModified).toDateString(), new Date().toDateString(), 'touched so it survives reload');
 });
 
 TestRunner.test('file sync: external edits, removals and exid-less lines are applied', async () => {
