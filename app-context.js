@@ -286,13 +286,21 @@ customElements.define('app-context', class extends HTMLElement {
         const recentEntries = await db.getEntriesByDateRange(oldest, new Date(todayStart.getTime() - 1));
         const exids = [...new Set(recentEntries.map(e => e.task))]
             .filter(exid => exid && !listed.has(String(exid)));
-        const carried = (await db.getTasksByExids(exids))
-            .filter(t => !t.complete && t.status !== 'complete' && !t.archived)
-            .map(t => ({ ...t, lastModified: today }));
-        if (!carried.length) return;
+        await this._addOpenTasksToToday(db, exids);
+    }
 
-        for (const task of carried) await db.updateTask(task, { preserveTimestamp: false });
-        this.tasks.value = [...this.tasks.value, ...carried];
+    // Lists the given tasks today if they're still open. Touches lastModified so they stay on reload.
+    async _addOpenTasksToToday(db, exids) {
+        if (!exids.length) return [];
+        const today = new Date();
+        const added = (await db.getTasksByExids(exids))
+            .filter(t => !t.complete && t.status !== 'complete' && !t.archived && !t.deleted)
+            .map(t => ({ ...t, lastModified: today }));
+        if (!added.length) return [];
+
+        for (const task of added) await db.updateTask(task, { preserveTimestamp: false });
+        this.tasks.value = [...this.tasks.value, ...added];
+        return added;
     }
 
     // Remove blank or timestamp-only tasks from the database.
@@ -438,6 +446,7 @@ customElements.define('app-context', class extends HTMLElement {
             });
             await this._applyInbound(db, plan);
         }
+        await this._includeFileTasks(db, fileTasks);
 
         const content = renderFiles({
             fileTasks,
@@ -446,6 +455,15 @@ customElements.define('app-context', class extends HTMLElement {
             doneLinked: !!files.done
         });
         return writeLinkedFiles(files, content);
+    }
+
+    // Open tasks in todo.txt are always on today's list, however long since they were worked on
+    async _includeFileTasks(db, fileTasks) {
+        const listed = new Set(this.tasks.value.map(t => String(t.exid)));
+        const exids = fileTasks.filter(t => !t.complete && !listed.has(String(t.exid))).map(t => t.exid);
+        if (!(await this._addOpenTasksToToday(db, exids)).length) return;
+        this.recalculateTaskTotals();
+        await this.refreshTaskLists();
     }
 
     // Apply external file edits. Tasks outside today's view are updated in the DB

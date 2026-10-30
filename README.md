@@ -7,7 +7,7 @@ For detailed requirements and implementation tasks, see [REQUIREMENTS.md](./REQU
 
 ## Features
 
-- **Tasks** — Track tasks with priorities, statuses, and time entries. Unfinished tasks carry over to today's list automatically while they have time logged in the last 3 days you worked (days with no entries don't count)
+- **Tasks** — Track tasks with priorities, statuses, and time entries. Unfinished tasks carry over to today's list automatically while they have time logged in the last 3 days you worked (days with no entries don't count). Open tasks in a linked todo.txt always show on today's list
 - **Timeline** — View and edit time entries; lazy-load historical days
 - **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts (incl. % of completed tasks meeting their estimate); navigate to previous weeks/months with Prev/Next controls
 - **Settings** — Customize theme color, focus interval, time snap, and weekly/monthly goals

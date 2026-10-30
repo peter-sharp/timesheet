@@ -2,6 +2,13 @@
 
 ## Features Implemented
 
+### ✅ Open todo.txt tasks always show today (v1.22.0)
+
+- Every open (not completed/deleted/archived) task in a linked todo.txt is listed today on each sync, however long
+  since it was last worked on (`_includeFileTasks` in `app-context.js`). Touches `lastModified` so it stays on reload.
+- Replaces the v1.18.0 rollover guard for open todo.txt lines; remove a line from todo.txt to drop the task.
+- Shares `_addOpenTasksToToday` with carry-over. Possible follow-up: `t:`/`due:` markers for scheduling ahead.
+
 ### ✅ Carry-over keeps tasks for 3 worked days (v1.21.1)
 
 - Previously a carried task not worked on that day dropped off the next. Now unfinished tasks carry over while they
@@ -39,7 +46,8 @@ other line in todo.txt, and the idle write could race ahead of the inbound read.
 - Writes are skipped if unchanged and aborted (then re-synced) if the file changed since it was read.
 - Triggers: load, `persistState`, visibility, window focus, 5s `lastModified` poll while visible.
 - Background syncs only query permission; `file-sync-menu` shows **Allow access** to re-grant.
-- Rollover guard kept: edits to tasks outside today's view update the DB with timestamps preserved.
+- Rollover guard kept: edits to tasks outside today's view update the DB with timestamps preserved
+  (superseded in v1.22.0: open todo.txt tasks are now always listed today).
 - Without done.txt linked, completed tasks stay in todo.txt as `x` lines.
 - Possible follow-up: use `FileSystemObserver` instead of polling once it ships unflagged.
 
