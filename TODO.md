@@ -2,6 +2,10 @@
 
 ## Features Implemented
 
+### ✅ Tasks archived today are searchable (v1.22.1)
+
+Archiving bumped `lastModified` to today, so `searchArchivedTasks` hid it. Archived tasks now always match search, except exid-only tasks (no description/project/context/client).
+
 ### ✅ Open todo.txt tasks always show today (v1.22.0)
 
 - Every open (not completed/deleted/archived) task in a linked todo.txt is listed today on each sync, however long

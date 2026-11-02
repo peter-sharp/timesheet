@@ -42,6 +42,7 @@ To change status: **long press** (hold 500 ms) or **right-click** the checkbox t
 #### Task Archiving
 - Tasks can be **archived** to remove them from today's active list without deleting them
 - Archived tasks remain in the database and appear in the add-task autocomplete
+- Archived tasks are searchable from the task input immediately, even if archived today (exid-only tasks are skipped as they're usually accidental)
 - Re-adding an archived task by name automatically unarchives it and restores it to today's list
 - Archiving stops any active timer on the task
 
