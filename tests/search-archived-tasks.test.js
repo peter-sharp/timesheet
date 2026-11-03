@@ -168,3 +168,32 @@ TestRunner.test('searchArchivedTasks: returns multiple matches across different 
 
   TestRunner.assertEquals(results.length, 3, 'Should match across exid, project, and client fields');
 });
+
+TestRunner.test('searchArchivedTasks: includes tasks archived today', async () => {
+  await seedData({
+    tasks: [
+      { exid: 'ARCH', description: 'Archived report', lastModified: daysAgo(0), deleted: false },
+    ]
+  });
+
+  const db = await TimesheetDB();
+  await db.archiveTask('ARCH');
+  const results = await db.searchArchivedTasks('report');
+
+  TestRunner.assertEquals(results.length, 1, 'Task archived today should be searchable');
+  TestRunner.assertEquals(results[0].exid, 'ARCH', 'Should return the archived task');
+});
+
+TestRunner.test('searchArchivedTasks: excludes exid-only tasks archived today', async () => {
+  await seedData({
+    tasks: [
+      { exid: 'OOPS-1', lastModified: daysAgo(0), deleted: false },
+    ]
+  });
+
+  const db = await TimesheetDB();
+  await db.archiveTask('OOPS-1');
+  const results = await db.searchArchivedTasks('OOPS');
+
+  TestRunner.assertEquals(results.length, 0, 'Exid-only archived tasks should not be searchable');
+});

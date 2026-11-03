@@ -528,6 +528,9 @@ TimesheetDB.modules.push(function tasksDb() {
             return tasks;
         }
 
+        const isExidOnly = task => !['description', 'project', 'context', 'client']
+            .some(field => String(task[field] ?? '').trim());
+
         // Search tasks NOT in today's list (archived/historical) matching a query string
         async function searchArchivedTasks(query, limit = 20) {
             if (!query) return [];
@@ -541,7 +544,10 @@ TimesheetDB.modules.push(function tasksDb() {
             const objectStore = transaction.objectStore("tasks");
             for await (const task of awaitCursor(objectStore.openCursor())) {
                 if (task.deleted) continue;
-                if (task.lastModified && task.lastModified >= today && task.lastModified < tomorrow) continue;
+                // Archived tasks are searchable even if archived today, unless exid-only (usually accidental)
+                if (task.archived) {
+                    if (isExidOnly(task)) continue;
+                } else if (task.lastModified && task.lastModified >= today && task.lastModified < tomorrow) continue;
                 const matches =
                     task.description?.toLowerCase().includes(q) ||
                     String(task.exid)?.toLowerCase().includes(q) ||
