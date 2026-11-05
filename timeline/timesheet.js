@@ -9,10 +9,14 @@ import round1dp from "../utils/round1dp.js";
 import formatPrice from "../utils/formatPrice.js";
 import format24hour from "../utils/format24Hour.js";
 import emitEvent from "../utils/emitEvent.js";
-import shallowClone from "../utils/shallowClone.js";
+import dayRibbon, { exidColor, formatShortDuration } from "../utils/dayRibbon.js";
 
 const template = document.createElement('template');
-template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=timesheet>
+template.innerHTML = /*html*/`<div class="wrapper__inner" id=timesheet>
+    <nav class="day-ribbon day-ribbon--sticky" aria-label="Today's entries by time" data-ribbon hidden>
+        <div class="day-ribbon__track" data-ribbon-track></div>
+        <div class="day-ribbon__ticks" data-ribbon-ticks aria-hidden="true"></div>
+    </nav>
     <div class="padding-inline-start-5">
         <section data-new="entry" class="new-entry-section">
             <h3 class="entry-title"><time-duration class="pulseOpacity"></time-duration><span>New Entry</span></h3>
@@ -38,7 +42,7 @@ template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=t
         </section>
     </div>
 
-    <div id="time_entries" class="padding-inline-start-5 timeline-container">
+    <div id="time_entries" class="timeline-container">
         <!-- Timeline entries will be inserted here -->
     </div>
     <div class="padding-inline-start-5">
@@ -63,52 +67,56 @@ template.innerHTML = /*html*/`<div class="wrapper__inner overflow-x-scroll" id=t
 
 </div>`
 
+const entrySummary = /*html*/`
+    <span class="time-entry__swatch" aria-hidden="true"></span>
+    <span class="time-entry__range" data-range></span>
+    <span class="time-entry__duration" data-duration></span>
+    <span class="time-entry__exid" data-exid></span>
+    <span class="time-entry__desc" data-desc></span>`
+
 const entryRow = document.createElement('template');
 entryRow.innerHTML = /*html*/`
-<section class="context-reveal time-entry time-entry-section">
-    <h3 class="entry-title entry-title--time-line"><time-duration></time-duration><span data-title></span></h3>
+<details class="time-entry">
+    <summary class="time-entry__summary">${entrySummary}</summary>
     <form class="entry-form">
-         <div class="input-group">
-            <label for="entryEnd">Time End: </label>
-            <input id="entryEnd" type="time" name="time_end" class="context-reveal__input">
-        </div>
-        <div class="input-group">
-            <label for="entryTask">Task: </label>
-            <input id="entryTask" type="text" name="task" class="context-reveal__input">
-        </div>
         <div class="input-group">
             <label for="entryStart">Time Start: </label>
-            <input id="entryStart" type="time" name="time_start" class="context-reveal__input">
+            <input id="entryStart" type="time" name="time_start">
         </div>
         <div class="input-group">
-            <label for="entryAnnotation">Annotation: </label>
-            <input id="entryAnnotation" type="text" name="annotation" class="context-reveal__input">
+            <label for="entryEnd">Time End: </label>
+            <input id="entryEnd" type="time" name="time_end">
         </div>
-        
-       
-       
-        <div class="entry-actions context-reveal__item">
+        <div class="input-group input-group--wide">
+            <label for="entryTask">Task: </label>
+            <input id="entryTask" type="text" name="task">
+        </div>
+        <div class="input-group input-group--wide">
+            <label for="entryAnnotation">Annotation: </label>
+            <input id="entryAnnotation" type="text" name="annotation">
+        </div>
+        <div class="entry-actions">
             <button name="delete" type="button" data-style="subtle"><span class="sr-only">Delete</span><svg width=16 height=16><title>delete</title><use href="#icon-close"></use></svg></button>
         </div>
     </form>
-</section>`
+</details>`
 
 const entryRowGap = document.createElement('template');
 entryRowGap.innerHTML = /*html*/`
-<section class="gap-section">
-    <p class="gap-text"><time-duration data-gap></time-duration><span>gap</span></p>
-</section>`
+<p class="gap-text"><span data-gap></span> gap</p>`
 
 const historicalEntryRow = document.createElement('template');
 historicalEntryRow.innerHTML = /*html*/`
-<section class="time-entry time-entry-section time-entry--readonly">
-    <h3 class="entry-title entry-title--time-line"><time-duration></time-duration><span data-title></span></h3>
-    <div class="entry-readonly">
-        <span data-time-range></span>
-        <span data-task-name></span>
-        <span data-annotation class="opacity50"></span>
-    </div>
-</section>`
+<div class="time-entry time-entry--readonly">
+    <div class="time-entry__summary">${entrySummary}</div>
+</div>`
+
+const historicalRibbon = document.createElement('template');
+historicalRibbon.innerHTML = /*html*/`
+<div class="day-ribbon" aria-hidden="true">
+    <div class="day-ribbon__track" data-ribbon-track></div>
+    <div class="day-ribbon__ticks" data-ribbon-ticks></div>
+</div>`
 
 const MILLISECONDS_PER_HOUR = 3600000
 class Timesheet extends HTMLElement {
@@ -122,6 +130,7 @@ class Timesheet extends HTMLElement {
     #durationTotalGaps;
     #historicalDays;
     #noMoreEntries;
+    #openIds = new Set();
     #unsubscribe = {};
     constructor() {
         super();
@@ -130,6 +139,7 @@ class Timesheet extends HTMLElement {
         this.entriesList = el.querySelector('#time_entries');
         this.historicalContainer = el.querySelector('#historical_entries');
         this.loadMoreBtn = el.querySelector('[data-load-more]');
+        this.ribbon = el.querySelector('[data-ribbon]');
         const form = el;
         this.state = {};
         timeLoop(1000, () => {
@@ -182,7 +192,7 @@ class Timesheet extends HTMLElement {
         el.addEventListener('focusout', function handleNewTimeEntry(ev) {
             if (ev.target.nodeName == 'INPUT') {
                 const input = ev.target;
-                const section = input.closest('section');
+                const section = input.closest('[data-id], [data-new]');
 
                 console.log({ allInputsEnteredExcept: allInputsEnteredExcept(['time_end'], section), section: section})
                 if (allInputsEntered(section)) {
@@ -212,8 +222,20 @@ class Timesheet extends HTMLElement {
             }
         });
 
+        el.addEventListener('toggle', function trackOpenEntries(ev) {
+            const details = ev.target;
+            if (!details.matches?.('details[data-id]')) return;
+            const id = parseInt(details.dataset.id, 10);
+            details.open ? that.#openIds.add(id) : that.#openIds.delete(id);
+            that.ribbon.querySelector(`[data-segment="${id}"]`)?.classList.toggle('is-open', details.open);
+        }, true);
+
         el.addEventListener("click", function handleTimesheetAction(ev) {
-           
+            const segment = ev.target.closest('[data-segment]');
+            if (segment) {
+                that.openEntry(parseInt(segment.dataset.segment, 10));
+                return;
+            }
             if(ev.target.closest("button")) {
                 const btn = ev.target.closest("button");
                 emitEvent(el, btn.name + "Entry", {
@@ -269,27 +291,20 @@ class Timesheet extends HTMLElement {
     render(state) {
         const el = this;
         const newEntry = el.querySelector('[data-new="entry"]');
-        this.renderEntry(newEntry, state.newEntry);
-        
-        // Clear only the timeline container content
-        for (const x of [...this.entriesList.childNodes]) {
-            x.remove();
-        }
-        const entries = state.entries.map(shallowClone);
-       
-        for (const entry of entries) {
-            let section = this.entriesList.querySelector(`[data-id="${entry.id}"]`);
-            if (!section) {
-                section = this.newTimeentrySection();
-                section.dataset.id = entry.id
-               
-            }
+        this.renderEntryInputs(newEntry, state.newEntry);
 
-
-            section = this.renderEntryGap(this.renderEntry(section, entry), entry);
-            this.entriesList.prepend(section);
+        this.entriesList.replaceChildren();
+        for (const entry of state.entries) {
+            const details = entryRow.content.cloneNode(true).querySelector('details');
+            details.dataset.id = entry.id;
+            details.open = this.#openIds.has(entry.id);
+            this.renderEntryInputs(details, entry);
+            this.renderSummary(details.querySelector('.time-entry__summary'), entry, (exid) => this.getTaskById(exid));
+            this.entriesList.prepend(this.renderEntryGap(details, entry));
         }
-        
+
+        this.renderRibbon(this.ribbon, state.entries, (exid) => this.getTaskById(exid), true);
+
         //TODO make sure in scope of timesheet
         const elDurationTotal = el.querySelector('[name="durationTotal"]');
         elDurationTotal.value = round1dp(state.durationTotal);
@@ -298,69 +313,89 @@ class Timesheet extends HTMLElement {
         elDurationTotalGaps.setAttribute("duration", round1dp(state.durationTotalGaps * MILLISECONDS_PER_HOUR));
     }
 
-    renderEntry(section, entry) {
+    /** Opens an entry's details and brings it into view (used by ribbon segments). */
+    openEntry(id) {
+        const details = this.entriesList.querySelector(`details[data-id="${id}"]`);
+        if (!details) return;
+        details.open = true;
+        this.#openIds.add(id);
+        this.ribbon.querySelector(`[data-segment="${id}"]`)?.classList.add('is-open');
+        details.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+        details.querySelector('summary').focus({ preventScroll: true });
+    }
 
+    renderEntryInputs(section, entry) {
         this.renderEntryInput(section.querySelector('[name="task"]'), entry.id, entry.task);
         this.renderEntryInput(section.querySelector('[name="annotation"]'), entry.id, entry.annotation);
         this.renderEntryInput(section.querySelector('[name="time_start"]'), entry.id, entry.start ? format24hour(entry.start) : '');
         this.renderEntryInput(section.querySelector('[name="time_end"]'), entry.id, entry.end ? format24hour(entry.end) : '');
-       
-        
-        // Update section title with task name
-        const titleElement = section.querySelector('.entry-title > span[data-title]');
-        if (titleElement && entry.task) {
-            const task = this.getTaskById(entry.task);
-            titleElement.textContent = task ? `${task.description || task.exid} (${task.exid})` : entry.task;
-        }
-        
-        // Calculate duration and set section size
-        let duration = 0;
-        const timeDurationElement = section.querySelector('time-duration');
-        if(entry.start && entry.end) {
-            timeDurationElement.setAttribute('end', entry.end);
-            timeDurationElement.setAttribute('start', entry.start);
-            duration = calcDuration(entry.start, entry.end);
-        } else {
-            timeDurationElement.setAttribute('duration', 0);
-        }
-        
-        // Set section height based on duration (2em per hour, minimum 4em)
-        const hours = duration / MILLISECONDS_PER_HOUR;
-        const sectionHeight = Math.max(hours * 2, 4);
-        section.style.setProperty('--section-height', `${sectionHeight}em`);
-    
-        return section
+        return section;
+    }
+
+    /** Fills a one-line summary: [start]–[end] [duration] [exid] [description] */
+    renderSummary(summary, entry, findTask) {
+        const start = entry.start ? new Date(entry.start) : null;
+        const end = entry.end ? new Date(entry.end) : null;
+        const task = findTask(entry.task);
+        summary.querySelector('[data-range]').textContent = `${start ? format24hour(start) : '…'}–${end ? format24hour(end) : '…'}`;
+        summary.querySelector('[data-duration]').textContent = start && end ? formatShortDuration(end - start) : '';
+        summary.querySelector('[data-exid]').textContent = task?.exid || entry.task || '';
+        summary.querySelector('[data-desc]').textContent = [task?.description, entry.annotation].filter(Boolean).join(' · ');
+        summary.querySelector('.time-entry__swatch').style.setProperty('--entry-color', exidColor(entry.task));
+        return summary;
+    }
+
+    /** Lays entries proportionally on a ribbon; interactive ribbons get buttons that open the entry. */
+    renderRibbon(ribbon, entries, findTask, interactive = false) {
+        const { segments, ticks } = dayRibbon(entries);
+        ribbon.hidden = !segments.length;
+        const track = ribbon.querySelector('[data-ribbon-track]');
+        track.replaceChildren(...segments.map((segment) => {
+            const node = document.createElement(interactive ? 'button' : 'span');
+            const task = findTask(segment.task);
+            const label = `${format24hour(segment.start)}–${format24hour(segment.end)} ${formatShortDuration(segment.end - segment.start)} ${task?.exid || segment.task || ''} ${task?.description || ''}`.trim();
+            node.className = 'day-ribbon__segment';
+            node.style.setProperty('--left', `${segment.left}%`);
+            node.style.setProperty('--width', `${segment.width}%`);
+            node.style.setProperty('--entry-color', exidColor(segment.task));
+            node.title = label;
+            if (interactive) {
+                node.type = 'button';
+                node.dataset.segment = segment.id;
+                node.setAttribute('aria-label', label);
+                node.classList.toggle('is-open', this.#openIds.has(segment.id));
+            }
+            return node;
+        }));
+        ribbon.querySelector('[data-ribbon-ticks]').replaceChildren(...ticks.map((tick) => {
+            const node = document.createElement('span');
+            node.textContent = tick.hour;
+            node.style.setProperty('--left', `${tick.left}%`);
+            return node;
+        }));
+        return ribbon;
     }
 
     renderEntryInput(input, id, value ) {
         if (!input) return;
-        const label = input.labels[0] || input.previousElementSibling.matches('label') ? input.previousElementSibling : null;
-        if(label) {
+        const label = input.labels?.[0];
+        if(label && id !== undefined) {
             label.setAttribute('for', label.getAttribute('for')?.replace('entry', id));
             input.id = input.id.replace('entry', id);
-            console.log(input.id, label.getAttribute('for'), id);
         }
-       
         input.value = value || '';
-        
         return input;
-
     }
 
-    renderEntryGap(section, entry) {
-        const sectionGroup = document.createDocumentFragment();
-       
-        
-        sectionGroup.appendChild(section);
-
+    renderEntryGap(details, entry) {
+        const group = document.createDocumentFragment();
+        group.appendChild(details);
         if(entry.gap && entry.gap > 0.05 ) {
-            const gapSection = entryRowGap.content.cloneNode(true).querySelector('section');
-            gapSection.querySelector('time-duration').setAttribute('duration', entry.gap * MILLISECONDS_PER_HOUR);
-            gapSection.style.setProperty("--gap-color", "rgba(255, 255, 255, 0.2)" );
-            gapSection.style.setProperty("--gap-size",  `${entry.gap + 1}em` );
-            sectionGroup.appendChild(gapSection);
+            const gap = entryRowGap.content.cloneNode(true).querySelector('p');
+            gap.querySelector('[data-gap]').textContent = formatShortDuration(entry.gap * MILLISECONDS_PER_HOUR);
+            group.appendChild(gap);
         }
-        return sectionGroup
+        return group
     }
 
 
@@ -383,10 +418,6 @@ class Timesheet extends HTMLElement {
         
     }
 
-
-    newTimeentrySection() {
-        return entryRow.content.cloneNode(true).querySelector('section')
-    }
 
     renderHistorical() {
         const days = this.#historicalDays?.value || [];
@@ -434,42 +465,15 @@ class Timesheet extends HTMLElement {
         header.appendChild(totalLabel);
         section.appendChild(header);
 
-        // Entry list container (timeline style)
+        const findTask = (exid) => tasksIndex[exid] || null;
+        section.appendChild(this.renderRibbon(historicalRibbon.content.cloneNode(true).querySelector('.day-ribbon'), sorted, findTask));
+
+        // Entry list (newest first, matching today's rendering)
         const entryContainer = document.createElement('div');
-        entryContainer.className = 'timeline-container padding-inline-start-5';
-
-        // Render entries in reverse chronological order (newest first, matching today's rendering)
+        entryContainer.className = 'timeline-container';
         for (const entry of [...sorted].reverse()) {
-            const row = historicalEntryRow.content.cloneNode(true).querySelector('section');
-
-            const start = new Date(entry.start);
-            const end = new Date(entry.end);
-            const duration = entry.start && entry.end ? calcDuration({ start, end }) : 0;
-            const hours = duration / 1; // already in hours
-            const sectionHeight = Math.max(hours * 2, 4);
-            row.style.setProperty('--section-height', `${sectionHeight}em`);
-
-            const timeDuration = row.querySelector('time-duration');
-            if (entry.start && entry.end) {
-                timeDuration.setAttribute('start', start);
-                timeDuration.setAttribute('end', end);
-            } else {
-                timeDuration.setAttribute('duration', 0);
-            }
-
-            const titleEl = row.querySelector('[data-title]');
-            const task = tasksIndex[entry.task];
-            titleEl.textContent = task ? `${task.description || task.exid} (${task.exid})` : entry.task || '';
-
-            const timeRange = row.querySelector('[data-time-range]');
-            timeRange.textContent = `${format24hour(start)} – ${format24hour(end)}`;
-
-            const taskName = row.querySelector('[data-task-name]');
-            taskName.textContent = entry.task || '';
-
-            const annotation = row.querySelector('[data-annotation]');
-            annotation.textContent = entry.annotation || '';
-
+            const row = historicalEntryRow.content.cloneNode(true).querySelector('.time-entry');
+            this.renderSummary(row.querySelector('.time-entry__summary'), entry, findTask);
             entryContainer.appendChild(row);
         }
 
