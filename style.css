@@ -50,6 +50,7 @@
   --color-chart-tick: rgba(255, 255, 255, 0.2);
   --color-chart-tick-label: var(--color-text-muted);
   --color-chart-goal: rgba(255, 200, 50, 0.8);
+  --color-chart-secondary: #3ecf8e;
 }
 
 /* Stats page */

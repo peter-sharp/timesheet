@@ -77,6 +77,15 @@ other line in todo.txt, and the idle write could race ahead of the inbound read.
 - `hash-router.js` resolves sub-routes (`#task/X` → section `#task`); unknown hashes fall back to default.
 - Possible follow-ups: rename exid (needs entry re-keying), edit archived tasks from search results.
 
+### ✅ Stats page: 12-month trend chart (v1.23.0)
+
+- New `monthlyTrend` signal (built in `handleLoadStats` via `buildMonthlyTrend`): tasks completed,
+  estimates met and % met for each of the last 12 months, always ending at the current month.
+- New `components/trend-chart.js`: bars = tasks completed, dashed line = monthly tasks goal,
+  green line = % estimates met (right axis). Months with no completed tasks leave a gap in the line.
+- Integration tests: `tests/monthly-trend.test.js`.
+- Possible follow-up: grey line for average of previous months on the daily charts.
+
 ### ✅ Task estimates (v1.14.0)
 
 - `estimate:` add-on (hours) is now stored on tasks (was parsed then dropped by `handleAddTask`/`handleAddTasks`).

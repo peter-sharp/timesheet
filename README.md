@@ -9,7 +9,7 @@ For detailed requirements and implementation tasks, see [REQUIREMENTS.md](./REQU
 
 - **Tasks** — Track tasks with priorities, statuses, and time entries. Unfinished tasks carry over to today's list automatically while they have time logged in the last 3 days you worked (days with no entries don't count). Open tasks in a linked todo.txt always show on today's list
 - **Timeline** — View and edit time entries; lazy-load historical days
-- **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts (incl. % of completed tasks meeting their estimate); navigate to previous weeks/months with Prev/Next controls
+- **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts (incl. % of completed tasks meeting their estimate); navigate to previous weeks/months with Prev/Next controls; a 12-month trend chart shows tasks completed per month vs goal and % of estimates met
 - **Settings** — Customize theme color, focus interval, time snap, and weekly/monthly goals
 - **File Sync** — Two-way sync with todo.txt / done.txt via File System Access API. Edits made in another editor are picked up within seconds (window focus + 5s polling) and merged line-by-line against the last-synced copy, so app writes never overwrite them. Deleting a line archives the task; lines typed without a `#exid` get one. After a reload use **Allow access** in the `...` menu if the browser asks again for file permission.
 

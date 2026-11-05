@@ -1,6 +1,7 @@
 import { ContextRequestEvent } from '../utils/Context.js';
 import { effect } from '../utils/Signal.js';
 import '../components/graph-chart.js';
+import '../components/trend-chart.js';
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`
@@ -103,6 +104,11 @@ template.innerHTML = /*html*/`
     </section>
 
     <section>
+        <h3 class="h5">12-Month Trend</h3>
+        <trend-chart class="monthly-trend-chart"></trend-chart>
+    </section>
+
+    <section>
         <h3 class="h5">Daily Hours <span data-label="hoursChartMonthLabel">This Month</span></h3>
         <graph-chart
             width="600" height="200" padding="40"
@@ -142,6 +148,7 @@ template.innerHTML = /*html*/`
 customElements.define('stats-page', class extends HTMLElement {
     #weeklyStats;
     #monthlyStats;
+    #monthlyTrend;
     #settings;
     #unsubscribeSignals;
     #unsubscribeState;
@@ -153,6 +160,7 @@ customElements.define('stats-page', class extends HTMLElement {
             new ContextRequestEvent('state', (state, unsubscribe) => {
                 this.#weeklyStats  = state.weeklyStats;
                 this.#monthlyStats = state.monthlyStats;
+                this.#monthlyTrend = state.monthlyTrend;
                 this.#settings     = state.settings;
                 this.#unsubscribeState = unsubscribe;
 
@@ -160,6 +168,7 @@ customElements.define('stats-page', class extends HTMLElement {
                     () => this.#render(),
                     this.#weeklyStats,
                     this.#monthlyStats,
+                    this.#monthlyTrend,
                     this.#settings
                 );
             }, true)
@@ -290,6 +299,12 @@ customElements.define('stats-page', class extends HTMLElement {
         if (gapsChart) {
             gapsChart.setAttribute('goal', dailyGapGoal);
             gapsChart.data = monthly.dailyGaps || [];
+        }
+
+        const trendChart = this.querySelector('.monthly-trend-chart');
+        if (trendChart) {
+            trendChart.setAttribute('goal', monthlyTasksGoal);
+            trendChart.data = this.#monthlyTrend?.value || [];
         }
     }
 

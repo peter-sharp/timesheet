@@ -112,6 +112,7 @@ customElements.define('app-context', class extends HTMLElement {
     noMoreEntries = signal(false)
     weeklyStats = signal(null)
     monthlyStats = signal(null)
+    monthlyTrend = signal([])
     filterQuery = signal('')
     archivedSearchResults = signal([])
     // Hours per task from entries NOT in the in-memory `entries` (i.e. previous days),
@@ -136,6 +137,7 @@ customElements.define('app-context', class extends HTMLElement {
         noMoreEntries: this.noMoreEntries,
         weeklyStats: this.weeklyStats,
         monthlyStats: this.monthlyStats,
+        monthlyTrend: this.monthlyTrend,
         filterQuery: this.filterQuery,
         archivedSearchResults: this.archivedSearchResults,
         taskPastTotals: this.taskPastTotals
@@ -1315,9 +1317,48 @@ customElements.define('app-context', class extends HTMLElement {
                 isCurrentMonth,
                 monthLabel
             };
+
+            this.monthlyTrend.value = await this.buildMonthlyTrend(db, now, workdays);
         } catch (e) {
             console.error('Failed to load stats:', e);
         }
+    }
+
+    // Tasks completed and % meeting their estimate for each of the last 12 months
+    // (oldest first, ending with the current month). Always relative to today,
+    // independent of the Stats page's month navigation.
+    async buildMonthlyTrend(db, now, workdays) {
+        const months = Array.from({ length: 12 }, (_, i) =>
+            new Date(now.getFullYear(), now.getMonth() - 11 + i, 1));
+        const rangeStart = months[0];
+        const rangeEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+        const completed = (await db.getTasksModifiedInRange(rangeStart, rangeEnd))
+            .filter(t => t.complete && t.lastModified && isWorkday(new Date(t.lastModified), workdays));
+
+        const allTimeHours = (await db.getEntriesByTasks(completed.map(t => t.exid))).reduce((totals, e) => {
+            if (!e.start || !e.end) return totals;
+            totals[e.task] = (totals[e.task] || 0) + calcDuration({ start: new Date(e.start), end: new Date(e.end) });
+            return totals;
+        }, {});
+
+        return months.map(monthStart => {
+            const year = monthStart.getFullYear();
+            const month = monthStart.getMonth();
+            const done = completed.filter(t => {
+                const d = new Date(t.lastModified);
+                return d.getFullYear() === year && d.getMonth() === month;
+            });
+            const estimatesMet = done.filter(t => isEstimateMet(allTimeHours[t.exid] || 0, t)).length;
+            return {
+                year,
+                month,
+                label: monthStart.toLocaleDateString(undefined, { month: 'short' }),
+                tasksCompleted: done.length,
+                estimatesMet,
+                estimateRate: done.length ? Math.round(estimatesMet / done.length * 100) : null
+            };
+        });
     }
 
     recalculateTaskTotals() {
