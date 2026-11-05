@@ -2,6 +2,13 @@
 
 ## Features Implemented
 
+### ✅ Compact timeline with sticky day ribbon (v1.23.0)
+
+- Entries are `<details>` rows: summary `start–end duration exid description`, expand to edit; open state survives re-renders.
+- Sticky ribbon (`utils/dayRibbon.js`) lays entries across the day in whole hours, coloured per exid, gaps hatched;
+  tapping a segment opens and scrolls to the entry. Historical days get a non-interactive ribbon.
+- Replaces duration-proportional entry heights. Possible follow-up: show the running entry live on the ribbon.
+
 ### ✅ Tasks archived today are searchable (v1.22.1)
 
 Archiving bumped `lastModified` to today, so `searchArchivedTasks` hid it. Archived tasks now always match search, except exid-only tasks (no description/project/context/client).

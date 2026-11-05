@@ -102,6 +102,7 @@ async function runTests() {
     await import('./estimate-total.test.js');
     await import('./file-sync.test.js');
     await import('./carry-over.test.js');
+    await import('./timeline-compact.test.js');
 
     // Wait a bit for tests to register and async operations to complete
     await new Promise(resolve => setTimeout(resolve, 200));
