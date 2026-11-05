@@ -2,6 +2,13 @@
 
 ## Features Implemented
 
+### ✅ Compact timeline with sticky day ribbon (v1.23.0)
+
+- Entries are `<details>` rows: summary `start–end duration exid description`, expand to edit; open state survives re-renders.
+- Sticky ribbon (`utils/dayRibbon.js`) lays entries across the day in whole hours, coloured per exid, gaps hatched;
+  tapping a segment opens and scrolls to the entry. Historical days get a non-interactive ribbon.
+- Replaces duration-proportional entry heights. Possible follow-up: show the running entry live on the ribbon.
+
 ### ✅ Tasks archived today are searchable (v1.22.1)
 
 Archiving bumped `lastModified` to today, so `searchArchivedTasks` hid it. Archived tasks now always match search, except exid-only tasks (no description/project/context/client).
@@ -77,7 +84,7 @@ other line in todo.txt, and the idle write could race ahead of the inbound read.
 - `hash-router.js` resolves sub-routes (`#task/X` → section `#task`); unknown hashes fall back to default.
 - Possible follow-ups: rename exid (needs entry re-keying), edit archived tasks from search results.
 
-### ✅ Stats page: 12-month trend chart (v1.23.0)
+### ✅ Stats page: 12-month trend chart (v1.24.0)
 
 - New `monthlyTrend` signal (built in `handleLoadStats` via `buildMonthlyTrend`): tasks completed,
   estimates met and % met for each of the last 12 months, always ending at the current month.
