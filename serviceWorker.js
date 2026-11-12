@@ -31,6 +31,7 @@ const assets = [
   "./tasks/tasks.js",
   "./time-duration.js",
   "./timeline/timesheet.js",
+  "./timeline/gap-menu.js",
   "./todoTxtFormat.js",
   "./fileSync.js",
   "./syncEngine.js",

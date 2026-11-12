@@ -522,6 +522,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'deleteEntry':
                 this.handleDeleteEntry(data);
                 break;
+            case 'fillGap':
+                this.handleFillGap(data);
+                break;
             case 'startTask':
                 this.handleStartTask(data);
                 break;
@@ -649,21 +652,53 @@ customElements.define('app-context', class extends HTMLElement {
         entries = sortByStart(entries);
         entries = calculateGaps(entries);
 
-        // Ensure task exists
-        if (task && task.trim() && !this.tasks.value.find(t => t.exid === task)) {
-            // Load task from database if it exists (preserve timestamp)
-            const db = await TimesheetDB();
-            const allTasks = await db.getAllTasks();
-            const existingTask = allTasks.find(t => t.exid === task);
+        await this.ensureTask(task);
 
-            if (existingTask) {
-                // Load existing task with original timestamp
-                this.tasks.value = [...this.tasks.value, existingTask];
-            } else {
-                // Create new task with today's timestamp
-                this.tasks.value = [...this.tasks.value, { exid: task, description: task, id: Date.now(), lastModified: new Date() }];
-            }
-        }
+        this.entries.value = entries;
+        this.recalculateTaskTotals();
+        this.recalculateTotals();
+    }
+
+    /** Adds a task to today's list if it isn't there yet, preserving its stored timestamp when known. */
+    async ensureTask(task) {
+        if (!task || !task.trim() || this.tasks.value.find(t => t.exid === task)) return;
+
+        // Load task from database if it exists (preserve timestamp)
+        const db = await TimesheetDB();
+        const allTasks = await db.getAllTasks();
+        const existingTask = allTasks.find(t => t.exid === task);
+
+        this.tasks.value = [...this.tasks.value, existingTask
+            // Load existing task with original timestamp
+            ? existingTask
+            // Create new task with today's timestamp
+            : { exid: task, description: task, id: Date.now(), lastModified: new Date() }];
+    }
+
+    /**
+     * Fills an unaccounted stretch of the day with one entry covering it exactly.
+     * Unlike handleChangedEntry this skips timeSnapThreshold: the bounds come from
+     * the neighbouring entries, so they are already exact.
+     */
+    async handleFillGap({ task, start, end }) {
+        if (!task || !String(task).trim()) return;
+        const gapStart = start instanceof Date ? start : new Date(start);
+        const gapEnd = end instanceof Date ? end : new Date(end);
+        if (isNaN(gapStart) || isNaN(gapEnd) || gapEnd <= gapStart) return;
+
+        let entries = [...this.entries.value, {
+            id: Date.now(),
+            task,
+            annotation: '',
+            start: gapStart,
+            end: gapEnd,
+            lastModified: new Date()
+        }];
+
+        entries = sortByStart(entries);
+        entries = calculateGaps(entries);
+
+        await this.ensureTask(task);
 
         this.entries.value = entries;
         this.recalculateTaskTotals();

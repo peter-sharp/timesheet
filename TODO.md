@@ -2,11 +2,22 @@
 
 ## Features Implemented
 
+### ✅ Fill a gap by tapping it (v1.25.0)
+
+- `dayRibbon()` now returns a `gaps` array (`MIN_GAP_MS` = 3 minutes; overlapping or contained entries make no gap).
+- Gaps are tappable in two places: a transparent button in the ribbon hole, and the `"45m gap"` row in the entry
+  list (now a `<button>`). Both open `<gap-menu>` (`timeline/gap-menu.js`), a filterable list of today's tasks
+  (most time logged first) then recently used ones.
+- Choosing a task emits `fillGap`; `handleFillGap` in `app-context.js` creates one entry covering the gap exactly —
+  deliberately skipping `timeSnapThreshold`, since the bounds come from the neighbouring entries.
+- Possible follow-up: fill part of a gap, or offer "extend previous entry" as a one-tap option.
+
 ### ✅ Compact timeline with sticky day ribbon (v1.23.0)
 
 - Entries are `<details>` rows: summary `start–end duration exid description`, expand to edit; open state survives re-renders.
 - Sticky ribbon (`utils/dayRibbon.js`) lays entries across the day in whole hours, coloured per exid, gaps hatched;
   tapping a segment opens and scrolls to the entry. Historical days get a non-interactive ribbon.
+  Gaps became tappable in v1.25.0.
 - Replaces duration-proportional entry heights. Possible follow-up: show the running entry live on the ribbon.
 
 ### ✅ Tasks archived today are searchable (v1.22.1)
