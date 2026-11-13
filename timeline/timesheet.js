@@ -9,7 +9,8 @@ import round1dp from "../utils/round1dp.js";
 import formatPrice from "../utils/formatPrice.js";
 import format24hour from "../utils/format24Hour.js";
 import emitEvent from "../utils/emitEvent.js";
-import dayRibbon, { exidColor, formatShortDuration } from "../utils/dayRibbon.js";
+import dayRibbon, { exidColor, formatShortDuration, MIN_GAP_MS } from "../utils/dayRibbon.js";
+import "./gap-menu.js";
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`<div class="wrapper__inner" id=timesheet>
@@ -65,6 +66,7 @@ template.innerHTML = /*html*/`<div class="wrapper__inner" id=timesheet>
 
 <!-- TODO add hidden button to save data -->
 
+    <gap-menu></gap-menu>
 </div>`
 
 const entrySummary = /*html*/`
@@ -103,7 +105,7 @@ entryRow.innerHTML = /*html*/`
 
 const entryRowGap = document.createElement('template');
 entryRowGap.innerHTML = /*html*/`
-<p class="gap-text"><span data-gap></span> gap</p>`
+<button type="button" class="gap-text"><span data-gap></span> gap</button>`
 
 const historicalEntryRow = document.createElement('template');
 historicalEntryRow.innerHTML = /*html*/`
@@ -128,6 +130,7 @@ class Timesheet extends HTMLElement {
     #tasksIndex = {};
     #durationTotal;
     #durationTotalGaps;
+    #allTasks;
     #historicalDays;
     #noMoreEntries;
     #openIds = new Set();
@@ -140,6 +143,9 @@ class Timesheet extends HTMLElement {
         this.historicalContainer = el.querySelector('#historical_entries');
         this.loadMoreBtn = el.querySelector('[data-load-more]');
         this.ribbon = el.querySelector('[data-ribbon]');
+        // Mounted outside the ribbon: .day-ribbon__track clips its children and the sticky ribbon's
+        // backdrop-filter would become the containing block for a position:fixed popup.
+        this.gapMenu = el.querySelector('gap-menu');
         const form = el;
         this.state = {};
         timeLoop(1000, () => {
@@ -159,6 +165,7 @@ class Timesheet extends HTMLElement {
             this.#newEntry = state.newEntry;
             this.#entries = state.entries;
             this.#tasks = state.tasks;
+            this.#allTasks = state.allTasks;
 
             this.#durationTotal = state.durationTotal;
             this.#durationTotalGaps = state.durationTotalGaps;
@@ -193,6 +200,8 @@ class Timesheet extends HTMLElement {
             if (ev.target.nodeName == 'INPUT') {
                 const input = ev.target;
                 const section = input.closest('[data-id], [data-new]');
+                // Inputs outside an entry section (e.g. the gap menu's filter) are not ours to handle
+                if (!section) return;
 
                 console.log({ allInputsEnteredExcept: allInputsEnteredExcept(['time_end'], section), section: section})
                 if (allInputsEntered(section)) {
@@ -231,6 +240,12 @@ class Timesheet extends HTMLElement {
         }, true);
 
         el.addEventListener("click", function handleTimesheetAction(ev) {
+            const gap = ev.target.closest('[data-gap-start]');
+            if (gap) {
+                ev.stopPropagation();
+                that.openGapMenu(gap);
+                return;
+            }
             const segment = ev.target.closest('[data-segment]');
             if (segment) {
                 that.openEntry(parseInt(segment.dataset.segment, 10));
@@ -293,15 +308,18 @@ class Timesheet extends HTMLElement {
         const newEntry = el.querySelector('[data-new="entry"]');
         this.renderEntryInputs(newEntry, state.newEntry);
 
+        // Any state change invalidates the element the open menu is anchored to
+        this.gapMenu?.close();
+
         this.entriesList.replaceChildren();
-        for (const entry of state.entries) {
+        state.entries.forEach((entry, i) => {
             const details = entryRow.content.cloneNode(true).querySelector('details');
             details.dataset.id = entry.id;
             details.open = this.#openIds.has(entry.id);
             this.renderEntryInputs(details, entry);
             this.renderSummary(details.querySelector('.time-entry__summary'), entry, (exid) => this.getTaskById(exid));
-            this.entriesList.prepend(this.renderEntryGap(details, entry));
-        }
+            this.entriesList.prepend(this.renderEntryGap(details, entry, state.entries[i - 1]));
+        });
 
         this.renderRibbon(this.ribbon, state.entries, (exid) => this.getTaskById(exid), true);
 
@@ -347,10 +365,23 @@ class Timesheet extends HTMLElement {
 
     /** Lays entries proportionally on a ribbon; interactive ribbons get buttons that open the entry. */
     renderRibbon(ribbon, entries, findTask, interactive = false) {
-        const { segments, ticks } = dayRibbon(entries);
+        const { segments, gaps, ticks } = dayRibbon(entries);
         ribbon.hidden = !segments.length;
         const track = ribbon.querySelector('[data-ribbon-track]');
-        track.replaceChildren(...segments.map((segment) => {
+        const gapNodes = interactive ? gaps.map((gap) => {
+            const node = document.createElement('button');
+            const label = `Fill ${formatShortDuration(gap.end - gap.start)} gap, ${format24hour(gap.start)}–${format24hour(gap.end)}`;
+            node.type = 'button';
+            node.className = 'day-ribbon__gap';
+            node.style.setProperty('--left', `${gap.left}%`);
+            node.style.setProperty('--width', `${gap.width}%`);
+            node.dataset.gapStart = gap.start.toISOString();
+            node.dataset.gapEnd = gap.end.toISOString();
+            node.title = label;
+            node.setAttribute('aria-label', label);
+            return node;
+        }) : [];
+        track.replaceChildren(...gapNodes, ...segments.map((segment) => {
             const node = document.createElement(interactive ? 'button' : 'span');
             const task = findTask(segment.task);
             const label = `${format24hour(segment.start)}–${format24hour(segment.end)} ${formatShortDuration(segment.end - segment.start)} ${task?.exid || segment.task || ''} ${task?.description || ''}`.trim();
@@ -387,15 +418,60 @@ class Timesheet extends HTMLElement {
         return input;
     }
 
-    renderEntryGap(details, entry) {
+    /** Renders an entry, followed by the gap that precedes it (the list reads newest-first). */
+    renderEntryGap(details, entry, prevEntry) {
         const group = document.createDocumentFragment();
         group.appendChild(details);
-        if(entry.gap && entry.gap > 0.05 ) {
-            const gap = entryRowGap.content.cloneNode(true).querySelector('p');
-            gap.querySelector('[data-gap]').textContent = formatShortDuration(entry.gap * MILLISECONDS_PER_HOUR);
+        const gapMs = (entry.gap || 0) * MILLISECONDS_PER_HOUR;
+        if (gapMs >= MIN_GAP_MS) {
+            const gap = entryRowGap.content.cloneNode(true).querySelector('button');
+            gap.querySelector('[data-gap]').textContent = formatShortDuration(gapMs);
+            const start = prevEntry?.end ? new Date(prevEntry.end) : null;
+            const end = entry.start ? new Date(entry.start) : null;
+            if (start && end) {
+                gap.dataset.gapStart = start.toISOString();
+                gap.dataset.gapEnd = end.toISOString();
+                gap.setAttribute('aria-label', `Fill ${formatShortDuration(gapMs)} gap, ${format24hour(start)}–${format24hour(end)}`);
+            } else {
+                gap.disabled = true;
+            }
             group.appendChild(gap);
         }
         return group
+    }
+
+    /** Opens the task picker for a tapped gap element (ribbon hole or list row). */
+    openGapMenu(gapEl) {
+        const start = new Date(gapEl.dataset.gapStart);
+        const end = new Date(gapEl.dataset.gapEnd);
+        if (isNaN(start) || isNaN(end)) return;
+        this.gapMenu.tasks = this.gapFillTasks();
+        this.gapMenu.open({ start, end, anchor: gapEl });
+    }
+
+    /** Today's tasks (most time logged first), then recently used ones; completed tasks last. */
+    gapFillTasks() {
+        const totals = {};
+        for (const entry of this.#entries?.value || []) {
+            if (!entry.task || !entry.start || !entry.end) continue;
+            totals[entry.task] = (totals[entry.task] || 0) + (new Date(entry.end) - new Date(entry.start));
+        }
+        const byTotal = (a, b) => (totals[b.exid] || 0) - (totals[a.exid] || 0);
+        const byRecency = (a, b) => new Date(b.mostRecentEntry || b.lastModified || 0) - new Date(a.mostRecentEntry || a.lastModified || 0);
+        const today = [...(this.#tasks?.value || [])].filter((task) => task.exid).sort(byTotal);
+        const recent = [...(this.#allTasks?.value || [])].filter((task) => task.exid).sort(byRecency);
+
+        const seen = new Set();
+        const merged = [...today, ...recent].filter((task) => {
+            if (seen.has(task.exid) || task.deleted) return false;
+            seen.add(task.exid);
+            return true;
+        });
+        // Completed tasks stay reachable through the filter, just not at the top
+        return [
+            ...merged.filter((task) => task.status !== 'complete'),
+            ...merged.filter((task) => task.status === 'complete')
+        ];
     }
 
 

@@ -1,6 +1,9 @@
 const MS_PER_MINUTE = 60000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 
+// Gaps shorter than this are noise, not something worth filling (matches the old 0.05h gap-text threshold)
+export const MIN_GAP_MS = 3 * MS_PER_MINUTE;
+
 const toDate = (x) => x instanceof Date ? x : new Date(x);
 const floorHour = (d) => { const x = new Date(d); x.setMinutes(0, 0, 0); return x; };
 const ceilHour = (d) => { const x = floorHour(d); return x.getTime() < d.getTime() ? new Date(x.getTime() + MS_PER_HOUR) : x; };
@@ -8,7 +11,7 @@ const ceilHour = (d) => { const x = floorHour(d); return x.getTime() < d.getTime
 /**
  * Lays out a day's entries proportionally on a ribbon spanning whole hours.
  * @param {Array<{id:number, task:string, start:Date|string, end:Date|string}>} entries
- * @returns {{start: Date|null, end: Date|null, segments: Array<{id, task, start: Date, end: Date, left: number, width: number}>, ticks: Array<{hour: number, left: number}>}}
+ * @returns {{start: Date|null, end: Date|null, segments: Array<{id, task, start: Date, end: Date, left: number, width: number}>, gaps: Array<{beforeId, afterId, start: Date, end: Date, left: number, width: number}>, ticks: Array<{hour: number, left: number}>}}
  *   left/width are percentages of the ribbon.
  */
 export default function dayRibbon(entries = []) {
@@ -18,7 +21,7 @@ export default function dayRibbon(entries = []) {
         .filter((entry) => entry.end > entry.start)
         .sort((a, b) => a.start - b.start);
 
-    if (!timed.length) return { start: null, end: null, segments: [], ticks: [] };
+    if (!timed.length) return { start: null, end: null, segments: [], gaps: [], ticks: [] };
 
     const start = floorHour(timed[0].start);
     const end = ceilHour(new Date(Math.max(...timed.map((entry) => entry.end.getTime()))));
@@ -34,12 +37,30 @@ export default function dayRibbon(entries = []) {
         width: (entry.end - entry.start) / span * 100
     }));
 
+    // Unfilled stretches between entries. A running cursor of the furthest end seen so far means
+    // overlapping or fully-contained entries never produce a phantom gap.
+    const gaps = [];
+    let cursor = timed[0];
+    for (const entry of timed.slice(1)) {
+        if (entry.start - cursor.end >= MIN_GAP_MS) {
+            gaps.push({
+                beforeId: cursor.id,
+                afterId: entry.id,
+                start: cursor.end,
+                end: entry.start,
+                left: pct(cursor.end),
+                width: (entry.start - cursor.end) / span * 100
+            });
+        }
+        if (entry.end > cursor.end) cursor = entry;
+    }
+
     const ticks = Array.from({ length: Math.round(span / MS_PER_HOUR) + 1 }, (_, i) => {
         const tick = new Date(start.getTime() + i * MS_PER_HOUR);
         return { hour: tick.getHours(), left: pct(tick) };
     });
 
-    return { start, end, segments, ticks };
+    return { start, end, segments, gaps, ticks };
 }
 
 /**
