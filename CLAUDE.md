@@ -25,8 +25,8 @@ Before or alongside implementing a feature, check whether it supersedes any exis
 
 Update the following version numbers (increment patch version for bug fixes, minor version for features):
 
-- **script.js**: Update `APP_VERSION` constant (currently "1.24.0")
-- **package.json**: Update `version` field (currently "1.24.0")
+- **script.js**: Update `APP_VERSION` constant (currently "1.26.0")
+- **package.json**: Update `version` field (currently "1.26.0")
 - **⚠️ IMPORTANT**: script.js and package.json versions **MUST match**
 - **timesheetStore.js**: Update `APP_VERSION` constant (currently "2.0") - only if storage schema changes
 
@@ -99,7 +99,9 @@ The `assets` array in serviceWorker.js should mirror the actual file structure. 
 
 **Subdirectories:**
 - tasks/: task-list.js, task-status.js, tasks.js
-- timeline/: timesheet.js
+- timeline/: timesheet.js, gap-menu.js
+- projects/: projects-page.js, project-detail.js
+- stats/: stats.js; components/: graph-chart.js, trend-chart.js
 - utils/: All utility functions (Signal.js, Context.js, etc.)
 
 **Assets:**

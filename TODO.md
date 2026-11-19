@@ -2,6 +2,18 @@
 
 ## Features Implemented
 
+### ✅ Projects view (v1.26.0)
+
+- New **Projects** nav tab (`#projects`, `projects/projects-page.js`) and drill-down (`#project/<tag>`, `projects/project-detail.js`).
+- Derivation is pure in `utils/projects.js` (`buildProjects`, `groupProjectsByMonth`, `findProject`): name = tag without
+  dashes/underscores; progress = completed/total task count; estimate = Σ `taskEstimate()`; hours = all-time tracked;
+  due = dedicated task `due:` else latest task/child due. Dedicated task = task whose exid equals the tag; its `+parent`
+  nests the project (cycle-safe). Timeline lists top-level projects only, children inside the card.
+- `loadProjects` handler in `app-context.js` reads all non-deleted tasks (incl. archived) + their entries; `projects` /
+  `projectsOffset` signals. Window = 7 months (now ±3), paged a window at a time.
+- Possible follow-ups: let task detail edit archived tasks so every project task can link to it; show a project's
+  dedicated-task description; filter projects by client.
+
 ### ✅ Fill a gap by tapping it (v1.25.0)
 
 - `dayRibbon()` now returns a `gaps` array (`MIN_GAP_MS` = 3 minutes; overlapping or contained entries make no gap).

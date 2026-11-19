@@ -14,6 +14,7 @@ const FILE_POLL_MS = 5000;
 // Unfinished tasks carry over while they have time logged within this many previous days with entries
 const CARRY_OVER_DAYS = 3;
 import { isEstimateMet } from './utils/estimate.js';
+import { buildProjects } from './utils/projects.js';
 
 // Pure function: calculate gaps between entries
 const calculateGaps = (entries) => entries.map((entry, i, arr) => {
@@ -118,6 +119,9 @@ customElements.define('app-context', class extends HTMLElement {
     // Hours per task from entries NOT in the in-memory `entries` (i.e. previous days),
     // used with today's totals to compare all-time task time against its estimate
     taskPastTotals = signal({})
+    // Derived project summaries (see utils/projects.js) and the projects timeline page offset
+    projects = signal([])
+    projectsOffset = signal(0)
 
     stateProvider = new ContextProvider(this, 'state', {
         settings: this.settings,
@@ -140,7 +144,9 @@ customElements.define('app-context', class extends HTMLElement {
         monthlyTrend: this.monthlyTrend,
         filterQuery: this.filterQuery,
         archivedSearchResults: this.archivedSearchResults,
-        taskPastTotals: this.taskPastTotals
+        taskPastTotals: this.taskPastTotals,
+        projects: this.projects,
+        projectsOffset: this.projectsOffset
     });
 
     connectedCallback() {
@@ -579,6 +585,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'loadStats':
                 this.handleLoadStats(data);
                 return; // skip persistState — stats are derived read-only data
+            case 'loadProjects':
+                this.handleLoadProjects(data);
+                return; // skip persistState — projects are derived read-only data
             default:
                 console.log('Unhandled event type:', type);
         }
@@ -1201,6 +1210,26 @@ customElements.define('app-context', class extends HTMLElement {
             }];
         } catch (e) {
             console.error('Failed to load previous day:', e);
+        }
+    }
+
+    // Builds project summaries from every non-deleted task (incl. archived) and all-time tracked hours
+    async handleLoadProjects({ offset } = {}) {
+        try {
+            if (Number.isInteger(offset)) this.projectsOffset.value = offset;
+            const db = await TimesheetDB();
+            const allTasks = await db.getAllTasks();
+            const tags = new Set(allTasks.map(t => t.project).filter(Boolean));
+            const relevant = allTasks.filter(t => t.project || tags.has(String(t.exid)));
+            const hoursByExid = (await db.getEntriesByTasks(relevant.map(t => t.exid).filter(Boolean)))
+                .filter(e => e.start && e.end)
+                .reduce((totals, e) => ({
+                    ...totals,
+                    [e.task]: (totals[e.task] || 0) + calcDuration({ start: new Date(e.start), end: new Date(e.end) })
+                }), {});
+            this.projects.value = buildProjects(relevant, hoursByExid);
+        } catch (e) {
+            console.error('Failed to load projects:', e);
         }
     }
 
