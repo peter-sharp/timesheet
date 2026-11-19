@@ -1221,13 +1221,17 @@ customElements.define('app-context', class extends HTMLElement {
             const allTasks = await db.getAllTasks();
             const tags = new Set(allTasks.map(t => t.project).filter(Boolean));
             const relevant = allTasks.filter(t => t.project || tags.has(String(t.exid)));
-            const hoursByExid = (await db.getEntriesByTasks(relevant.map(t => t.exid).filter(Boolean)))
-                .filter(e => e.start && e.end)
-                .reduce((totals, e) => ({
-                    ...totals,
-                    [e.task]: (totals[e.task] || 0) + calcDuration({ start: new Date(e.start), end: new Date(e.end) })
-                }), {});
-            this.projects.value = buildProjects(relevant, hoursByExid);
+            const entries = (await db.getEntriesByTasks(relevant.map(t => t.exid).filter(Boolean)))
+                .filter(e => e.start && e.end);
+            const hoursByExid = entries.reduce((totals, e) => ({
+                ...totals,
+                [e.task]: (totals[e.task] || 0) + calcDuration({ start: new Date(e.start), end: new Date(e.end) })
+            }), {});
+            const lastEntryByExid = entries.reduce((latest, e) => {
+                const end = new Date(e.end);
+                return end > (latest[e.task] || 0) ? { ...latest, [e.task]: end } : latest;
+            }, {});
+            this.projects.value = buildProjects(relevant, hoursByExid, lastEntryByExid);
         } catch (e) {
             console.error('Failed to load projects:', e);
         }
