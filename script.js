@@ -11,13 +11,15 @@ import "./tasks/task-status.js";
 import "./file-sync-menu.js";
 import "./settings-form.js";
 import "./stats/stats.js";
+import "./projects/projects-page.js";
+import "./projects/project-detail.js";
 import timeLoop from "./utils/timeLoop.js";
 import calcDuration, { formatDurationToStandard, hoursToMilliseconds } from "./utils/calcDuration.js";
 import { offsetHue, hexToHsla } from "./utils/colorUtils.js";
 import store from "./timesheetStore.js";
 import { effect } from "./utils/Signal.js";
 
-const APP_VERSION = "1.25.0";
+const APP_VERSION = "1.26.0";
 
 (async () => {
     // Register service worker

@@ -91,6 +91,20 @@
 .stats-nav-group { display: flex; align-items: center; gap: var(--space-2); }
 .stats-nav-group span { font-size: 0.9em; color: var(--color-text-muted); min-width: 8em; text-align: center; }
 .stats-nav-group button { padding: 0.3em 0.7em; line-height: 1; }
+
+/* Projects timeline: month headings on a left rail */
+.projects__month { border-left: 2px solid var(--color-text-muted); padding-left: var(--space-4); }
+.projects__month > h3 { position: relative; }
+.projects__month > h3::before {
+  content: ""; position: absolute; left: calc(-1 * var(--space-4) - 6px); top: 0.35em;
+  width: 10px; height: 10px; border-radius: 50%; background: var(--color-text);
+}
+.project-card { padding: var(--space-3) var(--space-4); background: var(--color-input-bg); border-radius: 6px; }
+.project-card__header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--space-2); }
+.project-card__header time, .project-card__meta { color: var(--color-text-muted); font-size: 0.85em; }
+.project-card progress, .project-detail progress { width: 100%; height: 6px; accent-color: var(--color-success); }
+.project-card__children { font-size: 0.85em; padding-left: var(--space-3); border-left: 1px solid var(--color-text-muted); }
+.project-detail__task--done { text-decoration: line-through; color: var(--color-text-muted); }
 html {
   font-size: 112.5%;
   width: 100%;
