@@ -136,6 +136,8 @@ TestRunner.test('projects page: shows timeline, undated group, paging and detail
 
     const undated = page.querySelector('[data-undated]');
     TestRunner.assert(!undated.hidden, 'undated group shown');
+    TestRunner.assert(!undated.open, 'undated group collapsed by default');
+    TestRunner.assertEquals(undated.querySelector('summary').textContent, 'No due date (1)');
     TestRunner.assert(undated.textContent.includes('pv misc'), 'undated project listed by display name');
 
     const cards = [...page.querySelectorAll('[data-months] .project-card')];

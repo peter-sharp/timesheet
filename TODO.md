@@ -4,6 +4,8 @@
 
 ### ✅ Projects view (v1.26.0)
 
+- v1.26.1: undated projects collapse into a `<details>` "No due date (n)" summary (closed by default).
+
 - New **Projects** nav tab (`#projects`, `projects/projects-page.js`) and drill-down (`#project/<tag>`, `projects/project-detail.js`).
 - Derivation is pure in `utils/projects.js` (`buildProjects`, `groupProjectsByMonth`, `findProject`): name = tag without
   dashes/underscores; progress = completed/total task count; estimate = Σ `taskEstimate()`; hours = all-time tracked;

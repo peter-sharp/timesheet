@@ -12,10 +12,10 @@ const template = document.createElement('template');
 template.innerHTML = /*html*/`
 <div class="stack projects">
     <button type="button" data-action="later" hidden>Later</button>
-    <section class="stack" data-undated hidden>
-        <h3 class="h5">No due date</h3>
+    <details class="projects__undated" data-undated hidden>
+        <summary class="h5">No due date (<span data-count></span>)</summary>
         <ol class="unstyled-list stack projects__list"></ol>
-    </section>
+    </details>
     <div class="stack" data-months></div>
     <p class="projects__empty" data-empty hidden>No projects in this period. Tag tasks with <code>+project</code> to see them here.</p>
     <button type="button" data-action="earlier" hidden>Earlier</button>
@@ -108,6 +108,7 @@ customElements.define('projects-page', class extends HTMLElement {
 
         const undatedSection = this.querySelector('[data-undated]');
         undatedSection.hidden = !undated.length;
+        undatedSection.querySelector('[data-count]').textContent = undated.length;
         undatedSection.querySelector('ol').replaceChildren(...listItems(undated));
 
         // Newest at top: mobile users scroll down into the past
