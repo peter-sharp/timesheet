@@ -10,7 +10,7 @@ For detailed requirements and implementation tasks, see [REQUIREMENTS.md](./REQU
 - **Tasks** — Track tasks with priorities, statuses, and time entries. Unfinished tasks carry over to today's list automatically while they have time logged in the last 3 days you worked (days with no entries don't count). Open tasks in a linked todo.txt always show on today's list
 - **Timeline** — Compact one-line entries (`start–end duration exid description`) that expand to edit; a sticky day ribbon shows how the day was spent, coloured per task — tap a segment to open its entry; tap a gap (in the ribbon or the "45m gap" row) to pick a task and fill it with one entry; lazy-load historical days (each with its own ribbon)
 - **Stats** — Weekly and monthly hours/task-completion summaries with goal tracking and daily trend charts (incl. % of completed tasks meeting their estimate); navigate to previous weeks/months with Prev/Next controls; a 12-month trend chart shows tasks completed per month vs goal and % of estimates met
-- **Projects** — Mobile-first timeline of `+project` tags grouped by due month, 3 months either side of today (Earlier/Later pages beyond; undated projects collapsed into an expandable "No due date (n)" summary, showing only those whose last time entry falls in the window shown). Each project shows progress (completed/total tasks), time spent vs summed estimates and its due date (latest task due date). A task whose `#exid` matches a project tag is that project's dedicated task: its `due:` overrides the derived due date and its own `+project` nests it under a parent project (children roll up into the parent's totals). Tap a project for its detail page (stats, sub-projects, tasks)
+- **Projects** — Mobile-first timeline of `+project` tags grouped by due month, 3 months either side of today (Earlier/Later pages beyond; undated projects collapsed into an expandable "No due date (n)" summary, showing only those whose last time entry falls in the window shown). Each project shows progress (completed/total tasks), time spent vs summed estimates and its due date (latest task due date). A task whose `#exid` matches a project tag is that project's dedicated task: its `due:` overrides the derived due date and its own `+project` nests it under a parent project (children roll up into the parent's totals). Tap a project's chevron for its detail page (stats, sub-projects, tasks). Month sections share one continuous timeline rail. **New project** form (top of the page) stores a project in IndexedDB with optional due date and parent; a dedicated task is only created when a description is entered (an existing task whose exid matches becomes the project task instead)
 - **Settings** — Customize theme color, focus interval, time snap, and weekly/monthly goals
 - **File Sync** — Two-way sync with todo.txt / done.txt via File System Access API. Edits made in another editor are picked up within seconds (window focus + 5s polling) and merged line-by-line against the last-synced copy, so app writes never overwrite them. Deleting a line archives the task; lines typed without a `#exid` get one. After a reload use **Allow access** in the `...` menu if the browser asks again for file permission.
 
@@ -49,7 +49,7 @@ To change status: **long press** (hold 500 ms) or **right-click** the checkbox t
 
 #### Editing Tasks
 - Each task row ends with a chevron (›), always the right-most icon; it opens the **Edit task** screen (`#task/<id>`)
-- Edit description, project, context, client, priority, due date and estimate; **Save** returns to the task list
+- Edit description, project (suggestions: known projects, then other task exids — tagging a task's exid makes that task a project), context, client, priority, due date and estimate; **Save** returns to the task list
 - The edit screen slides in from the right and slides back out on return (off when reduced motion is preferred)
 - Blank fields clear the property; the task ID is read-only
 - Play/pause button next to the task ID starts/stops timing the task without leaving the screen
@@ -79,6 +79,7 @@ To change status: **long press** (hold 500 ms) or **right-click** the checkbox t
 #### Data Indexes
 - Tasks are indexed by: `exid` (unique), `client`, `project`, `lastModified`, `deleted`
 - Entries are indexed by: `id` (unique), `task`, `start`, `lastModified`, `deleted`
+- Projects created from the projects page live in the `projects` store (keyPath `tag`: `{ tag, due, parent, created }`)
 - Indexes enable efficient queries for today's items, searches, and pagination
 
 #### Signal-Based Reactivity

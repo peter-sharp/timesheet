@@ -1,6 +1,6 @@
 // Projects view: derivation rules (utils/projects.js) and the projects timeline / detail pages
 import TimesheetDB from '../timesheetDb.js';
-import { buildProjects, groupProjectsByMonth, findProject, projectName } from '../utils/projects.js';
+import { buildProjects, groupProjectsByMonth, findProject, projectName, projectOptions } from '../utils/projects.js';
 import '../projects/projects-page.js';
 import '../projects/project-detail.js';
 
@@ -15,8 +15,10 @@ function dueIn(months) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-15`;
 }
 
-async function seed({ tasks = [], entries = [] }) {
+async function seed({ tasks = [], entries = [], projects = [] }) {
     const db = await TimesheetDB();
+    for (const project of await db.getAllProjects()) await db.deleteProject(project.tag);
+    for (const project of projects) await db.putProject(project);
     for (const task of await db.getAllTasks()) await db.permanentlyDeleteTask(task.exid);
     for await (const task of db.getDeletedTasks()) await db.permanentlyDeleteTask(task.exid);
     for (const entry of await db.getAllEntries()) await db.permanentlyDeleteEntry(entry.id);
@@ -158,6 +160,11 @@ TestRunner.test('projects page: shows timeline, undated group, paging and detail
     TestRunner.assertEquals(site.querySelector('[data-time]').textContent, '2.5h / 5.8h');
     TestRunner.assertEquals(site.querySelector('time').dateTime, dueIn(2), 'due = furthest incl. child');
     TestRunner.assert(!page.textContent.includes('pv future'), 'far future project paged out');
+    TestRunner.assert(!site.querySelector('h4 a'), 'project name is plain text');
+    TestRunner.assertEquals(site.querySelector('header a.task-item__details-link').getAttribute('href'), '#project/pv_site', 'chevron drill-down');
+    TestRunner.assertEquals(site.querySelector('.project-card__children a.task-item__details-link').getAttribute('href'), '#project/pv_sub', 'sub-project chevron');
+    TestRunner.assertEquals(page.querySelectorAll('.projects__timeline').length, 1, 'one continuous timeline container');
+    TestRunner.assert(page.querySelector('.projects__timeline > .projects__month'), 'months inside timeline');
 
     const later = page.querySelector('[data-action="later"]');
     TestRunner.assert(!later.hidden, 'Later button shown');
@@ -190,4 +197,87 @@ TestRunner.test('projects page: shows timeline, undated group, paging and detail
     detail.remove();
     appContext.tasks.value = [];
     window.location.hash = '';
+});
+
+// ── Stored projects ──────────────────────────────────────────────────────────
+
+TestRunner.test('projects: stored projects add empty projects and fallback due/parent', async () => {
+    const created = new Date();
+    const projects = buildProjects(
+        [{ exid: 't1', project: 'sp_parent' }],
+        {}, {},
+        [{ tag: 'sp_empty', due: '', parent: '', created }, { tag: 'sp_child', due: '2026-03-01', parent: 'sp_parent', created }]
+    );
+    const empty = findProject(projects, 'sp_empty');
+    TestRunner.assert(empty, 'stored-only project exists');
+    TestRunner.assertEquals(empty.count, 0);
+    TestRunner.assertEquals(String(empty.lastEntry), String(created), 'created date counts as activity');
+    const child = findProject(projects, 'sp_child');
+    TestRunner.assertEquals(child.parent, 'sp_parent', 'stored parent nests project');
+    TestRunner.assertEquals(child.due, '2026-03-01', 'stored due used');
+    TestRunner.assert(!projects.some(p => p.tag === 'sp_child'), 'child not top-level');
+    TestRunner.assertEquals(
+        projectOptions(projects, [{ exid: 't1' }, { exid: 'sp_empty' }]).join(','),
+        'sp_parent,sp_child,sp_empty,t1',
+        'project tags first, then other task exids'
+    );
+});
+
+TestRunner.test('projects page: new project form creates projects (task only with description)', async () => {
+    await seed({ tasks: [{ exid: 'np_existing', description: 'Already here', project: '' }] });
+    appContext.tasks.value = [];
+    const page = document.createElement('projects-page');
+    appContext.append(page);
+    window.location.hash = '#projects';
+    window.dispatchEvent(new Event('hashchange'));
+    await wait(300);
+
+    const form = page.querySelector('[data-new-project]');
+    const submit = (values) => {
+        for (const name of ['name', 'due', 'parent', 'description', 'estimate']) form.elements[name].value = values[name] || '';
+        form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    };
+
+    submit({ name: 'np alpha' });
+    await wait(300);
+    const db = await TimesheetDB();
+    TestRunner.assert((await db.getAllProjects()).some(p => p.tag === 'np_alpha'), 'project stored');
+    TestRunner.assert(!(await db.getAllTasks()).some(t => t.exid === 'np_alpha'), 'no task without description');
+    TestRunner.assert(page.textContent.includes('np alpha'), 'empty project shown on page');
+    TestRunner.assertEquals(form.elements.name.value, '', 'form reset');
+    TestRunner.assert([...page.querySelectorAll('[data-new-project] datalist option')].some(o => o.value === 'np_alpha'), 'parent datalist lists project');
+
+    submit({ name: 'np beta', due: dueIn(1), parent: 'np_alpha', description: 'Beta work', estimate: '3h' });
+    await wait(400);
+    const beta = (await db.getAllTasks()).find(t => t.exid === 'np_beta');
+    TestRunner.assert(beta, 'dedicated task created when description given');
+    TestRunner.assertEquals(beta.description, 'Beta work');
+    TestRunner.assertEquals(beta.project, 'np_alpha', 'task tagged with parent');
+    TestRunner.assertEquals(beta.due, dueIn(1));
+    TestRunner.assertEquals(beta.estimate, '3h');
+    TestRunner.assertEquals(findProject(appContext.projects.value, 'np_beta')?.parent, 'np_alpha', 'nested under parent');
+
+    submit({ name: 'np_existing', description: 'Should not duplicate' });
+    await wait(300);
+    const existing = (await db.getAllTasks()).filter(t => t.exid === 'np_existing');
+    TestRunner.assertEquals(existing.length, 1, 'no duplicate task');
+    TestRunner.assertEquals(existing[0].description, 'Already here', 'existing task untouched');
+    TestRunner.assertEquals(findProject(appContext.projects.value, 'np_existing')?.task?.exid, 'np_existing', 'existing task becomes the project task');
+
+    page.remove();
+    appContext.tasks.value = [];
+    window.location.hash = '';
+});
+
+TestRunner.test('projects: tagging a task with another task exid makes it a project', async () => {
+    await seed({ tasks: [
+        { exid: 'tx_a', description: 'Task A', project: '' },
+        { exid: 'tx_b', description: 'Task B', project: 'tx_a' }
+    ] });
+    appContext.dispatchEvent(new CustomEvent('updateState', { detail: { type: 'loadProjects' } }));
+    await wait(300);
+    const project = findProject(appContext.projects.value, 'tx_a');
+    TestRunner.assert(project, 'tx_a is a project');
+    TestRunner.assertEquals(project.task?.description, 'Task A', 'task A is the dedicated task');
+    TestRunner.assertEquals(project.tasks.map(t => t.exid).join(','), 'tx_b', 'task B is a member');
 });

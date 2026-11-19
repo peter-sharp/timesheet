@@ -2,6 +2,18 @@
 
 ## Features Implemented
 
+### ✅ Project creation & projects page tidy-up (v1.28.0)
+
+- New IndexedDB `projects` store (DB v10, `projectsDb` module in `timesheetDb.js`): `putProject`, `getAllProjects`, `deleteProject`.
+- `addProject` handler in `app-context.js`: stores `{ tag, due, parent, created }`; creates a dedicated task (exid = tag)
+  only when a description is given and no task with that exid exists.
+- `buildProjects(..., stored)` merges stored projects (fallback `due`/`parent`, `created` counts as activity so new
+  undated projects show in the current window). `flattenProjects` / `projectOptions` feed datalists.
+- Projects page: "New project" form; project cards use the task list's chevron drill-down link (name is plain text);
+  months sit in one `.projects__timeline` with a continuous rail.
+- Task detail Project field has a datalist (project tags, then other task exids).
+- Follow-ups: edit/delete stored projects; stored projects aren't synced to todo.txt (only their dedicated tasks are).
+
 ### ✅ Projects view (v1.26.0)
 
 - v1.27.0: projects carry `lastEntry` (latest time entry across tasks/children); undated projects are listed

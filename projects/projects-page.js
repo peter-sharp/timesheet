@@ -4,20 +4,51 @@ import { ContextRequestEvent } from '../utils/Context.js';
 import { effect } from '../utils/Signal.js';
 import emitEvent from '../utils/emitEvent.js';
 import round1dp from '../utils/round1dp.js';
-import { groupProjectsByMonth } from '../utils/projects.js';
+import { groupProjectsByMonth, projectOptions } from '../utils/projects.js';
 
 const ROUTE = '#projects';
 
 const template = document.createElement('template');
 template.innerHTML = /*html*/`
 <div class="stack projects">
+    <details class="projects__new">
+        <summary class="h5">New project</summary>
+        <form class="stack" data-new-project>
+            <div class="row">
+                <div class="input-group">
+                    <label for="newProjectName">Name</label>
+                    <input id="newProjectName" name="name" type="text" required autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label for="newProjectDue">Due</label>
+                    <input id="newProjectDue" name="due" type="date">
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="newProjectParent">Parent project</label>
+                <input id="newProjectParent" name="parent" type="text" list="newProjectParents" autocomplete="off">
+                <datalist id="newProjectParents"></datalist>
+            </div>
+            <div class="row">
+                <div class="input-group">
+                    <label for="newProjectDescription">Description <small>(creates a project task)</small></label>
+                    <input id="newProjectDescription" name="description" type="text" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label for="newProjectEstimate">Estimate</label>
+                    <input id="newProjectEstimate" name="estimate" type="text" placeholder="e.g. 2h" autocomplete="off">
+                </div>
+            </div>
+            <button type="submit">Add project</button>
+        </form>
+    </details>
     <button type="button" data-action="later" hidden>Later</button>
     <details class="projects__undated" data-undated hidden>
         <summary class="h5">No due date (<span data-count></span>)</summary>
         <ol class="unstyled-list stack projects__list"></ol>
     </details>
-    <div class="stack" data-months></div>
-    <p class="projects__empty" data-empty hidden>No projects in this period. Tag tasks with <code>+project</code> to see them here.</p>
+    <div class="stack projects__timeline" data-months></div>
+    <p class="projects__empty" data-empty hidden>No projects in this period. Add one above or tag tasks with <code>+project</code>.</p>
     <button type="button" data-action="earlier" hidden>Earlier</button>
 </div>`;
 
@@ -37,13 +68,22 @@ export const formatDue = (due) => {
 
 export const projectHref = (tag) => `#project/${encodeURIComponent(tag)}`;
 
-// Shared card: name link, due date, progress and time vs estimate
+// Drill-down chevron, same markup as the task list's details link
+export function detailsLink(href, label) {
+    const link = el('a', { href, className: 'task-item__details-link' }, el('span', { className: 'sr-only', textContent: label }));
+    link.dataset.style = 'subtle';
+    link.insertAdjacentHTML('beforeend', '<svg width=16 height=16><title>view details</title><use href="#icon-chevron-right"></use></svg>');
+    return link;
+}
+
+// Shared card: name, due date, drill-down, progress and time vs estimate
 export function projectCard(project) {
     const pct = Math.round(project.progress * 100);
     const card = el('article', { className: 'project-card stack' },
         el('header', { className: 'project-card__header' },
-            el('h4', { className: 'h5 margin-0' }, el('a', { href: projectHref(project.tag), textContent: project.name })),
-            project.due ? el('time', { dateTime: project.due, textContent: formatDue(project.due) }) : null
+            el('h4', { className: 'h5 margin-0', textContent: project.name }),
+            project.due ? el('time', { dateTime: project.due, textContent: formatDue(project.due) }) : null,
+            detailsLink(projectHref(project.tag), `View ${project.name}`)
         ),
         el('progress', { max: 100, value: pct, textContent: `${pct}%` }),
         el('p', { className: 'project-card__meta margin-0' },
@@ -55,8 +95,8 @@ export function projectCard(project) {
     if (project.children.length) {
         card.append(el('ul', { className: 'unstyled-list project-card__children' },
             ...project.children.map(child => el('li', {},
-                el('a', { href: projectHref(child.tag), textContent: child.name }),
-                ` ${child.done}/${child.count}`
+                el('span', { textContent: `${child.name} ${child.done}/${child.count}` }),
+                detailsLink(projectHref(child.tag), `View ${child.name}`)
             ))
         ));
     }
@@ -68,6 +108,7 @@ const listItems = (projects) => projects.map(project => el('li', {}, projectCard
 customElements.define('projects-page', class extends HTMLElement {
     #projects;
     #offset;
+    #tasks;
     #unsubscribeSignals;
     #unsubscribeState;
 
@@ -77,11 +118,20 @@ customElements.define('projects-page', class extends HTMLElement {
         this.dispatchEvent(new ContextRequestEvent('state', (state, unsubscribe) => {
             this.#projects = state.projects;
             this.#offset = state.projectsOffset;
+            this.#tasks = state.allTasksWithDeleted;
             this.#unsubscribeState = unsubscribe;
             this.#unsubscribeSignals?.();
-            this.#unsubscribeSignals = effect(() => this.#render(), this.#projects, this.#offset);
+            this.#unsubscribeSignals = effect(() => this.#render(), ...[this.#projects, this.#offset, this.#tasks].filter(Boolean));
         }, true));
 
+        this.querySelector('[data-new-project]').addEventListener('submit', (ev) => {
+            ev.preventDefault();
+            const form = ev.target;
+            emitEvent(this, 'addProject', Object.fromEntries(
+                ['name', 'due', 'parent', 'description', 'estimate'].map(name => [name, form.elements[name].value])
+            ));
+            form.reset();
+        });
         this.querySelector('[data-action="earlier"]').addEventListener('click', () => this.#load((this.#offset?.value ?? 0) - 1));
         this.querySelector('[data-action="later"]').addEventListener('click', () => this.#load((this.#offset?.value ?? 0) + 1));
 
@@ -105,6 +155,9 @@ customElements.define('projects-page', class extends HTMLElement {
     #render() {
         const offset = this.#offset?.value ?? 0;
         const { undated, months, hasEarlier, hasLater } = groupProjectsByMonth(this.#projects?.value || [], { offset });
+
+        this.querySelector('[data-new-project] datalist').replaceChildren(...projectOptions(this.#projects?.value, (this.#tasks?.value || []).filter(t => !t.deleted))
+            .map(value => el('option', { value })));
 
         const undatedSection = this.querySelector('[data-undated]');
         undatedSection.hidden = !undated.length;

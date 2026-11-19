@@ -5,6 +5,7 @@ import newtemplateItem from "../utils/newTemplateItem.js";
 import timeLoop from "../utils/timeLoop.js";
 import calcDuration from "../utils/calcDuration.js";
 import { taskEstimate } from "../utils/estimate.js";
+import { projectOptions } from "../utils/projects.js";
 
 // Drill-down screen for editing a task's properties. Routed via #task/<exid>
 const ROUTE = "#task/";
@@ -27,7 +28,8 @@ template.innerHTML = /*html*/ `
         <div class="row">
             <div class="input-group">
                 <label for="taskDetailProject">Project</label>
-                <input id="taskDetailProject" type="text" name="project">
+                <input id="taskDetailProject" type="text" name="project" list="taskDetailProjects" autocomplete="off">
+                <datalist id="taskDetailProjects"></datalist>
             </div>
             <div class="input-group">
                 <label for="taskDetailContext">Context</label>
@@ -77,6 +79,9 @@ class TaskDetail extends HTMLElement {
   #tasks;
   #newEntry;
   #taskPastTotals;
+  #projects;
+  #allTasks;
+  #projectList;
   #unsubscribe = {};
   #form;
   #loop;
@@ -86,6 +91,7 @@ class TaskDetail extends HTMLElement {
   #build() {
     this.appendChild(newtemplateItem(template));
     this.#form = this.querySelector("form");
+    this.#projectList = this.#form.querySelector("datalist");
     this.#form.addEventListener("submit", (ev) => {
       ev.preventDefault();
       const exid = exidFromHash(window.location.hash);
@@ -104,7 +110,10 @@ class TaskDetail extends HTMLElement {
     this.#form.elements.estimate.addEventListener("input", () => this.renderTiming());
   }
 
-  #handleHashChange = () => this.render(true);
+  #handleHashChange = () => {
+    if (exidFromHash(window.location.hash)) emitEvent(this, "loadProjects");
+    this.render(true);
+  };
 
   connectedCallback() {
     if (!this.#form) this.#build();
@@ -116,16 +125,24 @@ class TaskDetail extends HTMLElement {
           this.#tasks = state.tasks;
           this.#newEntry = state.newEntry;
           this.#taskPastTotals = state.taskPastTotals;
+          this.#projects = state.projects;
+          this.#allTasks = state.allTasksWithDeleted;
           this.#unsubscribe.state = unsubscribe;
           this.#unsubscribe.signals?.();
           this.#unsubscribe.signals = effect(
             () => this.render(false),
             ...[this.#tasks, this.#newEntry, this.#taskPastTotals].filter(Boolean)
           );
+          this.#unsubscribe.projects?.();
+          this.#unsubscribe.projects = effect(
+            () => this.renderProjectOptions(),
+            ...[this.#projects, this.#allTasks, this.#tasks].filter(Boolean)
+          );
         },
         true
       )
     );
+    if (exidFromHash(window.location.hash)) emitEvent(this, "loadProjects");
     this.render(true);
     // Keep the % taken live while this task is being timed
     this.#loop = timeLoop(1000, () => {
@@ -137,7 +154,20 @@ class TaskDetail extends HTMLElement {
     window.removeEventListener("hashchange", this.#handleHashChange);
     if (this.#loop) clearTimeout(this.#loop.timeout);
     this.#unsubscribe.signals?.();
+    this.#unsubscribe.projects?.();
     this.#unsubscribe.state?.();
+  }
+
+  // Project suggestions: known projects, then other task exids (excluding this task)
+  renderProjectOptions() {
+    const exid = exidFromHash(window.location.hash);
+    const tasks = [...(this.#tasks?.value || []), ...(this.#allTasks?.value || [])]
+      .filter((t) => !t.deleted && String(t.exid) !== exid);
+    this.#projectList?.replaceChildren(
+      ...projectOptions(this.#projects?.value, tasks)
+        .filter((value) => value !== exid)
+        .map((value) => Object.assign(document.createElement("option"), { value }))
+    );
   }
 
   // Populate the form on navigation; on signal updates only refill if a different
