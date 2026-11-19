@@ -99,6 +99,8 @@
   content: ""; position: absolute; left: calc(-1 * var(--space-4) - 6px); top: 0.35em;
   width: 10px; height: 10px; border-radius: 50%; background: var(--color-text);
 }
+.projects__undated > summary { cursor: pointer; }
+.projects__undated[open] > ol { margin-top: var(--space-3); }
 .project-card { padding: var(--space-3) var(--space-4); background: var(--color-input-bg); border-radius: 6px; }
 .project-card__header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--space-2); }
 .project-card__header time, .project-card__meta { color: var(--color-text-muted); font-size: 0.85em; }

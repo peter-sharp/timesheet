@@ -11,9 +11,10 @@ const latest = (dates) => dates.filter(Boolean).sort().at(-1) || '';
 /**
  * @param {Array} tasks all (non-deleted) tasks
  * @param {Object} hoursByExid all-time tracked hours keyed by task exid
+ * @param {Object} lastEntryByExid most recent time entry (Date) keyed by task exid
  * @returns {Array} top-level projects; nested projects live in `children`
  */
-export function buildProjects(tasks = [], hoursByExid = {}) {
+export function buildProjects(tasks = [], hoursByExid = {}, lastEntryByExid = {}) {
     const tags = [...new Set(tasks.map(t => t.project).filter(Boolean))];
     const tagSet = new Set(tags);
     const dedicated = Object.fromEntries(
@@ -39,6 +40,10 @@ export function buildProjects(tasks = [], hoursByExid = {}) {
                 + (task ? hoursByExid[task.exid] || 0 : 0)
         };
         const sum = (key) => children.reduce((total, c) => total + c[key], own[key]);
+        const entryDates = [...members, ...(task ? [task] : [])].map(t => lastEntryByExid[t.exid])
+            .concat(children.map(c => c.lastEntry))
+            .filter(Boolean)
+            .map(d => new Date(d));
         const count = sum('count');
         const done = sum('done');
         return {
@@ -53,6 +58,7 @@ export function buildProjects(tasks = [], hoursByExid = {}) {
             progress: count ? done / count : 0,
             estimate: sum('estimate'),
             hours: sum('hours'),
+            lastEntry: entryDates.length ? new Date(Math.max(...entryDates)) : null,
             due: task?.due || latest([...members.map(t => t.due), ...children.map(c => c.due)])
         };
     };
@@ -90,8 +96,9 @@ const parseDue = (due) => {
 };
 
 /**
- * Groups projects into months within a 6-month window centred on now
- * (3 months back, 3 months forward). Each `offset` step shifts by the 7-month window.
+ * Groups dated projects into months within a 7-month window centred on now
+ * (3 months back, 3 months forward). Each `offset` step shifts by one window.
+ * Undated projects are listed only when their last time entry falls in the window.
  */
 export function groupProjectsByMonth(projects = [], { offset = 0, now = new Date() } = {}) {
     const start = new Date(now.getFullYear(), now.getMonth() - 3 + offset * 7, 1);
@@ -100,6 +107,10 @@ export function groupProjectsByMonth(projects = [], { offset = 0, now = new Date
         .map(project => ({ project, date: parseDue(project.due) }))
         .filter(x => x.date)
         .sort((a, b) => a.date - b.date);
+    // Undated projects are kept only while their last time entry falls in the window
+    const undatedActive = projects
+        .filter(p => !parseDue(p.due) && p.lastEntry)
+        .map(project => ({ project, date: new Date(project.lastEntry) }));
     const inWindow = dated.filter(x => x.date >= start && x.date <= end);
     const months = inWindow.reduce((groups, { project, date }) => {
         const key = monthKey(date);
@@ -115,9 +126,9 @@ export function groupProjectsByMonth(projects = [], { offset = 0, now = new Date
     return {
         start,
         end,
-        undated: offset === 0 ? projects.filter(p => !parseDue(p.due)) : [],
+        undated: undatedActive.filter(x => x.date >= start && x.date <= end).map(x => x.project),
         months,
-        hasEarlier: dated.some(x => x.date < start),
-        hasLater: dated.some(x => x.date > end)
+        hasEarlier: [...dated, ...undatedActive].some(x => x.date < start),
+        hasLater: [...dated, ...undatedActive].some(x => x.date > end)
     };
 }
