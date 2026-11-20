@@ -11,7 +11,7 @@ Timesheet is a simple time tracking tool that helps you record and analyze your 
 The app uses a modern, signal-based architecture with IndexedDB for persistent storage:
 
 ### Storage Architecture
-- **IndexedDB**: Primary storage for ALL tasks and time entries (both current and historical)
+- **IndexedDB**: Primary storage for ALL tasks and time entries (both current and historical), plus created projects
 - **localStorage**: UI state only (settings, current task, new entry, clients, version)
 - **sessionStorage**: Deletion tracking for the current session
 
@@ -25,7 +25,8 @@ The app uses a modern, signal-based architecture with IndexedDB for persistent s
 ### Migration History
 - **Database Version 2**: Migrated archived tasks from localStorage to IndexedDB
 - **Database Version 3**: Migrated archived entries from localStorage to IndexedDB
-- **Current (Version 6)**: All data lives in IndexedDB; no separate archive storage
+- **Version 6**: All data lives in IndexedDB; no separate archive storage
+- **Current (Version 10)**: Adds a `projects` store for projects created from the projects page
 
 ## 📋 What Needs to Be Done
 

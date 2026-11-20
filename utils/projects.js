@@ -1,6 +1,8 @@
 // Derives project summaries from todo.txt-style tasks.
 // A project is any `+tag`. A task whose exid equals the tag is the project's
 // dedicated task (optional); its own `+parent` tag nests the project under that parent.
+// Stored projects (created from the projects page) add tags with no tasks yet and
+// supply fallback `due`/`parent` when there's no dedicated task.
 import { taskEstimate } from './estimate.js';
 
 export const projectName = (tag = '') => tag.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -12,16 +14,18 @@ const latest = (dates) => dates.filter(Boolean).sort().at(-1) || '';
  * @param {Array} tasks all (non-deleted) tasks
  * @param {Object} hoursByExid all-time tracked hours keyed by task exid
  * @param {Object} lastEntryByExid most recent time entry (Date) keyed by task exid
+ * @param {Array} stored projects from the projects store: { tag, due, parent, created }
  * @returns {Array} top-level projects; nested projects live in `children`
  */
-export function buildProjects(tasks = [], hoursByExid = {}, lastEntryByExid = {}) {
-    const tags = [...new Set(tasks.map(t => t.project).filter(Boolean))];
+export function buildProjects(tasks = [], hoursByExid = {}, lastEntryByExid = {}, stored = []) {
+    const storedByTag = Object.fromEntries(stored.filter(p => p?.tag).map(p => [p.tag, p]));
+    const tags = [...new Set([...tasks.map(t => t.project), ...Object.keys(storedByTag)].filter(Boolean))];
     const tagSet = new Set(tags);
     const dedicated = Object.fromEntries(
         tasks.filter(t => t.exid && tagSet.has(String(t.exid))).map(t => [String(t.exid), t])
     );
     const parentOf = (tag) => {
-        const parent = dedicated[tag]?.project;
+        const parent = dedicated[tag]?.project || storedByTag[tag]?.parent;
         return parent && parent !== tag ? parent : '';
     };
 
@@ -41,7 +45,7 @@ export function buildProjects(tasks = [], hoursByExid = {}, lastEntryByExid = {}
         };
         const sum = (key) => children.reduce((total, c) => total + c[key], own[key]);
         const entryDates = [...members, ...(task ? [task] : [])].map(t => lastEntryByExid[t.exid])
-            .concat(children.map(c => c.lastEntry))
+            .concat(children.map(c => c.lastEntry), storedByTag[tag]?.created)
             .filter(Boolean)
             .map(d => new Date(d));
         const count = sum('count');
@@ -59,7 +63,7 @@ export function buildProjects(tasks = [], hoursByExid = {}, lastEntryByExid = {}
             estimate: sum('estimate'),
             hours: sum('hours'),
             lastEntry: entryDates.length ? new Date(Math.max(...entryDates)) : null,
-            due: task?.due || latest([...members.map(t => t.due), ...children.map(c => c.due)])
+            due: task?.due || storedByTag[tag]?.due || latest([...members.map(t => t.due), ...children.map(c => c.due)])
         };
     };
 
@@ -79,6 +83,19 @@ export function buildProjects(tasks = [], hoursByExid = {}, lastEntryByExid = {}
     };
     return tags.filter(isRoot).map(t => build(t, new Set()));
 }
+
+// Every project tag, depth first (top-level then its sub-projects)
+export const flattenProjects = (projects = []) =>
+    projects.flatMap(project => [project, ...flattenProjects(project.children)]);
+
+// Datalist options for a project field: known project tags first, then task exids
+// (tagging a task's exid as a project turns that task into the project's dedicated task)
+export const projectOptions = (projects = [], tasks = []) => {
+    const tags = flattenProjects(projects).map(p => p.tag);
+    const known = new Set(tags);
+    const exids = tasks.map(t => String(t.exid || '')).filter(exid => exid && !known.has(exid));
+    return [...new Set([...tags, ...exids])];
+};
 
 export function findProject(projects = [], tag) {
     for (const project of projects) {

@@ -95,6 +95,30 @@ TestRunner.test('task detail: drill-down form loads task and saves edits', async
     window.location.hash = '';
 });
 
+TestRunner.test('task detail: project field suggests projects and other task exids', async () => {
+    const detail = document.createElement('task-detail');
+    appContext.append(detail);
+    appContext.tasks.value = [
+        { exid: 'TD6', description: 'Pick project', project: '' },
+        { exid: 'TD7', description: 'Could be a project', project: '' }
+    ];
+    window.location.hash = '#task/TD6';
+    window.dispatchEvent(new Event('hashchange'));
+    await wait();
+    // Set after navigation: opening the task reloads projects from the DB
+    appContext.projects.value = [{ tag: 'dl_proj', children: [{ tag: 'dl_child', children: [] }] }];
+    await wait();
+
+    const input = detail.querySelector('form').elements.project;
+    const options = [...detail.querySelectorAll(`datalist[id="${input.getAttribute('list')}"] option`)].map(o => o.value);
+    TestRunner.assert(options.includes('dl_proj') && options.includes('dl_child'), 'projects (incl. sub-projects) suggested');
+    TestRunner.assert(options.includes('TD7'), 'other task exids suggested');
+    TestRunner.assert(!options.includes('TD6'), 'own exid not suggested');
+    TestRunner.assert(options.indexOf('dl_child') < options.indexOf('TD7'), 'projects listed before exids');
+    detail.remove();
+    window.location.hash = '';
+});
+
 TestRunner.test('task detail: play/pause button times the task and % of estimate shown', async () => {
     const detail = document.createElement('task-detail');
     appContext.append(detail);

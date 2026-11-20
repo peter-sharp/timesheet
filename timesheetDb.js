@@ -65,7 +65,7 @@
  */
 export default async function TimesheetDB() {
     const dbName = "timesheet";
-    const version = 9;
+    const version = 10;
     const request = indexedDB.open(dbName, version);
     const modules = TimesheetDB.modules.map(fn => fn());
     request.onupgradeneeded = (event) => {
@@ -957,6 +957,39 @@ TimesheetDB.modules.push(function fileHandlesDb() {
         }
 
         return { putFileHandle, getFileHandle, deleteFileHandle, setFileSyncBase };
+    }
+
+    return { init, upgrade };
+});
+
+/**
+ * Projects Module - Projects created from the projects page ({ tag, due, parent, created }).
+ * Tag-derived projects (from task `+tags`) aren't stored; these add empty/undated projects.
+ */
+TimesheetDB.modules.push(function projectsDb() {
+    async function upgrade(db) {
+        if (!db.objectStoreNames.contains("projects")) {
+            db.createObjectStore("projects", { keyPath: "tag" });
+        }
+    }
+
+    function init(db) {
+        async function putProject(project) {
+            const store = db.transaction(["projects"], "readwrite").objectStore("projects");
+            return await awaitEvt(store.put(project), 'onsuccess', 'onerror');
+        }
+
+        async function getAllProjects() {
+            const store = db.transaction(["projects"], "readonly").objectStore("projects");
+            return await awaitEvt(store.getAll(), 'onsuccess', 'onerror');
+        }
+
+        async function deleteProject(tag) {
+            const store = db.transaction(["projects"], "readwrite").objectStore("projects");
+            return await awaitEvt(store.delete(tag), 'onsuccess', 'onerror');
+        }
+
+        return { putProject, getAllProjects, deleteProject };
     }
 
     return { init, upgrade };

@@ -588,6 +588,9 @@ customElements.define('app-context', class extends HTMLElement {
             case 'loadProjects':
                 this.handleLoadProjects(data);
                 return; // skip persistState — projects are derived read-only data
+            case 'addProject':
+                this.handleAddProject(data);
+                return; // persists itself once the (optional) dedicated task is added
             default:
                 console.log('Unhandled event type:', type);
         }
@@ -1219,7 +1222,8 @@ customElements.define('app-context', class extends HTMLElement {
             if (Number.isInteger(offset)) this.projectsOffset.value = offset;
             const db = await TimesheetDB();
             const allTasks = await db.getAllTasks();
-            const tags = new Set(allTasks.map(t => t.project).filter(Boolean));
+            const stored = await db.getAllProjects();
+            const tags = new Set([...allTasks.map(t => t.project), ...stored.map(p => p.tag)].filter(Boolean));
             const relevant = allTasks.filter(t => t.project || tags.has(String(t.exid)));
             const entries = (await db.getEntriesByTasks(relevant.map(t => t.exid).filter(Boolean)))
                 .filter(e => e.start && e.end);
@@ -1231,9 +1235,39 @@ customElements.define('app-context', class extends HTMLElement {
                 const end = new Date(e.end);
                 return end > (latest[e.task] || 0) ? { ...latest, [e.task]: end } : latest;
             }, {});
-            this.projects.value = buildProjects(relevant, hoursByExid, lastEntryByExid);
+            this.projects.value = buildProjects(relevant, hoursByExid, lastEntryByExid, stored);
         } catch (e) {
             console.error('Failed to load projects:', e);
+        }
+    }
+
+    // Stores a new project; a dedicated task (exid = tag) is only created when a description is given
+    // and no task with that exid exists already (an existing task simply becomes the project's task)
+    async handleAddProject({ name, due, parent, description, estimate } = {}) {
+        const clean = (value) => String(value ?? '').trim().replace(/^\+/, '').replace(/\s+/g, '_');
+        const tag = clean(name);
+        if (!tag) return;
+        const parentTag = clean(parent);
+        const dueDate = String(due ?? '').trim();
+        try {
+            const db = await TimesheetDB();
+            await db.putProject({ tag, due: dueDate, parent: parentTag === tag ? '' : parentTag, created: new Date() });
+            const text = String(description ?? '').trim();
+            const exists = (await db.getAllTasks()).some(t => String(t.exid) === tag)
+                || this.tasks.value.some(t => String(t.exid) === tag);
+            if (text && !exists) {
+                await this.handleAddTask({ raw: text, exid: tag, estimate: String(estimate ?? '').trim() });
+                const applyChanges = t => String(t.exid) === tag
+                    ? { ...t, project: parentTag === tag ? '' : parentTag, due: dueDate, lastModified: new Date() }
+                    : t;
+                this.tasks.value = this.tasks.value.map(applyChanges);
+                this.todaysTasks.value = this.todaysTasks.value.map(applyChanges);
+                this.allTasksWithDeleted.value = this.allTasksWithDeleted.value.map(applyChanges);
+                await this.persistState();
+            }
+            await this.handleLoadProjects();
+        } catch (e) {
+            console.error('Failed to add project:', e);
         }
     }
 
